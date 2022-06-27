@@ -13,6 +13,7 @@ awscli = "^1.25.17"
 flake8 = "^4.0.1"
 isort = "^5.10.1"
 pandas = "^1.4.3"
+joblib = "^1.1.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
