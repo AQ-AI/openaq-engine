@@ -1,5 +1,5 @@
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from joblib import Parallel, delayed
 from config.model_settings import HistoricOpenAQConfig
 
@@ -11,14 +11,12 @@ class HistoricOpenAQ:
         region: str,
         s3_output: str,
         s3_bucket: str,
-        query: str,
         dates: datetime.date,
     ) -> None:
         self.database = database
         self.region = region
         self.s3_output = s3_output
         self.s3_bucket = s3_bucket
-        self.query = query
         self.dates = dates
 
     @classmethod
@@ -33,23 +31,25 @@ class HistoricOpenAQ:
         )
 
     def execute(self, session):
+        # Parallel(n_jobs=-1, backend="multiprocessing", verbose=5)(
+        #     delayed(self.query_results)(session, params, date) for date in self.dates
+        # )
+        for date in self.dates:
+            self.query_results(session, date)
+
+    def query_results(self, session, date, wait=True):
+        print(date.strftime("%Y-%m-%d"))
         params = {
             "region": self.region,
             "database": self.database,
             "bucket": self.s3_bucket,
-            "path": f"{self.s3_output}",
+            "path": f"{self.s3_output}/{str(date.strftime('%Y-%m-%d'))}",
         }
-        Parallel(n_jobs=-1, backend="multiprocessing", verbose=5)(
-            delayed(self.query_results)(session, params, date) for date in self.dates
-        )
+        next_date = date + timedelta(days=1)
 
-    def get_var_char_values(self, d):
-        return [obj["VarCharValue"] for obj in d["Data"]]
-
-    def query_results(self, session, params, date, wait=True):
         client = session.client("athena", params["region"])
-        query = f"SELECT * FROM openaq where parameter='pm25' and date.local == {date} and value >= 0;"
-
+        query = f"SELECT * FROM openaq WHERE PARAMETER = 'pm25' and date.local between '{str(date)}' and '{str(next_date)}' and value >= 0;"
+        print(query)
         ## This function executes the query and returns the query execution ID
         response_query_execution_id = client.start_query_execution(
             QueryString=query,
@@ -60,7 +60,6 @@ class HistoricOpenAQ:
                 + "/"
                 + params["path"]
                 + "/"
-                + str(date)
             },
         )
 
@@ -75,7 +74,6 @@ class HistoricOpenAQ:
 
             while iterations > 0:
                 iterations = iterations - 1
-                print(iterations)
                 response_get_query_details = client.get_query_execution(
                     QueryExecutionId=response_query_execution_id["QueryExecutionId"]
                 )
@@ -116,3 +114,10 @@ class HistoricOpenAQ:
                 time.sleep(5)
 
             return False
+
+    def get_var_char_values(self, d):
+        for obj in d["Data"]:
+            if obj["VarCharValue"]:
+                return obj["VarCharValue"]
+            else:
+                pass
