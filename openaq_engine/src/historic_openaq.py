@@ -1,5 +1,6 @@
 import time
-from datetime import datetime, timedelta
+import calendar
+from datetime import datetime, timedelta, date
 from joblib import Parallel, delayed
 from config.model_settings import HistoricOpenAQConfig
 
@@ -12,12 +13,14 @@ class HistoricOpenAQ:
         s3_output: str,
         s3_bucket: str,
         dates: datetime.date,
+        time_aggregation: int,
     ) -> None:
         self.database = database
         self.region = region
         self.s3_output = s3_output
         self.s3_bucket = s3_bucket
         self.dates = dates
+        self.time_aggregation = time_aggregation
 
     @classmethod
     def from_dataclass_config(cls, config: HistoricOpenAQConfig) -> "HistoricOpenAQ":
@@ -28,6 +31,7 @@ class HistoricOpenAQ:
             s3_output=config.S3_OUTPUT,
             s3_bucket=config.S3_BUCKET,
             dates=config.DATES,
+            time_aggregation=config.TIME_AGGREGATION,
         )
 
     def execute(self, session):
@@ -45,10 +49,10 @@ class HistoricOpenAQ:
             "bucket": self.s3_bucket,
             "path": f"{self.s3_output}/{str(date.strftime('%Y-%m-%d'))}",
         }
-        next_date = date + timedelta(days=1)
+        next_time = date + timedelta(weeks=self.time_aggregation)
 
         client = session.client("athena", params["region"])
-        query = f"SELECT * FROM openaq WHERE PARAMETER = 'pm25' and date.local between '{str(date)}' and '{str(next_date)}' and value >= 0;"
+        query = f"SELECT * FROM openaq WHERE PARAMETER = 'pm25' and date.local between '{str(date)}' and '{str(next_time)}' and value >= 0;"
         print(query)
         ## This function executes the query and returns the query execution ID
         response_query_execution_id = client.start_query_execution(
@@ -121,3 +125,8 @@ class HistoricOpenAQ:
                 return obj["VarCharValue"]
             else:
                 pass
+
+    def _get_last_day_of_month(self):
+        last_day = datetime.date(
+            date.year, date.month, calendar.monthrange(date.year, date.month)[1]
+        )

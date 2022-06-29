@@ -23,4 +23,5 @@ class HistoricOpenAQConfig:
     # query constant
     PARAMETER = "pm25"
 
-    DATES = pd.date_range("2021-01-01", "2021-02-01", freq="D")
+    DATES = pd.date_range("2021-01-01", "2022-01-01", freq="M")
+    TIME_AGGREGATION = 4
