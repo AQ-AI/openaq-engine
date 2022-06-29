@@ -38,21 +38,21 @@ class HistoricOpenAQ:
         # Parallel(n_jobs=-1, backend="multiprocessing", verbose=5)(
         #     delayed(self.query_results)(session, params, date) for date in self.dates
         # )
-        for date in self.dates:
-            self.query_results(session, date)
+        for month in self.dates:
+            self.query_results(session, month)
 
-    def query_results(self, session, date, wait=True):
-        print(date.strftime("%Y-%m-%d"))
+    def query_results(self, session, month, wait=True):
+        print(month.strftime("%Y-%m-%d"))
         params = {
             "region": self.region,
             "database": self.database,
             "bucket": self.s3_bucket,
-            "path": f"{self.s3_output}/{str(date.strftime('%Y-%m-%d'))}",
+            "path": f"{self.s3_output}/{str(month.strftime('%Y-%m-%d'))}",
         }
-        next_time = date + timedelta(weeks=self.time_aggregation)
+        first_day_of_month = self._get_first_day_of_month(month.date())
 
         client = session.client("athena", params["region"])
-        query = f"SELECT * FROM openaq WHERE PARAMETER = 'pm25' and date.local between '{str(date)}' and '{str(next_time)}' and value >= 0;"
+        query = f"SELECT * FROM openaq WHERE PARAMETER = 'pm25' and date.local between '{str(first_day_of_month)}' and '{str(month)}' and value >= 0;"
         print(query)
         ## This function executes the query and returns the query execution ID
         response_query_execution_id = client.start_query_execution(
@@ -126,7 +126,5 @@ class HistoricOpenAQ:
             else:
                 pass
 
-    def _get_last_day_of_month(self):
-        last_day = datetime.date(
-            date.year, date.month, calendar.monthrange(date.year, date.month)[1]
-        )
+    def _get_first_day_of_month(self, date_time):
+        return datetime(date_time.year, date_time.month, 1)
