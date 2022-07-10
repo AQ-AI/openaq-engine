@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Sequence
 from pydantic.dataclasses import dataclass
 from src.utils.utils import date_range
 
+import boto3
 import pandas as pd
 
 
@@ -43,6 +44,12 @@ class TimeSplitterConfig:
     WITHIN_WINDOW_SAMPLER: int = 3
     WINDOW_COUNT: int = 3  # this will increase for more than one split
     TABLE_NAME: str = "openaq"
+    REGION = "us-east-1"
+    AWS_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY")
+    AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+    S3_BUCKET = os.getenv("S3_BUCKET_OPENAQ")
+    S3_OUTPUT = os.getenv("S3_OUTPUT_OPENAQ")
+    RESOURCE = boto3.resource("s3")
 
 
 @dataclass
