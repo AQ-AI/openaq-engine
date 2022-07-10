@@ -100,20 +100,3 @@ def query_results(params, query, wait=True):
             time.sleep(5)
 
         return False
-
-
-def obtain_data_from_s3(region_name):
-    self.resource = boto3.resource(
-        "s3",
-        region_name=region_name,
-        aws_access_key_id=self.aws_access_key_id,
-        aws_secret_access_key=self.aws_secret_access_key,
-    )
-
-    response = (
-        self.resource.Bucket(self.bucket)
-        .Object(key=self.folder + self.filename + ".csv")
-        .get()
-    )
-
-    return read_csv(io.BytesIO(response["Body"].read()), encoding="utf8")
