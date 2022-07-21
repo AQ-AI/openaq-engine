@@ -1,16 +1,15 @@
 from abc import ABC
-from typing import Any, Dict
+from typing import Any, Dict, List
 import logging
 import io
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-from joblib import Parallel, delayed
 
 import boto3
 import pandas as pd
 
 from config.model_settings import TimeSplitterConfig
-from src.utils.utils import read_csv
+from src.utils.utils import read_csv, query_results
 
 logging.basicConfig(level=logging.INFO)
 
@@ -18,6 +17,9 @@ logging.basicConfig(level=logging.INFO)
 class TimeSplitterBase(ABC):
     def __init__(
         self,
+        date_col: str,
+        table_name: str,
+        database: str,
         region_name: str,
         aws_access_key_id: str,
         aws_secret_access_key: str,
@@ -25,6 +27,10 @@ class TimeSplitterBase(ABC):
         s3_output: str,
         resource: boto3.resource,
     ):
+
+        self.date_col = date_col
+        self.table_name = table_name
+        self.database = database
         self.region_name = region_name
         self.aws_access_key_id = aws_access_key_id
         self.aws_secret_access_key = aws_secret_access_key
@@ -32,38 +38,78 @@ class TimeSplitterBase(ABC):
         self.s3_output = s3_output
         self.resource = resource
 
-    def _obtain_df_from_s3(self, filename):
+    def _obtain_df_from_s3(self, filepath):
+        print(filepath)
 
-        response = self.resource.Bucket(self.bucket).Object(key=filename).get()
+        s3 = boto3.client("s3", region_name=self.region_name)
 
-        return read_csv(io.BytesIO(response["Body"].read()))
+        obj = s3.get_object(Bucket=self.bucket, Key=filepath)
 
-    def get_s3_file_path_list(self):
-        csv_filetype = ".csv"
-        my_bucket = self.resource.Bucket(self.bucket)
-        csv_list = []
-        for object_summary in my_bucket.objects.filter(Prefix="pm25-month/"):
-            if object_summary.key.endswith(csv_filetype):
-                csv_list.append(object_summary.key)
-        print(csv_list)
-        return csv_list
+        # response = self.resource.Bucket(self.bucket).Object(key=filepath).get()
+
+        return read_csv(obj)
+
+    def create_end_date(self, params) -> pd.DataFrame:
+        sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime 
+        FROM {table} WHERE parameter='pm25' 
+        AND from_iso8601_timestamp({date_col}) <= DATE(NOW()) 
+        ORDER BY {date_col} DESC limit 1;""".format(
+            table=self.table_name, date_col=self.date_col
+        )
+        response_query_result = self._build_response(params, sql_query)
+        print(response_query_result)
+
+        return datetime.strptime(
+            f"{response_query_result}", "%Y-%m-%d %H:%M:%S.000 UTC"
+        ).date()
+
+    def create_start_date(self, params: Dict[str, Any]) -> datetime:
+        sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime 
+        FROM {table} WHERE parameter='pm25' 
+        AND from_iso8601_timestamp({date_col}) <= DATE(NOW()) 
+        ORDER BY {date_col} ASC limit 1;""".format(
+            table=self.table_name, date_col=self.date_col
+        )
+
+        response_query_result = self._build_response(params, sql_query)
+        print(response_query_result)
+
+        return datetime.strptime(
+            f"{response_query_result}", "%Y-%m-%d %H:%M:%S.000 UTC"
+        ).date()
+
+    def _build_response(self, params, sql_query):
+        response_query_result = query_results(params, sql_query)
+        header = response_query_result["ResultSet"]["Rows"][0]
+        rows = response_query_result["ResultSet"]["Rows"][1:]
+        row_list = []
+        for row in rows:
+            return self._get_var_char_values(row)
+
+    def _get_var_char_values(self, d):
+        for obj in d["Data"]:
+            if obj["VarCharValue"]:
+                return obj["VarCharValue"]
+            else:
+                pass
 
 
 class TimeSplitter(TimeSplitterBase):
     def __init__(
         self,
-        date_col: str,
-        table_name: str,
         time_window_length: int,
         within_window_sampler: int,
         window_count: int,
+        train_validation_dict: Dict[str, List[Any]],
     ) -> None:
-        self.date_col = date_col
-        self.table_name = table_name
         self.time_window_length = time_window_length
         self.within_window_sampler = within_window_sampler
         self.window_count = window_count
+        self.train_validation_dict = train_validation_dict
         super().__init__(
+            TimeSplitterConfig.DATE_COL,
+            TimeSplitterConfig.TABLE_NAME,
+            TimeSplitterConfig.DATABASE,
             TimeSplitterConfig.REGION,
             TimeSplitterConfig.AWS_ACCESS_KEY,
             TimeSplitterConfig.AWS_SECRET_ACCESS_KEY,
@@ -75,11 +121,10 @@ class TimeSplitter(TimeSplitterBase):
     @classmethod
     def from_dataclass_config(cls, config: TimeSplitterConfig) -> "TimeSplitter":
         return cls(
-            date_col=config.DATE_COL,
-            table_name=config.TABLE_NAME,
             time_window_length=config.TIME_WINDOW_LENGTH,
             within_window_sampler=config.WITHIN_WINDOW_SAMPLER,
             window_count=config.WINDOW_COUNT,
+            train_validation_dict=config.TRAIN_VALIDATION_DICT,
         )
 
     def execute(
@@ -93,35 +138,35 @@ class TimeSplitter(TimeSplitterBase):
         ----
         The start and end dates for each time window
         """
-        self.get_s3_file_path_list()
-        # window_no = 0
-        # end_date = self.create_end_date(self.date_col, self.table_name)
+        window_no = 0
+        params = {
+            "region": self.region_name,
+            "database": self.database,
+            "bucket": self.bucket,
+            "path": f"{self.s3_output}/max_date",
+        }
+        end_date = self.create_end_date(params)
+        start_date = self.create_start_date(params)
 
-        # training_validation_date_list = []
-        # while window_no <= self.window_count:
+        while window_no < self.window_count:
+            window_start_date, window_end_date = self.get_validation_window(
+                end_date, window_no
+            )
 
-        #     window_start_date, window_end_date = self.get_time_window(
-        #         end_date, window_no
-        #     )
-        #     training_validation_date_list.append((window_start_date, window_end_date))
-        #     window_no += 1
-        # return training_validation_date_list
+            self.train_validation_dict["validation"] += [
+                (
+                    window_start_date,
+                    window_end_date,
+                )
+            ]
+            self.train_validation_dict["training"] += [(start_date, window_start_date)]
+            window_no += 1
+        print(self.train_validation_dict)
+        return self.train_validation_dict
 
-    def create_end_date(self, *args: Any) -> pd.DataFrame:
-        sql_query = """SELECT MAX("{date_col}") FROM "{table}";""".format(
-            table=self.table_name, date_col=self.date_col
-        )
-        # latest_date_df = self.obtain_data_from_s3(self.filename)
-        # latest_date_string = latest_date_df.values[0][0]  # Accessing timestamp string
-        # return datetime.strptime(f"{latest_date_string}", "%Y-%m-%dT%H:%M:%S.000000000")
-
-    def create_start_date(self, end_date):
-        start_date = end_date - relativedelta(months=+self.time_window_length)
-        return start_date
-
-    def get_time_window(self, start_date, window_no):
+    def get_validation_window(self, end_date, window_no):
         """Gets start and end date of each training window"""
-        window_start_date = self._get_start_time_windows(start_date, window_no)
+        window_start_date = self._get_start_time_windows(end_date, window_no)
         window_end_date = self._get_end_time_windows(window_start_date)
         return window_start_date, window_end_date
 
@@ -136,7 +181,3 @@ class TimeSplitter(TimeSplitterBase):
         """Gets end date of window based on the window length and the number of sample
         months used in the window"""
         return window_start_date + relativedelta(months=+self.within_window_sampler)
-
-
-if __name__ == "__main__":
-    TimeSplitter().execute()
