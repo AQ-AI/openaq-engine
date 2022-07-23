@@ -82,7 +82,6 @@ class TimeSplitterBase(ABC):
         response_query_result = query_results(params, sql_query)
         header = response_query_result["ResultSet"]["Rows"][0]
         rows = response_query_result["ResultSet"]["Rows"][1:]
-        row_list = []
         for row in rows:
             return self._get_var_char_values(row)
 
@@ -161,7 +160,6 @@ class TimeSplitter(TimeSplitterBase):
             ]
             self.train_validation_dict["training"] += [(start_date, window_start_date)]
             window_no += 1
-        print(self.train_validation_dict)
         return self.train_validation_dict
 
     def get_validation_window(self, end_date, window_no):
