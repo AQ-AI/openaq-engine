@@ -93,10 +93,20 @@ def query_results(params, query, wait=True):
                 response_query_result = client.get_query_results(
                     QueryExecutionId=response_query_execution_id["QueryExecutionId"]
                 )
-                # result_data = response_query_result["ResultSet"]
-                return response_query_result, location
+                return response_query_result
 
         else:
             time.sleep(5)
 
         return False
+
+
+def get_s3_file_path_list(resource, bucket, folder):
+    csv_filetype = ".csv"
+    my_bucket = resource.Bucket(bucket)
+    csv_list = []
+    for object_summary in my_bucket.objects.filter(Prefix=f"{folder}"):
+        if object_summary.key.endswith(csv_filetype):
+            csv_list.append(object_summary.key)
+
+    return csv_list
