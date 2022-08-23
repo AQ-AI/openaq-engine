@@ -5,7 +5,7 @@ description = ""
 authors = ["ChristinaLast <christina.last@outlook.com>"]
 
 [tool.poetry.dependencies]
-python = ">=3.8"
+python = ">=3.8,<3.11"
 boto3 = "^1.24.16"
 pydantic = "^1.9.1"
 black = "^22.3.0"
@@ -15,6 +15,7 @@ isort = "^5.10.1"
 pandas = "^1.4.3"
 joblib = "^1.1.0"
 python-lambda-local = "^0.1.13"
+mlflow = "^1.28.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
