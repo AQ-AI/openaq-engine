@@ -1,9 +1,12 @@
 import time
 import os
-
+import json
+from typing import Any, List, Union
+import numpy as np
+import pandas as pd
+from pydantic.json import pydantic_encoder
 import boto3
 from datetime import timedelta
-from typing import Any
 
 import pandas as pd
 
@@ -110,3 +113,33 @@ def get_s3_file_path_list(resource, bucket, folder):
             csv_list.append(object_summary.key)
 
     return csv_list
+
+
+def write_dataclass(dclass: object, path: str) -> None:
+    """
+    Write a dataclass to the provided path as a json
+
+    """
+    with open(path, "w+") as f:
+        f.write(
+            json.dumps(dclass, indent=4, ensure_ascii=True, default=pydantic_encoder)
+        )
+
+
+def get_categorical_feature_indices(df: pd.DataFrame) -> List[int]:
+    return list(np.where(df.dtypes == "category")[0])
+
+
+def json_provider(file_path, cmd_name):
+    with open(file_path) as config_data:
+        return json.load(config_data)
+
+
+def parametrized(dec):
+    def layer(*args, **kwargs):
+        def repl(f):
+            return dec(f, *args, **kwargs)
+
+        return repl
+
+    return layer
