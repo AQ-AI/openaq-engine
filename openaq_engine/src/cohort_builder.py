@@ -13,14 +13,12 @@ from src.utils.utils import query_results, read_csv
 class CohortBuilderBase(ABC):
     def __init__(
         self,
-        table_name: str,
         database: str,
         region_name: str,
         bucket: str,
         s3_output: str,
     ):
 
-        self.table_name = table_name
         self.database = database
         self.region_name = region_name
         self.bucket = bucket
