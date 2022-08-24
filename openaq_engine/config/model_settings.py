@@ -46,9 +46,7 @@ class CohortBuilderConfig:
     FILTER_DICT: Dict[str, Any] = field(
         default_factory=lambda: dict(
             filter_null_pollution_values=["parameter"],
-            filter_children=["triagecomplaint", "age_years"],
             # filter_non_standard_codes=["category"],
-            filter_priority_categories=["category"],
         ),
     )
     PRIORITY_SCHEMA_NAME = "raw"
@@ -78,11 +76,3 @@ class TimeSplitterConfig:
             training=[],
         )
     )
-
-
-@dataclass
-class CohortBuilderConfig:
-    ENTITY_ID_COLS: Sequence[str] = field(default_factory=lambda: ["unique_id"])
-    DATE_COL: str = "triage_datetime"
-    TABLE_NAME: str = "train"
-    SCHEMA_NAME: str = "model_prep"
