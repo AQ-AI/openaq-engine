@@ -22,7 +22,7 @@ RUN apt-get update && \
     apt-get install -y \
     git \
     openssh-server \
-    libmysqlclient-dev
+    default-libmysqlclient-dev
 
 # Authorize SSH Host
 RUN mkdir -p /root/.ssh && \
@@ -35,14 +35,17 @@ RUN echo "$ssh_prv_key" > /root/.ssh/id_rsa && \
     chmod 600 /root/.ssh/id_rsa && \
     chmod 600 /root/.ssh/id_rsa.pub
 
+ENV SHELL=/bin/bash
+ENV USERNAME=openaq_engine
+
 RUN adduser \
     --disabled-password \
     --gecos "" \
     "${USERNAME}"
 
 RUN mkdir -p /opt/venv
-RUN chown -R openaq-engine:openaq-engine /opt/venv
-RUN chown -R openaq-engine:openaq-engine .
+RUN chown -R ${USERNAME}:${USERNAME} /opt/venv
+RUN chown -R ${USERNAME}:${USERNAME} .
 
 USER ${USERNAME}
 
