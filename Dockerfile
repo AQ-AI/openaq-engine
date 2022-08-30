@@ -45,18 +45,19 @@ RUN adduser \
 
 RUN mkdir -p /opt/venv
 RUN chown -R ${USERNAME}:${USERNAME} /opt/venv
-RUN chown -R ${USERNAME}:${USERNAME} .
+# RUN chown -R ${USERNAME}:${USERNAME} .
 
+RUN git clone git@github.com:AQ-AI/openaq-engine.git
 USER ${USERNAME}
 
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
-WORKDIR openaq-engine
 
 RUN pip install poetry
 # RUN pip install "poetry==$POETRY_VERSION"
+WORKDIR /app/
+RUN mkdir openaq_engine 
 COPY poetry.lock pyproject.toml /app/
-RUN poetry config virtualenvs.create false
+COPY openaq_engine/ /app/openaq_engine/
 RUN poetry install --no-interaction --no-ansi
-
 ENTRYPOINT [ "bash" ]
