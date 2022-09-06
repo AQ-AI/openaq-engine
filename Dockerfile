@@ -48,6 +48,7 @@ RUN chown -R ${USERNAME}:${USERNAME} /opt/venv
 # RUN chown -R ${USERNAME}:${USERNAME} .
 
 RUN git clone git@github.com:AQ-AI/openaq-engine.git
+RUN chown -R ${USERNAME}:${USERNAME} /openaq-engine
 USER ${USERNAME}
 
 RUN python -m venv /opt/venv
