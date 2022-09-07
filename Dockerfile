@@ -35,8 +35,17 @@ RUN echo "$ssh_prv_key" > /root/.ssh/id_rsa && \
     chmod 600 /root/.ssh/id_rsa && \
     chmod 600 /root/.ssh/id_rsa.pub
 
-ENV SHELL=/bin/bash
-ENV USERNAME=openaq_engine
+ENV SHELL=/bin/bash \
+    USERNAME=openaq_engine \
+    DB_NAME_OPENAQ=openaq \
+    S3_OUTPUT_OPENAQ=pm25-month \
+    S3_BUCKET_OPENAQ=openaq-pm25-historic \
+    AWS_PROFILE=default \
+    AWS_ACCESS_KEY=AKIAVZ3WREYKEIAIMAPJ \
+    AWS_SECRET_ACCESS_KEY=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 \
+    PGDATABASE=openaq_db \ 
+    PGUSER=postgres \
+    PGPASSWORD=postgres
 
 RUN adduser \
     --disabled-password \
@@ -48,8 +57,6 @@ RUN chown -R ${USERNAME}:${USERNAME} /opt/venv
 # RUN chown -R ${USERNAME}:${USERNAME} .
 
 RUN git clone git@github.com:AQ-AI/openaq-engine.git
-RUN chown -R ${USERNAME}:${USERNAME} /openaq-engine
-USER ${USERNAME}
 
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
@@ -57,8 +64,12 @@ ENV PATH="/opt/venv/bin:$PATH"
 RUN pip install poetry
 # RUN pip install "poetry==$POETRY_VERSION"
 WORKDIR /app/
+
 RUN mkdir openaq_engine 
 COPY poetry.lock pyproject.toml /app/
 COPY openaq_engine/ /app/openaq_engine/
+RUN chown -R ${USERNAME}:${USERNAME} /app/openaq_engine/
+USER ${USERNAME}
+
 RUN poetry install --no-interaction --no-ansi
 ENTRYPOINT [ "bash" ]
