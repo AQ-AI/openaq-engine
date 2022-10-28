@@ -38,6 +38,27 @@ class RealtimeOpenAQConfig:
 
 
 @dataclass
+class CohortBuilderConfig:
+    ENTITY_ID_COLS: Sequence[str] = field(default_factory=lambda: ["unique_id"])
+    DATE_COL: str = "date.utc"
+    DATABASE = "openaq_db"
+    REGION = "us-east-1"
+    TABLE_NAME: str = "openaq"
+    SCHEMA_NAME: str = "model_output"
+    FILTER_DICT: Dict[str, Any] = field(
+        default_factory=lambda: dict(
+            filter_null_pollution_values=["parameter"],
+            # filter_non_standard_codes=["category"],
+        ),
+    )
+    PRIORITY_SCHEMA_NAME = "raw"
+    PRIORITY_TABLE_NAME = "priority_codes"
+    NO_OF_OCCURENCES = 500
+    S3_BUCKET = os.getenv("S3_BUCKET_OPENAQ")
+    S3_OUTPUT = os.getenv("S3_OUTPUT_OPENAQ")
+
+
+@dataclass
 class TimeSplitterConfig:
     DATE_COL: str = "triage_datetime"
     TIME_WINDOW_LENGTH: int = 12
