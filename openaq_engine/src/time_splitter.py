@@ -45,7 +45,6 @@ class TimeSplitterBase(ABC):
         for object_summary in my_bucket.objects.filter(Prefix="pm25-month/"):
             if object_summary.key.endswith(csv_filetype):
                 csv_list.append(object_summary.key)
-        print(csv_list)
         return csv_list
 
 
@@ -94,18 +93,19 @@ class TimeSplitter(TimeSplitterBase):
         The start and end dates for each time window
         """
         self.get_s3_file_path_list()
-        # window_no = 0
-        # end_date = self.create_end_date(self.date_col, self.table_name)
+        window_no = 0
+        end_date = self.create_end_date(self.date_col, self.table_name)
 
-        # training_validation_date_list = []
-        # while window_no <= self.window_count:
+        training_validation_date_list = []
+        while window_no <= self.window_count:
 
-        #     window_start_date, window_end_date = self.get_time_window(
-        #         end_date, window_no
-        #     )
-        #     training_validation_date_list.append((window_start_date, window_end_date))
-        #     window_no += 1
-        # return training_validation_date_list
+            window_start_date, window_end_date = self.get_time_window(
+                end_date, window_no
+            )
+            training_validation_date_list.append((window_start_date, window_end_date))
+            window_no += 1
+        print(training_validation_date_list)
+        return training_validation_date_list
 
     def create_end_date(self, *args: Any) -> pd.DataFrame:
         sql_query = """SELECT MAX("{date_col}") FROM "{table}";""".format(
