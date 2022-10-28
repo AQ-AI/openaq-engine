@@ -31,7 +31,7 @@ To release a major you need to add `BREAKING CHANGE: ` to the start of the body 
 
 ## Code standards
 
-Ensure ot use [black](https://github.com/psf/black) and [flake8](https://flake8.pycqa.org/en/latest/).
+Ensure to use [black](https://github.com/psf/black) and [flake8](https://flake8.pycqa.org/en/latest/).
 
 ## Sending pull requests
 
