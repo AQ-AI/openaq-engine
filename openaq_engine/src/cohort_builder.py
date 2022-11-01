@@ -13,12 +13,13 @@ from src.utils.utils import query_results, read_csv
 class CohortBuilderBase(ABC):
     def __init__(
         self,
+        table_name: str,
         database: str,
         region_name: str,
         bucket: str,
         s3_output: str,
     ):
-
+        self.table_name = table_name
         self.database = database
         self.region_name = region_name
         self.bucket = bucket
@@ -48,11 +49,11 @@ class CohortBuilder(CohortBuilderBase):
         self.date_col = date_col
         self.filter_dict = filter_dict
         super().__init__(
-            CohortBuilderBase.TABLE_NAME,
-            CohortBuilderBase.DATABASE,
-            CohortBuilderBase.REGION,
-            CohortBuilderBase.S3_BUCKET,
-            CohortBuilderBase.S3_OUTPUT,
+            CohortBuilderConfig.TABLE_NAME,
+            CohortBuilderConfig.DATABASE,
+            CohortBuilderConfig.REGION,
+            CohortBuilderConfig.S3_BUCKET,
+            CohortBuilderConfig.S3_OUTPUT,
         )
 
     @classmethod
@@ -77,11 +78,8 @@ class CohortBuilder(CohortBuilderBase):
             axis=0,
         ).reset_index(drop=True)
 
-        filtered_cohorts_df = Preprocess.from_options(
-            list(self.filter_dict.keys())
-        ).execute(cohorts_df)
-
-        self._results_to_db(engine, filtered_cohorts_df, filter_cols)
+        filtered_cohorts_df = self.filter_no_features(cohorts_df, filter_cols)
+        self._results_to_db(engine, filtered_cohorts_df)
 
     def cohort_builder(
         self, cohort_type, train_validation_dict, filter_cols
@@ -107,7 +105,7 @@ class CohortBuilder(CohortBuilderBase):
         }
 
         for index, date_tuple in enumerate(date_tup_list):
-            query = """SELECT DISTINCT ,{date_col},{filter_cols}
+            query = """SELECT DISTINCT {date_col},{filter_cols}
                 FROM {table}
                 WHERE {date_col}
                 BETWEEN '{start_date}'
@@ -117,9 +115,10 @@ class CohortBuilder(CohortBuilderBase):
                 start_date=date_tuple[0],
                 end_date=date_tuple[1],
                 filter_cols=filter_cols,
-            )
+            )   
 
             df = self._build_response(params, query)
+            print(df)
             df["train_validation_set"] = index
             df["cohort"] = f"{index}_{date_tuple[0].date()}_{date_tuple[1].date()}"
             df["cohort_type"] = f"{cohort_type}"
@@ -133,42 +132,25 @@ class CohortBuilder(CohortBuilderBase):
         cohort_df = pd.concat(df_list, axis=0).reset_index(drop=True)
         return cohort_df
 
-    def _results_to_db(self, engine, filtered_cohorts_df, filter_cols):
+    def _results_to_db(self, ååfiltered_cohorts_df, engine):
         """Write model results to the database for all cohorts"""
-        filtered_cohorts_df_no_features = filtered_cohorts_df.drop(
-            labels=list(filter_cols.split(", ")), axis=1
-        )
-        # write_to_db(
-        #     filtered_cohorts_df_no_features,
-        #     engine,
-        #     "cohorts",
-        #     self.schema_name,
-        #     "replace",
-        # )
 
-    def filter_priority_categories(self, df: pd.DataFrame) -> pd.DataFrame:
+        write_to_db(
+            filtered_cohorts_df,
+            engine,
+            "cohorts",
+            self.schema_name,
+            "replace",
+        )
+
+    def filter_no_features(self, cohorts_df: pd.DataFrame, filter_cols: str) -> pd.DataFrame:
         """
         Filter out rows which contain non-priority categories
         """
-        priority_cats = self._list_priority_categories()
-
-        return df.assign(
-            priority_cats=(
-                df.category.apply(
-                    lambda cat: any(
-                        str_.lower() in cat[1:-1].split(",") for str_ in priority_cats
-                    )
-                )
-            )
-        ).query("priority_cats == True")
-
-    def _list_priority_categories(self):
-        """Getting priority codes as a list"""
-        priority_cat_query = """select icd_10_cm from {schema_name}.{table}
-        where count >= {no_of_occurrences};""".format(
-            schema_name=self.priority_schema_name,
-            table=self.priority_table_name,
-            no_of_occurrences=self.no_of_occurrences,
+        filtered_cohorts_df = cohorts_df.drop(
+            labels=list(filter_cols.split(", ")), axis=1
         )
-        priority_cats = get_data(priority_cat_query)
-        return list(priority_cats["icd_10_cm"])
+        filtered_cohorts_df.to_csv("openaq-engine/data/cohorts.csv")
+        
+        return filtered_cohorts_df
+
