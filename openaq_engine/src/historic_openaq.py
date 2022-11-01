@@ -36,13 +36,10 @@ class HistoricOpenAQ:
         )
 
     def execute(self):
-        # Parallel(n_jobs=-1, backend="multiprocessing", verbose=5)(
-        #     delayed(self.query_results)(session, params, date) for date in self.dates
-        # )
         for month in self.dates:
-            self.query_results(month)
+            self.get_results(month)
 
-    def query_results(self, month, wait=True):
+    def get_results(self, month, wait=True):
         params = {
             "region": self.region,
             "database": self.database,
@@ -56,6 +53,7 @@ class HistoricOpenAQ:
             params,
             query,
         )
+
         if len(response_query_result["ResultSet"]["Rows"]) > 1:
             header = response_query_result["ResultSet"]["Rows"][0]
             rows = response_query_result["ResultSet"]["Rows"][1:]
