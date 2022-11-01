@@ -30,16 +30,16 @@ class Preprocess:
                 Filter.filter_non_null_pm25_values
             )
             logging.info(
-                f"""Total number of patients left after
-                filtering pregnancies : {len(training_validation_df)}"""
+                f"""Total number of Pm2.5 values left after
+                filtering non-null values : {len(training_validation_df)}"""
             )
         if self.filter_extreme:
             training_validation_df = training_validation_df.pipe(
                 Filter.filter_extreme_pollution_values
             )
             logging.info(
-                f"""Total number of patients left after
-                filtering children {len(training_validation_df)}"""
+                f"""Total number of PM2.5 values left after
+                filtering extreme values {len(training_validation_df)}"""
             )
 
         return training_validation_df
