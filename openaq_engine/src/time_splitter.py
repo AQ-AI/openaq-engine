@@ -32,16 +32,6 @@ class TimeSplitterBase(ABC):
         self.bucket = bucket
         self.s3_output = s3_output
 
-    def _obtain_df_from_s3(self, filepath):
-
-        s3 = boto3.client("s3", region_name=self.region_name)
-
-        obj = s3.get_object(Bucket=self.bucket, Key=filepath)
-
-        # response = self.resource.Bucket(self.bucket).Object(key=filepath).get()
-
-        return read_csv(obj)
-
     def create_end_date(self, params) -> pd.DataFrame:
         sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime 
         FROM {table} WHERE parameter='{target_variable}' 
@@ -52,7 +42,6 @@ class TimeSplitterBase(ABC):
             target_variable=self.target_variable,
         )
         response_query_result = self._build_response(params, sql_query)
-        logging.info(response_query_result)
 
         return datetime.strptime(
             f"{response_query_result}", "%Y-%m-%d %H:%M:%S.000 UTC"
@@ -69,7 +58,6 @@ class TimeSplitterBase(ABC):
         )
 
         response_query_result = self._build_response(params, sql_query)
-
         return datetime.strptime(
             f"{response_query_result}", "%Y-%m-%d %H:%M:%S.000 UTC"
         ).date()

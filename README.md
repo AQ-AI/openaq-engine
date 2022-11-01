@@ -23,7 +23,7 @@ Default output format [None]: {format} # e.g. json
 ### Enter `psql`
 ```
 sudo su - postgres 
-psql --connect
+psql
 ```
 
 

@@ -9,6 +9,7 @@ import boto3
 from datetime import timedelta
 
 import pandas as pd
+from setup_environment import connect_to_db
 
 
 def date_range(start, end):
@@ -49,8 +50,8 @@ def write_csv(df: pd.DataFrame, path: str, **kwargs: Any) -> None:
 def query_results(params, query, wait=True):
     s3 = boto3.resource(
         "s3",
-        aws_access_key_id=os.getenv("ACCESS_ID"),
-        aws_secret_access_key=os.getenv("ACCESS_KEY"),
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
+        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
     )
     session = boto3.Session()
 
@@ -99,7 +100,7 @@ def query_results(params, query, wait=True):
                 return response_query_result
 
         else:
-            time.sleep(5)
+            time.sleep(0.001)
 
         return False
 
@@ -143,3 +144,38 @@ def parametrized(dec):
         return repl
 
     return layer
+
+
+def get_data(query):
+    """
+    Pulls data from the db based on the query
+    Input
+    -----
+    query: str
+       SQL query from the database
+    Output
+    ------
+    data: DataFrame
+       Dump of Query into a DataFrame
+    """
+
+    with connect_to_db() as conn:
+        df = pd.read_sql_query(query, conn)
+    return df
+
+
+def write_to_db(
+    df, engine, table_name, schema_name, table_behaviour, index=False, **kwargs
+):
+
+    with engine.connect() as conn:
+        with conn.begin():
+            df.pg_copy_to(
+                name=table_name,
+                schema=schema_name,
+                con=conn,
+                if_exists=table_behaviour,
+                index=index,
+                **kwargs,
+            )
+
