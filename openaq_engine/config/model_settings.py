@@ -43,12 +43,12 @@ class CohortBuilderConfig:
     DATE_COL: str = "date.utc"
     DATABASE = "openaq_db"
     REGION = "us-east-1"
-    TABLE_NAME: str = "openaq"
+    TABLE_NAME = "openaq"
     SCHEMA_NAME: str = "model_output"
     FILTER_DICT: Dict[str, Any] = field(
         default_factory=lambda: dict(
-            filter_null_pollution_values=["parameter"],
-            # filter_non_standard_codes=["category"],
+            filter_non_null_pm25_values=["parameter"],
+            filter_extreme=["parameter"],
         ),
     )
     PRIORITY_SCHEMA_NAME = "raw"

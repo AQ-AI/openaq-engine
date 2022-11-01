@@ -7,6 +7,7 @@ from config.model_settings import (
 from src.historic_openaq import HistoricOpenAQ
 from src.time_splitter import TimeSplitter
 from src.cohort_builder import CohortBuilder
+from setup_environment import get_dbengine
 
 
 class HistoricOpenAQFlow:
@@ -53,11 +54,14 @@ def time_splitter():
 
 @click.command("cohort-builder", help="Generate cohorts for time splits")
 def cohort_builder():
+    # initialize engine
+    engine = get_dbengine()
+    print(engine)
     time_splitter = TimeSplitterFlow().execute()
     train_validation_list = time_splitter.execute()
 
     cohort_builder = CohortBuilderFlow().execute()
-    cohort_builder.execute(train_validation_list)
+    cohort_builder.execute(train_validation_list, engine)
 
 
 @click.group("openaq-engine", help="Library to query openaq data")
