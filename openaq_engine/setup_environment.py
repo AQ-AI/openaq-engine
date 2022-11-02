@@ -11,8 +11,6 @@ from contextlib import contextmanager
 import os
 import pandas as pd
 import psycopg2
-import yaml
-from pkg_resources import resource_filename
 from sqlalchemy.engine import create_engine
 
 
