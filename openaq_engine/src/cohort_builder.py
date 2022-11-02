@@ -8,7 +8,7 @@ import pandas as pd
 from joblib import Parallel, delayed
 
 from config.model_settings import CohortBuilderConfig
-from src.utils.utils import query_results, read_csv
+from src.utils.utils import query_results, read_csv, write_to_db
 
 
 class CohortBuilderBase(ABC):
@@ -35,8 +35,7 @@ class CohortBuilderBase(ABC):
         return pd.DataFrame(result)
 
     def _get_var_char_values(self, row):
-        print(row)
-        return [d["VarCharValue"] for d in row["Data"]]
+        return [d["VarCharValue"] for d in row["Data"] if 'VarCharValue' in d]
 
 
 class CohortBuilder(CohortBuilderBase):
@@ -116,7 +115,6 @@ class CohortBuilder(CohortBuilderBase):
             )
 
             df = self._build_response(params, query)
-            print(df)
             df["train_validation_set"] = index
             df["cohort"] = f"{index}_{date_tuple[0]}_{date_tuple[1]}"
             df["cohort_type"] = f"{cohort_type}"
@@ -134,10 +132,10 @@ class CohortBuilder(CohortBuilderBase):
         """Write model results to the database for all cohorts"""
 
         write_to_db(
-            filtered_cohorts_df,
             engine,
+            filtered_cohorts_df,
             "cohorts",
-            self.schema_name,
+            "public",
             "replace",
         )
 
