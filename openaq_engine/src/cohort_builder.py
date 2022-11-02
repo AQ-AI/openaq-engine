@@ -26,23 +26,17 @@ class CohortBuilderBase(ABC):
 
     def _build_response(self, params, sql_query):
         response_query_result = query_results(params, sql_query)
-        print("response_query_result", response_query_result)
-        header = response_query_result["ResultSet"]["Rows"][0]
-        # header = response_query_result["ResultSet"]["Rows"][0]
+        header = [
+            d["VarCharValue"]
+            for d in response_query_result["ResultSet"]["Rows"][0]["Data"]
+        ]
         rows = response_query_result["ResultSet"]["Rows"][1:]
-        
         result = [dict(zip(header, self._get_var_char_values(row))) for row in rows]
-        print(result)
-        return result
+        return pd.DataFrame(result)
 
-    def _get_var_char_values(self, d):
-        print(d)
-        for obj in d["Data"]:
-            print("obj", obj)
-            if obj["VarCharValue"]:
-                return obj["VarCharValue"].values()
-            else:
-                pass
+    def _get_var_char_values(self, row):
+        print(row)
+        return [d["VarCharValue"] for d in row["Data"]]
 
 
 class CohortBuilder(CohortBuilderBase):
@@ -119,12 +113,12 @@ class CohortBuilder(CohortBuilderBase):
                 start_date=date_tuple[0],
                 end_date=date_tuple[1],
                 filter_cols=filter_cols,
-            )   
+            )
 
             df = self._build_response(params, query)
             print(df)
             df["train_validation_set"] = index
-            df["cohort"] = f"{index}_{date_tuple[0].date()}_{date_tuple[1].date()}"
+            df["cohort"] = f"{index}_{date_tuple[0]}_{date_tuple[1]}"
             df["cohort_type"] = f"{cohort_type}"
             if df.empty:
                 logging.info(
@@ -147,14 +141,13 @@ class CohortBuilder(CohortBuilderBase):
             "replace",
         )
 
-    def filter_no_features(self, cohorts_df: pd.DataFrame, filter_cols: str) -> pd.DataFrame:
+    def filter_no_features(
+        self, cohorts_df: pd.DataFrame, filter_cols: str
+    ) -> pd.DataFrame:
         """
         Filter out rows which contain non-priority categories
         """
         filtered_cohorts_df = cohorts_df.drop(
             labels=list(filter_cols.split(", ")), axis=1
         )
-        filtered_cohorts_df.to_csv("openaq-engine/data/cohorts.csv")
-        
         return filtered_cohorts_df
-

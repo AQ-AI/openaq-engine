@@ -13,10 +13,13 @@ class Preprocess:
         self.filter_pollutant = filter_non_null
         self.filter_non_null_values = filter_non_null_values
         self.filter_extreme_values = filter_extreme_values
-        
+
     @classmethod
     def from_options(cls, filters) -> "Preprocess":
-        filter_default = dict.fromkeys(["filter_pollutant", "filter_non_null_values", "filter_extreme_values"], False)
+        filter_default = dict.fromkeys(
+            ["filter_pollutant", "filter_non_null_values", "filter_extreme_values"],
+            False,
+        )
         for filter_ in filters:
             filter_default[filter_] = True
         return cls(**filter_default)
@@ -60,9 +63,7 @@ class Preprocess:
                 filtering countries: {len(training_validation_df)}"""
             )
         if self.filter_cities:
-            training_validation_df = training_validation_df.pipe(
-                Filter.filter_cities
-            )
+            training_validation_df = training_validation_df.pipe(Filter.filter_cities)
             logging.info(
                 f"""Total number of pollutant values left after
                 filtering cities: {len(training_validation_df)}"""

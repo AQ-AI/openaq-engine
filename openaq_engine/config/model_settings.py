@@ -1,6 +1,7 @@
 import os
 from dataclasses import field
 from typing import Any, Dict, List, Sequence
+from pydantic import StrictStr
 
 from pydantic.dataclasses import dataclass
 from src.utils.utils import date_range
@@ -34,6 +35,36 @@ class RealtimeOpenAQConfig:
     # S3 constant
     S3_OUTPUT = os.getenv("S3_OUTPUT_OPENAQ")
     S3_BUCKET = os.getenv("S3_BUCKET_OPENAQ")
+
+
+@dataclass
+class FeatureConfig:
+    CATEGORICAL_FEATURES: List[StrictStr] = field(
+        default_factory=lambda: [
+            "city",
+            "country",
+            "sourcetype",
+        ]
+    )
+    CORE_FEATURES: List[StrictStr] = field(
+        default_factory=lambda: [
+            "city",
+            "country",
+            "pca_lat",
+            "pca_lng",
+            "sourcetype",
+            "mobile",
+        ]
+    )
+    SATELLITE_FEATURES = []
+
+    @property
+    def ALL_MODEL_FEATURES(self) -> List[str]:
+        """Return all features to be fed into the model"""
+        return list(
+            set((self.CORE_FEATURES + self.CATEGORICAL_FEATURES))
+            - set(self.EXCLUDE_FEATURES)
+        )
 
 
 @dataclass
