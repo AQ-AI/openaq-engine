@@ -67,9 +67,7 @@ class Preprocess:
                 filtering countries: {len(training_validation_df)}"""
             )
         if self.filter_cities:
-            training_validation_df = training_validation_df.pipe(
-                Filter.filter_cities
-            )
+            training_validation_df = training_validation_df.pipe(Filter.filter_cities)
             logging.info(
                 f"""Total number of pollutant values left after
                 filtering cities: {len(training_validation_df)}"""
