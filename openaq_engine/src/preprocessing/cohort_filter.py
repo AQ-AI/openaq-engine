@@ -4,7 +4,9 @@ import pandas as pd
 
 class Filter:
     @staticmethod
-    def filter_pollutant(df: pd.DataFrame, select_pollutant: str) -> pd.DataFrame:
+    def filter_pollutant(
+        df: pd.DataFrame, select_pollutant: str
+    ) -> pd.DataFrame:
 
         """
         Filter for rows selected pollutant
@@ -40,7 +42,9 @@ class Filter:
 
         return (
             df.assign(
-                null_values=(df.value.apply(lambda pm25_value: float(pm25_value) >= 0))
+                null_values=(
+                    df.value.apply(lambda pm25_value: float(pm25_value) >= 0)
+                )
             )
             .query("null_values == False")
             .drop(["null_values"], axis=1)
@@ -60,7 +64,9 @@ class Filter:
         return (
             df.assign(
                 extreme_values=(
-                    df.value.apply(lambda pm25_value: float(pm25_value) <= 500)
+                    df.value.apply(
+                        lambda pm25_value: float(pm25_value) <= 500
+                    )
                 )
             )
             .query("extreme_values == False")
@@ -68,7 +74,9 @@ class Filter:
         )
 
     @staticmethod
-    def filter_countries(df: pd.DataFrame, countries: List[str]) -> pd.DataFrame:
+    def filter_countries(
+        df: pd.DataFrame, countries: List[str]
+    ) -> pd.DataFrame:
         """
         Filter for countries
 
@@ -83,7 +91,8 @@ class Filter:
                 filtered_country=(
                     df.country.apply(
                         lambda country: any(
-                            str_ in country[1:-1].split(",") for str_ in countries
+                            str_ in country[1:-1].split(",")
+                            for str_ in countries
                         )
                     )
                 )
