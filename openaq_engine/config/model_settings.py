@@ -25,7 +25,6 @@ class HistoricOpenAQConfig:
     PARAMETER = "pm25"
 
     DATES = pd.date_range("2020-01-01", "2022-01-01", freq="M")
-    TIME_AGGREGATION = 4
 
 
 class RealtimeOpenAQConfig:
@@ -41,19 +40,18 @@ class RealtimeOpenAQConfig:
 class CohortBuilderConfig:
     ENTITY_ID_COLS: Sequence[str] = field(default_factory=lambda: ["unique_id"])
     DATE_COL: str = "date.utc"
-    DATABASE = "openaq_db"
     REGION = "us-east-1"
     TABLE_NAME = "openaq"
     SCHEMA_NAME: str = "model_output"
     FILTER_DICT: Dict[str, Any] = field(
         default_factory=lambda: dict(
-            filter_non_null_pm25_values=["parameter"],
-            filter_extreme=["parameter"],
+            filter_pollutant=["parameter"],
+            filter_non_null_values=["value"],
+            filter_extreme_values=["value"],
+            filter_countries=["country"],
+            filter_cities=["city"],
         ),
     )
-    PRIORITY_SCHEMA_NAME = "raw"
-    PRIORITY_TABLE_NAME = "priority_codes"
-    NO_OF_OCCURENCES = 500
     S3_BUCKET = os.getenv("S3_BUCKET_OPENAQ")
     S3_OUTPUT = os.getenv("S3_OUTPUT_OPENAQ")
 

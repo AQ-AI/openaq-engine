@@ -1,3 +1,4 @@
+import os
 import logging
 from abc import ABC
 from itertools import chain
@@ -14,28 +15,32 @@ class CohortBuilderBase(ABC):
     def __init__(
         self,
         table_name: str,
-        database: str,
         region_name: str,
         bucket: str,
         s3_output: str,
     ):
         self.table_name = table_name
-        self.database = database
         self.region_name = region_name
         self.bucket = bucket
         self.s3_output = s3_output
 
     def _build_response(self, params, sql_query):
         response_query_result = query_results(params, sql_query)
+        print("response_query_result", response_query_result)
         header = response_query_result["ResultSet"]["Rows"][0]
+        # header = response_query_result["ResultSet"]["Rows"][0]
         rows = response_query_result["ResultSet"]["Rows"][1:]
-        for row in rows:
-            return self._get_var_char_values(row)
+        
+        result = [dict(zip(header, self._get_var_char_values(row))) for row in rows]
+        print(result)
+        return result
 
     def _get_var_char_values(self, d):
+        print(d)
         for obj in d["Data"]:
+            print("obj", obj)
             if obj["VarCharValue"]:
-                return obj["VarCharValue"]
+                return obj["VarCharValue"].values()
             else:
                 pass
 
@@ -50,7 +55,6 @@ class CohortBuilder(CohortBuilderBase):
         self.filter_dict = filter_dict
         super().__init__(
             CohortBuilderConfig.TABLE_NAME,
-            CohortBuilderConfig.DATABASE,
             CohortBuilderConfig.REGION,
             CohortBuilderConfig.S3_BUCKET,
             CohortBuilderConfig.S3_OUTPUT,
@@ -99,9 +103,9 @@ class CohortBuilder(CohortBuilderBase):
         df_list = []
         params = {
             "region": str(self.region_name),
-            "database": str(self.database),
+            "database": str(os.getenv("DB_NAME_OPENAQ")),
             "bucket": str(self.bucket),
-            "path": f"{self.s3_output}/max_date",
+            "path": f"{self.s3_output}/cohorts",
         }
 
         for index, date_tuple in enumerate(date_tup_list):
@@ -109,7 +113,7 @@ class CohortBuilder(CohortBuilderBase):
                 FROM {table}
                 WHERE {date_col}
                 BETWEEN '{start_date}'
-                AND '{end_date}';""".format(
+                AND '{end_date}' LIMIT 100;""".format(
                 table=self.table_name,
                 date_col=self.date_col,
                 start_date=date_tuple[0],
@@ -132,7 +136,7 @@ class CohortBuilder(CohortBuilderBase):
         cohort_df = pd.concat(df_list, axis=0).reset_index(drop=True)
         return cohort_df
 
-    def _results_to_db(self, ååfiltered_cohorts_df, engine):
+    def _results_to_db(self, filtered_cohorts_df, engine):
         """Write model results to the database for all cohorts"""
 
         write_to_db(
