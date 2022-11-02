@@ -68,9 +68,7 @@ class FeatureConfig:
 
 @dataclass
 class CohortBuilderConfig:
-    ENTITY_ID_COLS: Sequence[str] = field(
-        default_factory=lambda: ["unique_id"]
-    )
+    ENTITY_ID_COLS: Sequence[str] = field(default_factory=lambda: ["unique_id"])
     DATE_COL: str = "date.utc"
     REGION = "us-east-1"
     TABLE_NAME = "openaq"

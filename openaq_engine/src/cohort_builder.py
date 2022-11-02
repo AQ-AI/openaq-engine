@@ -30,9 +30,7 @@ class CohortBuilderBase(ABC):
             for d in response_query_result["ResultSet"]["Rows"][0]["Data"]
         ]
         rows = response_query_result["ResultSet"]["Rows"][1:]
-        result = [
-            dict(zip(header, self._get_var_char_values(row))) for row in rows
-        ]
+        result = [dict(zip(header, self._get_var_char_values(row))) for row in rows]
         return pd.DataFrame(result)
 
     def _get_var_char_values(self, row):
@@ -55,9 +53,7 @@ class CohortBuilder(CohortBuilderBase):
         )
 
     @classmethod
-    def from_dataclass_config(
-        cls, config: CohortBuilderConfig
-    ) -> "CohortBuilder":
+    def from_dataclass_config(cls, config: CohortBuilderConfig) -> "CohortBuilder":
         return cls(
             date_col=config.DATE_COL,
             filter_dict=config.FILTER_DICT,
