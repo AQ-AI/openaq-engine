@@ -40,7 +40,12 @@ def get_athena_engine():
 
 
 def get_dbengine(
-    PGDATABASE="", PGHOST="", PGPORT=5432, PGPASSWORD="", PGUSER="", DBTYPE="postgresql"
+    PGDATABASE="",
+    PGHOST="",
+    PGPORT=5432,
+    PGPASSWORD="",
+    PGUSER="",
+    DBTYPE="postgresql",
 ):
     """
     Returns a sql engine
@@ -111,7 +116,7 @@ def test_database_connect():
     """
     test database connection
     """
-    with connect_to_db(**db_dict) as conn:
+    with connect_to_db() as conn:
         query = "select * from raw.codes limit 10"
         data = pd.read_sql_query(query, conn)
         assert len(data) > 1
