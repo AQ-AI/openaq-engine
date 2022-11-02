@@ -178,4 +178,3 @@ def write_to_db(
                 index=index,
                 **kwargs,
             )
-

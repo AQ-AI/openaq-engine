@@ -16,36 +16,61 @@ from pkg_resources import resource_filename
 from sqlalchemy.engine import create_engine
 
 
-def get_dbengine(PGPORT=5432, DBTYPE="postgresql"):
+def get_athena_engine():
+    """
+    Returns a sql engine
+
+    Output
+    ------
+    engine: SQLalchemy engine
+    """
+    conn_str = (
+        "awsathena+rest://{aws_access_key_id}:{aws_secret_access_key}@athena.{region_name}.amazonaws.com:443/"
+        "{schema_name}?s3_staging_dir={s3_staging_dir}"
+    )
+
+    engine = create_engine(
+        conn_str.format(
+            aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
+            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+            region_name="us-east-1",
+            schema_name="default",
+            s3_staging_dir="s3://openaq-pm25-historic/pm25-month/cohorts/",
+        )
+    )
+    return engine
+
+
+def get_dbengine(
+    PGDATABASE="", PGHOST="", PGPORT=5432, PGPASSWORD="", PGUSER="", DBTYPE="postgresql"
+):
     """
     Returns a sql engine
 
     Input
     -----
     PGDATABASE: str
-            DB Name
+    DB Name
     PGHOST: str
-            hostname
+    hostname
     PGPASSWORD: str
-            DB password
+    DB password
     DBTYPE: str
-            type of database, default is posgresql
+    type of database, default is posgresql
 
     Output
     ------
     engine: SQLalchemy engine
     """
-    conn_str = 'awsathena+rest://{aws_access_key_id}:{aws_secret_access_key}@athena.{region_name}.amazonaws.com:443/'\
-            '{schema_name}?s3_staging_dir={s3_staging_dir}'
+    str_conn = "{dbtype}://{username}@{host}:{port}/{db}".format(
+        dbtype=DBTYPE,
+        username=os.getenv("PGUSER"),
+        db=os.getenv("PGDATABASE"),
+        host=os.getenv("PGHOST"),
+        port=PGPORT,
+    )
 
-    engine = create_engine(conn_str.format(
-        aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
-        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-        region_name='us-east-1',
-        schema_name="default",
-        s3_staging_dir="s3://s3-results-bucket/output/",
-    ))
-    return engine
+    return create_engine(str_conn)
 
 
 @contextmanager

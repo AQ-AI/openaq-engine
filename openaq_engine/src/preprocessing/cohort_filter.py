@@ -65,6 +65,7 @@ class Filter:
             .query("extreme_values == False")
             .drop(["extreme_values"], axis=1)
         )
+
     @staticmethod
     def filter_countries(df: pd.DataFrame, countries: List[str]) -> pd.DataFrame:
         """
@@ -75,7 +76,6 @@ class Filter:
         df : pd.DataFrame
         countries: list with `countries`
         """
-
 
         return (
             df.assign(
@@ -90,7 +90,7 @@ class Filter:
             .query("filtered_country == True")
             .drop(["filtered_country"], axis=1)
         )
-    
+
     @staticmethod
     def filter_cities(df: pd.DataFrame, cities: List[str]) -> pd.DataFrame:
         """
@@ -101,7 +101,6 @@ class Filter:
         df : pd.DataFrame
         cities: list with `cities`
         """
-
 
         return (
             df.assign(
