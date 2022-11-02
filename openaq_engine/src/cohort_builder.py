@@ -109,7 +109,7 @@ class CohortBuilder(CohortBuilderBase):
         }
 
         for index, date_tuple in enumerate(date_tup_list):
-            query = """SELECT DISTINCT {date_col},{filter_cols}
+            query = """SELECT DISTINCT *
                 FROM {table}
                 WHERE {date_col}
                 BETWEEN '{start_date}'
