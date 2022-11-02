@@ -35,7 +35,7 @@ CREATE DATABASE openaq_db;
 GRANT ALL PRIVILEGES ON DATABASE openaq_db TO openaq;
 ALTER ROLE openaq SUPERUSER;
 ```
-### Researt postgres
+### Restart postgres
 ```
 sudo systemctl restart postgresql-12.service
 ```
