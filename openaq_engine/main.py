@@ -49,7 +49,7 @@ def query_historic_openaq():
 
 @click.command("time-splitter", help="Splits csvs for time splits")
 def time_splitter():
-    csv_list = TimeSplitterFlow().execute()
+    TimeSplitterFlow().execute()
 
 
 @click.command("cohort-builder", help="Generate cohorts for time splits")

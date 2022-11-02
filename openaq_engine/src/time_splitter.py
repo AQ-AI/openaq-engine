@@ -1,15 +1,13 @@
 from abc import ABC
 from typing import Any, Dict, List
 import logging
-import io
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
-import boto3
 import pandas as pd
 
 from config.model_settings import TimeSplitterConfig
-from src.utils.utils import read_csv, query_results
+from src.utils.utils import query_results
 
 logging.basicConfig(level=logging.INFO)
 
@@ -64,7 +62,7 @@ class TimeSplitterBase(ABC):
 
     def _build_response(self, params, sql_query):
         response_query_result = query_results(params, sql_query)
-        header = response_query_result["ResultSet"]["Rows"][0]
+        response_query_result["ResultSet"]["Rows"][0]
         rows = response_query_result["ResultSet"]["Rows"][1:]
         for row in rows:
             return self._get_var_char_values(row)

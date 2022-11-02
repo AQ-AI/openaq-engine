@@ -2,13 +2,12 @@ import os
 import logging
 from abc import ABC
 from itertools import chain
-from typing import List, Dict, Any
-import boto3
+from typing import Any, Dict
 import pandas as pd
 from joblib import Parallel, delayed
 
 from config.model_settings import CohortBuilderConfig
-from src.utils.utils import query_results, read_csv, write_to_db
+from src.utils.utils import query_results, write_to_db
 
 
 class CohortBuilderBase(ABC):
@@ -35,7 +34,7 @@ class CohortBuilderBase(ABC):
         return pd.DataFrame(result)
 
     def _get_var_char_values(self, row):
-        return [d["VarCharValue"] for d in row["Data"] if 'VarCharValue' in d]
+        return [d["VarCharValue"] for d in row["Data"] if "VarCharValue" in d]
 
 
 class CohortBuilder(CohortBuilderBase):

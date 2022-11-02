@@ -1,7 +1,4 @@
-import time
-import calendar
-from datetime import datetime, timedelta, date
-from joblib import Parallel, delayed
+from datetime import datetime
 from config.model_settings import HistoricOpenAQConfig
 from src.utils.utils import query_results
 
@@ -35,7 +32,6 @@ class HistoricOpenAQ:
     def execute(self):
         for month in self.dates:
             print(self.get_results(month))
-
 
     def get_results(self, month, wait=True):
         params = {

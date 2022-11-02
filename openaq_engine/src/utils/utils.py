@@ -1,7 +1,7 @@
 import time
 import os
 import json
-from typing import Any, List, Union
+from typing import Any, List
 import numpy as np
 import pandas as pd
 from pydantic.json import pydantic_encoder
@@ -163,11 +163,12 @@ def get_data(query):
         df = pd.read_sql_query(query, conn)
     return df
 
+
 def write_to_db(
     df, engine, table_name, schema_name, table_behaviour, index=False, **kwargs
 ):
-#     with engine.begin() as connection:
-#         connection.execute(text("""SET ROLE "pakistan-ihhn-role" """))
+    #     with engine.begin() as connection:
+    #         connection.execute(text("""SET ROLE "pakistan-ihhn-role" """))
 
     df.to_sql(
         name=table_name,
@@ -177,4 +178,3 @@ def write_to_db(
         index=index,
         **kwargs,
     )
-
