@@ -7,13 +7,13 @@ authors = ["ChristinaLast <christina.last@outlook.com>"]
 [tool.poetry.dependencies]
 python = "^3.8"
 boto3 = "^1.26.0"
-awscli = "pandas"
 pandas = "^1.5.1"
 pydantic = "^1.10.2"
 psycopg2-binary = "^2.9.5"
 SQLAlchemy = "^1.4.42"
 joblib = "^1.2.0"
 pyathena = "^2.14.0"
+awscli = "^1.27.2"
 
 [tool.poetry.dev-dependencies]
 black = "^22.10.0"
