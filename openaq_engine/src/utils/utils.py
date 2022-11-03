@@ -65,11 +65,7 @@ def query_results(params, query, wait=True):
         QueryString=query,
         QueryExecutionContext={"Database": "default"},
         ResultConfiguration={
-            "OutputLocation": "s3://"
-            + params["bucket"]
-            + "/"
-            + params["path"]
-            + "/"
+            "OutputLocation": "s3://" + params["bucket"] + "/" + params["path"] + "/"
         },
     )
 
@@ -85,18 +81,14 @@ def query_results(params, query, wait=True):
         while iterations > 0:
             iterations = iterations - 1
             response_get_query_details = client.get_query_execution(
-                QueryExecutionId=response_query_execution_id[
-                    "QueryExecutionId"
-                ]
+                QueryExecutionId=response_query_execution_id["QueryExecutionId"]
             )
-            status = response_get_query_details["QueryExecution"]["Status"][
-                "State"
-            ]
+            status = response_get_query_details["QueryExecution"]["Status"]["State"]
 
             if (status == "FAILED") or (status == "CANCELLED"):
-                failure_reason = response_get_query_details["QueryExecution"][
-                    "Status"
-                ]["StateChangeReason"]
+                failure_reason = response_get_query_details["QueryExecution"]["Status"][
+                    "StateChangeReason"
+                ]
                 print(failure_reason)
                 return False, False
 
@@ -107,9 +99,7 @@ def query_results(params, query, wait=True):
 
                 # Function to get output results
                 response_query_result = client.get_query_results(
-                    QueryExecutionId=response_query_execution_id[
-                        "QueryExecutionId"
-                    ]
+                    QueryExecutionId=response_query_execution_id["QueryExecutionId"]
                 )
                 return response_query_result
 
@@ -137,9 +127,7 @@ def write_dataclass(dclass: object, path: str) -> None:
     """
     with open(path, "w+") as f:
         f.write(
-            json.dumps(
-                dclass, indent=4, ensure_ascii=True, default=pydantic_encoder
-            )
+            json.dumps(dclass, indent=4, ensure_ascii=True, default=pydantic_encoder)
         )
 
 

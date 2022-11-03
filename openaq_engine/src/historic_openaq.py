@@ -19,9 +19,7 @@ class HistoricOpenAQ:
         self.dates = dates
 
     @classmethod
-    def from_dataclass_config(
-        cls, config: HistoricOpenAQConfig
-    ) -> "HistoricOpenAQ":
+    def from_dataclass_config(cls, config: HistoricOpenAQConfig) -> "HistoricOpenAQ":
 
         return cls(
             database=config.DATABASE,
@@ -55,10 +53,7 @@ class HistoricOpenAQ:
             rows = response_query_result["ResultSet"]["Rows"][1:]
 
             header = [obj["VarCharValue"] for obj in header["Data"]]
-            result = [
-                dict(zip(header, self.get_var_char_values(row)))
-                for row in rows
-            ]
+            result = [dict(zip(header, self.get_var_char_values(row))) for row in rows]
 
             return location, result
         else:
