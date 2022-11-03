@@ -31,10 +31,10 @@ class TimeSplitterBase(ABC):
         self.s3_output = s3_output
 
     def create_end_date(self, params) -> pd.DataFrame:
-        sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime 
-        FROM {table} WHERE parameter='{target_variable}' 
-        AND from_iso8601_timestamp({date_col}) <= DATE(NOW()) 
-        ORDER BY {date_col} DESC limit 1;""".format(
+        sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime
+         FROM {table} WHERE parameter='{target_variable}'
+         AND from_iso8601_timestamp({date_col}) <= DATE(NOW())
+         ORDER BY {date_col} DESC limit 1;""".format(
             table=self.table_name,
             date_col=self.date_col,
             target_variable=self.target_variable,
@@ -46,10 +46,10 @@ class TimeSplitterBase(ABC):
         ).date()
 
     def create_start_date(self, params: Dict[str, Any]) -> datetime:
-        sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime 
-        FROM {table} WHERE parameter='{target_variable}' 
-        AND from_iso8601_timestamp({date_col}) <= DATE(NOW()) 
-        ORDER BY {date_col} ASC limit 1;""".format(
+        sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime
+         FROM {table} WHERE parameter='{target_variable}'
+         AND from_iso8601_timestamp({date_col}) <= DATE(NOW())
+         ORDER BY {date_col} ASC limit 1;""".format(
             table=self.table_name,
             date_col=self.date_col,
             target_variable=self.target_variable,
@@ -99,9 +99,7 @@ class TimeSplitter(TimeSplitterBase):
         )
 
     @classmethod
-    def from_dataclass_config(
-        cls, config: TimeSplitterConfig
-    ) -> "TimeSplitter":
+    def from_dataclass_config(cls, config: TimeSplitterConfig) -> "TimeSplitter":
         return cls(
             time_window_length=config.TIME_WINDOW_LENGTH,
             within_window_sampler=config.WITHIN_WINDOW_SAMPLER,
@@ -167,13 +165,10 @@ class TimeSplitter(TimeSplitterBase):
         """Gets start date of window based on the window length and the number of sample
         months used in the window"""
         return window_date - relativedelta(
-            months=+window_no * self.time_window_length
-            + self.within_window_sampler
+            months=+window_no * self.time_window_length + self.within_window_sampler
         )
 
     def _get_end_time_windows(self, window_start_date):
         """Gets end date of window based on the window length and the number of sample
         months used in the window"""
-        return window_start_date + relativedelta(
-            months=+self.within_window_sampler
-        )
+        return window_start_date + relativedelta(months=+self.within_window_sampler)
