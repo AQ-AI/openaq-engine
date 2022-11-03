@@ -52,11 +52,6 @@ def write_csv(df: pd.DataFrame, path: str, **kwargs: Any) -> None:
 
 
 def query_results(params, query, wait=True):
-    s3 = boto3.resource(
-        "s3",
-        aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
-        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-    )
     session = boto3.Session()
 
     client = session.client("athena", params["region"])
@@ -93,10 +88,6 @@ def query_results(params, query, wait=True):
                 return False, False
 
             elif status == "SUCCEEDED":
-                location = response_get_query_details["QueryExecution"][
-                    "ResultConfiguration"
-                ]["OutputLocation"]
-
                 # Function to get output results
                 response_query_result = client.get_query_results(
                     QueryExecutionId=response_query_execution_id["QueryExecutionId"]
