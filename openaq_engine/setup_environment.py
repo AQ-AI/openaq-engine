@@ -107,7 +107,7 @@ def run_query(query):
     Runs a query on the database and returns
     the result in a dataframe.
     """
-    with connect_to_db(**db_dict) as conn:
+    with connect_to_db() as conn:
         data = pd.read_sql(query, conn)
     return data
 
