@@ -30,7 +30,9 @@ class CohortBuilderBase(ABC):
             for d in response_query_result["ResultSet"]["Rows"][0]["Data"]
         ]
         rows = response_query_result["ResultSet"]["Rows"][1:]
-        result = [dict(zip(header, self._get_var_char_values(row))) for row in rows]
+        result = [
+            dict(zip(header, self._get_var_char_values(row))) for row in rows
+        ]
         return pd.DataFrame(result)
 
     def _get_var_char_values(self, row):
@@ -53,7 +55,9 @@ class CohortBuilder(CohortBuilderBase):
         )
 
     @classmethod
-    def from_dataclass_config(cls, config: CohortBuilderConfig) -> "CohortBuilder":
+    def from_dataclass_config(
+        cls, config: CohortBuilderConfig
+    ) -> "CohortBuilder":
         return cls(
             date_col=config.DATE_COL,
             filter_dict=config.FILTER_DICT,
@@ -73,8 +77,12 @@ class CohortBuilder(CohortBuilderBase):
             ),
             axis=0,
         ).reset_index(drop=True)
+        filtered_cohorts_df = (
+            Preprocess()
+            .from_options(list(self.filter_dict.keys()))
+            .execute(cohorts_df)
+        )
 
-        filtered_cohorts_df = self.filter_no_features(cohorts_df, filter_cols)
         self._results_to_db(engine, filtered_cohorts_df)
 
     def cohort_builder(
@@ -136,14 +144,3 @@ class CohortBuilder(CohortBuilderBase):
             "public",
             "replace",
         )
-
-    def filter_no_features(
-        self, cohorts_df: pd.DataFrame, filter_cols: str
-    ) -> pd.DataFrame:
-        """
-        Filter out rows which contain non-priority categories
-        """
-        filtered_cohorts_df = cohorts_df.drop(
-            labels=list(filter_cols.split(", ")), axis=1
-        )
-        return filtered_cohorts_df

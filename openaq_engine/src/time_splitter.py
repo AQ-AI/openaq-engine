@@ -99,7 +99,9 @@ class TimeSplitter(TimeSplitterBase):
         )
 
     @classmethod
-    def from_dataclass_config(cls, config: TimeSplitterConfig) -> "TimeSplitter":
+    def from_dataclass_config(
+        cls, config: TimeSplitterConfig
+    ) -> "TimeSplitter":
         return cls(
             time_window_length=config.TIME_WINDOW_LENGTH,
             within_window_sampler=config.WITHIN_WINDOW_SAMPLER,
@@ -165,10 +167,13 @@ class TimeSplitter(TimeSplitterBase):
         """Gets start date of window based on the window length and the number of sample
         months used in the window"""
         return window_date - relativedelta(
-            months=+window_no * self.time_window_length + self.within_window_sampler
+            months=+window_no * self.time_window_length
+            + self.within_window_sampler
         )
 
     def _get_end_time_windows(self, window_start_date):
         """Gets end date of window based on the window length and the number of sample
         months used in the window"""
-        return window_start_date + relativedelta(months=+self.within_window_sampler)
+        return window_start_date + relativedelta(
+            months=+self.within_window_sampler
+        )
