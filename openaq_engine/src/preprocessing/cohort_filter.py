@@ -124,4 +124,3 @@ class Filter:
             .query("filtered_cities == True")
             .drop(["filtered_cities"], axis=1)
         )
-    

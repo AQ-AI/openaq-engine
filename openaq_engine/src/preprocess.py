@@ -34,11 +34,15 @@ class Preprocess:
         return cls(**filter_default)
 
     def execute(self, training_validation_df: pd.DataFrame, **kwargs):
-        preprocessed_training = self.preprocess_data(training_validation_df)
+        filtered_training_validation_df = self.filter_data(
+            training_validation_df
+        )
+        preprocessed_training_validation_df = self.preprocess_data(
+            filtered_training_validation_df
+        )
+        return preprocessed_training_validation_df
 
-        return preprocessed_training
-
-    def preprocess_data(self, training_validation_df: pd.DataFrame):
+    def filter_data(self, training_validation_df: pd.DataFrame):
         if self.filter_pollutant:
             training_validation_df = Filter.filter_pollutant(
                 training_validation_df,
@@ -83,24 +87,25 @@ class Preprocess:
             )
         return training_validation_df
 
+    def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
+        return df
 
-    def shift_columns(df: pd.DataFrame, cities: List[str]) -> pd.DataFrame:
+    def _shift_columns(df: pd.DataFrame) -> pd.DataFrame:
         """
         This function checks the format of each column
         and the following column to see whether results
         have "shifted" one columns over.
         """
-        for col_name in CohortBuilderConfig.COLUMN_DICT.keys():
+        for col_name in df.columns:
             if col_name == "averagingperiod":
                 df.assign(
                     rows_to_shift=(
-                        df.col_name.apply(
-                            lambda row: "unit" not in str(row)
-                        )
+                        df.col_name.apply(lambda row: "unit" not in str(row))
                     )
+                    .query("rows_to_shift == True")
+                    .averagingperiod.shift(1, axis=1, fill_value="{}")
+                    .drop(["rows_to_shift"], axis=1)
                 )
-                .query("rows_to_shift == True")
-                df_to_shift["averagingperiod"] = df_to_shift.averagingperiod.shift(1, axis=1, fill_value="{}")
 
             if col_name == "coordinates":
                 df.assign(
@@ -109,13 +114,13 @@ class Preprocess:
                             lambda row: "latitude" not in str(row)
                         )
                     )
+                    .query("rows_to_drop == False")
+                    .drop(["rows_to_drop"], axis=1)
                 )
-                .query("rows_to_drop == False")
-                .drop(["rows_to_drop"], axis=1)
 
         return df
-    
-    def extract_coordinates(self, df: pd.DataFrame) -> pd.DataFrame:
+
+    def _extract_coordinates(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Extract coordinates into 'x' and 'y' columns from point objects in 'pnt'.
         Filters out rows with invalid point representations.
