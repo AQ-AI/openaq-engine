@@ -14,10 +14,10 @@ class TimeSplitterFlow:
 
         return time_splitter.execute()
 
+
 @click.command("time-splitter", help="Splits csvs for time splits")
 def time_splitter():
-
-    csv_list = TimeSplitterFlow().execute()
+    TimeSplitterFlow().execute()
 
 
 @click.group("openaq-engine", help="Library to query openaq data")

@@ -6,7 +6,6 @@ from pydantic.dataclasses import dataclass
 from typing import Any, Dict, List
 
 import boto3
-import pandas as pd
 
 
 @dataclass
@@ -30,6 +29,7 @@ class TimeSplitterConfig:
             training=[],
         )
     )
+
 
 @dataclass
 class CohortBuilderConfig:
