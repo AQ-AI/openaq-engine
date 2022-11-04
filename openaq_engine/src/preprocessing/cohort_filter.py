@@ -43,11 +43,11 @@ class Filter:
 
         return (
             df.assign(
-                null_values=(
+                non_null_values=(
                     df.value.apply(lambda pm25_value: float(pm25_value) >= 0)
                 )
             )
-            .query("null_values == False")
+            .query("non_null_values == True")
             .drop(["null_values"], axis=1)
         )
 
@@ -64,12 +64,12 @@ class Filter:
 
         return (
             df.assign(
-                extreme_values=(
+                non_extreme_values=(
                     df.value.apply(lambda pm25_value: float(pm25_value) <= 500)
                 )
             )
-            .query("extreme_values == True")
-            .drop(["extreme_values"], axis=1)
+            .query("non_extreme_values == True")
+            .drop(["non_extreme_values"], axis=1)
         )
 
     @staticmethod
