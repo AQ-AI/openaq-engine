@@ -23,7 +23,8 @@ def get_athena_engine():
     engine: SQLalchemy engine
     """
     conn_str = (
-        "awsathena+rest://{aws_access_key_id}:{aws_secret_access_key}@athena.{region_name}.amazonaws.com:443/"
+        "awsathena+rest://{aws_access_key_id}:{aws_secret_access_key}"
+        "@athena.{region_name}.amazonaws.com:443/"
         "{schema_name}?s3_staging_dir={s3_staging_dir}"
     )
 
