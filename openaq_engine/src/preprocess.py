@@ -82,3 +82,56 @@ class Preprocess:
                 filtering cities: {len(training_validation_df)}"""
             )
         return training_validation_df
+
+
+    def shift_columns(df: pd.DataFrame, cities: List[str]) -> pd.DataFrame:
+        """
+        This function checks the format of each column
+        and the following column to see whether results
+        have "shifted" one columns over.
+        """
+        for col_name in CohortBuilderConfig.COLUMN_DICT.keys():
+            if col_name == "averagingperiod":
+                df.assign(
+                    rows_to_shift=(
+                        df.col_name.apply(
+                            lambda row: "unit" not in str(row)
+                        )
+                    )
+                )
+                .query("rows_to_shift == True")
+                df_to_shift["averagingperiod"] = df_to_shift.averagingperiod.shift(1, axis=1, fill_value="{}")
+
+            if col_name == "coordinates":
+                df.assign(
+                    rows_to_drop=(
+                        df.col_name.apply(
+                            lambda row: "latitude" not in str(row)
+                        )
+                    )
+                )
+                .query("rows_to_drop == False")
+                .drop(["rows_to_drop"], axis=1)
+
+        return df
+    
+    def extract_coordinates(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Extract coordinates into 'x' and 'y' columns from point objects in 'pnt'.
+        Filters out rows with invalid point representations.
+        """
+        # Filter out any invalid points
+        df["point_is_valid"] = df.pnt.apply(lambda x: x.wkt != "POINT EMPTY")
+
+        if not all(df.point_is_valid):
+            num_invalid_pnts = len(df[~df.point_is_valid])
+            logger.info(
+                f"There were {num_invalid_pnts} rows with invalid points and were filtered out"
+            )
+
+        df_valid = df[df.point_is_valid]
+
+        df_valid.loc[:, "x"] = df_valid.pnt.apply(lambda pnt: pnt.y)
+        df_valid.loc[:, "y"] = df_valid.pnt.apply(lambda pnt: pnt.x)
+
+        return df_valid.drop(["pnt", "point_is_valid"], axis=1)

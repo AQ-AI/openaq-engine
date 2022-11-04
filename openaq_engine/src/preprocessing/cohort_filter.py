@@ -48,7 +48,7 @@ class Filter:
                 )
             )
             .query("non_null_values == True")
-            .drop(["null_values"], axis=1)
+            .drop(["non_null_values"], axis=1)
         )
 
     @staticmethod
@@ -124,3 +124,4 @@ class Filter:
             .query("filtered_cities == True")
             .drop(["filtered_cities"], axis=1)
         )
+    
