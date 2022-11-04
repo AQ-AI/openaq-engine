@@ -20,7 +20,12 @@ def read_csv(path: str, **kwargs: Any) -> pd.DataFrame:
     """
 
     return pd.read_csv(
-        path, sep=",", low_memory=False, encoding="utf-8", na_filter=False, **kwargs
+        path,
+        sep=",",
+        low_memory=False,
+        encoding="utf-8",
+        na_filter=False,
+        **kwargs,
     )
 
 
