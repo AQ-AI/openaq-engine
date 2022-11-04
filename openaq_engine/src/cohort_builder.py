@@ -7,6 +7,7 @@ import pandas as pd
 from joblib import Parallel, delayed
 
 from config.model_settings import CohortBuilderConfig
+from src.preprocess import Preprocess
 from src.utils.utils import query_results, write_to_db
 
 
@@ -91,8 +92,8 @@ class CohortBuilder(CohortBuilderBase):
         """
         Retrieve coded er data data from train data.
 
-        Ensures that dataframe always has columns mentioned in ENTITY_ID_COLUMNS
-        even if dataframe is empty.
+        Ensures that dataframe always has columns mentioned in
+        ENTITY_ID_COLUMNS even if dataframe is empty.
 
         Returns
         -------
@@ -127,7 +128,8 @@ class CohortBuilder(CohortBuilderBase):
             if df.empty:
                 logging.info(
                     f"""No openaq data found for
-                     {date_tuple[0].date()}_{date_tuple[1].date()} time window"""
+                    {date_tuple[0].date()}_{date_tuple[1].date()}
+                    time window"""
                 )
 
             df_list.append(df)

@@ -5,7 +5,7 @@ import pandas as pd
 class Filter:
     @staticmethod
     def filter_pollutant(
-        df: pd.DataFrame, select_pollutant: str
+        df: pd.DataFrame, pollutant_to_predict: str
     ) -> pd.DataFrame:
 
         """
@@ -21,7 +21,8 @@ class Filter:
             df.assign(
                 selected_pollutant=(
                     df.parameter.apply(
-                        lambda pollutant: select_pollutant in str(pollutant)
+                        lambda pollutant: pollutant_to_predict
+                        in str(pollutant)
                     )
                 )
             )
@@ -67,7 +68,7 @@ class Filter:
                     df.value.apply(lambda pm25_value: float(pm25_value) <= 500)
                 )
             )
-            .query("extreme_values == False")
+            .query("extreme_values == True")
             .drop(["extreme_values"], axis=1)
         )
 
