@@ -61,8 +61,8 @@ class FeatureConfig:
     def ALL_MODEL_FEATURES(self) -> List[str]:
         """Return all features to be fed into the model"""
         return list(
-            set((self.CORE_FEATURES + self.CATEGORICAL_FEATURES)) -
-            set(self.EXCLUDE_FEATURES)
+            set((self.CORE_FEATURES + self.CATEGORICAL_FEATURES))
+            - set(self.EXCLUDE_FEATURES)
         )
 
 
@@ -87,9 +87,6 @@ class CohortBuilderConfig:
     POLLUTANT_TO_PREDICT = "pm25"
     S3_BUCKET = os.getenv("S3_BUCKET_OPENAQ")
     S3_OUTPUT = os.getenv("S3_OUTPUT_OPENAQ")
-    COLUMN_DICT: Dict[str, Any] = field(
-        default_factory=lambda: dict(
-            averagingperiod={}
 
 
 @dataclass
