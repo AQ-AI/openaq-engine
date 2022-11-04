@@ -80,10 +80,11 @@ class CohortBuilderConfig:
             filter_pollutant=["parameter"],
             filter_non_null_values=["value"],
             filter_extreme_values=["value"],
-            filter_countries=["country"],
-            filter_cities=["city"],
+            # filter_countries=["country"],
+            # filter_cities=["city"],
         ),
     )
+    POLLUTANT_TO_PREDICT = "pm25"
     S3_BUCKET = os.getenv("S3_BUCKET_OPENAQ")
     S3_OUTPUT = os.getenv("S3_OUTPUT_OPENAQ")
 

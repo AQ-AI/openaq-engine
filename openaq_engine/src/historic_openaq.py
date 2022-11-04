@@ -44,7 +44,9 @@ class HistoricOpenAQ:
         }
         first_day_of_month = self._get_first_day_of_month(month.date())
 
-        query = f"SELECT * FROM openaq WHERE PARAMETER = 'pm25' and date.local between '{str(first_day_of_month)}' and '{str(month)}' and value >= 0 limit 10;"
+        query = f"""SELECT * FROM openaq WHERE PARAMETER = 'pm25' and
+        date.local between '{str(first_day_of_month)}' and '{str(month)}'
+        and value >= 0 limit 10;"""
         response_query_result, location = query_results(
             params,
             query,

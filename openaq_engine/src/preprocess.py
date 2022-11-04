@@ -1,6 +1,6 @@
 import logging
 import pandas as pd
-from src.preprocess import Preprocess
+from config.model_settings import CohortBuilderConfig
 from src.preprocessing.cohort_filter import Filter
 
 
@@ -10,10 +10,14 @@ class Preprocess:
         filter_pollutant: bool = True,
         filter_non_null_values: bool = True,
         filter_extreme_values: bool = True,
+        filter_countries: bool = False,
+        filter_cities: bool = False,
     ):
         self.filter_pollutant = filter_pollutant
         self.filter_non_null_values = filter_non_null_values
         self.filter_extreme_values = filter_extreme_values
+        self.filter_countries = filter_countries
+        self.filter_cities = filter_cities
 
     @classmethod
     def from_options(cls, filters) -> "Preprocess":
@@ -35,13 +39,15 @@ class Preprocess:
         return preprocessed_training
 
     def preprocess_data(self, training_validation_df: pd.DataFrame):
-        if self.filter_non_null:
-            training_validation_df = training_validation_df.pipe(
-                Filter.filter_pollutant
+        if self.filter_pollutant:
+            training_validation_df = Filter.filter_pollutant(
+                training_validation_df,
+                CohortBuilderConfig.POLLUTANT_TO_PREDICT,
             )
             logging.info(
                 f"""Total number of pollutant values left after
-                filtering for specific pollutant : {len(training_validation_df)}"""
+                filtering for specific pollutant:
+                {len(training_validation_df)}"""
             )
         if self.filter_extreme_values:
             training_validation_df = training_validation_df.pipe(
