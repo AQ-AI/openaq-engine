@@ -32,8 +32,8 @@ class FeatureConfig:
     def ALL_MODEL_FEATURES(self) -> List[str]:
         """Return all features to be fed into the model"""
         return list(
-            set((self.CORE_FEATURES + self.CATEGORICAL_FEATURES)) -
-            set(self.EXCLUDE_FEATURES)
+            set((self.CORE_FEATURES + self.CATEGORICAL_FEATURES))
+            - set(self.EXCLUDE_FEATURES)
         )
 
 
