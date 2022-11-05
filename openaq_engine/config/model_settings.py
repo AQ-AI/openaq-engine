@@ -9,6 +9,24 @@ import boto3
 
 
 @dataclass
+class CohortBuilderConfig:
+    ENTITY_ID_COLS: Sequence[str] = field(default_factory=lambda: ["unique_id"])
+    DATE_COL: str = "date.utc"
+    TABLE_NAME: str = "openaq"
+    SCHEMA_NAME: str = "model_output"
+    FILTER_DICT: Dict[str, Any] = field(
+        default_factory=lambda: dict(
+            filter_null_pollution_values=["parameter"],
+            # filter_non_standard_codes=["category"],
+        ),
+    )
+    PRIORITY_SCHEMA_NAME = "raw"
+    PRIORITY_TABLE_NAME = "priority_codes"
+    NO_OF_OCCURENCES = 500
+    S3_BUCKET = os.getenv("S3_BUCKET_OPENAQ")
+
+
+@dataclass
 class TimeSplitterConfig:
     DATE_COL: str = "date.utc"
     TARGET_VARIABLE = "pm25"
@@ -29,13 +47,3 @@ class TimeSplitterConfig:
             training=[],
         )
     )
-
-
-@dataclass
-class CohortBuilderConfig:
-    ENTITY_ID_COLS: Sequence[str] = field(
-        default_factory=lambda: ["unique_id"]
-    )
-    DATE_COL: str = "triage_datetime"
-    TABLE_NAME: str = "train"
-    SCHEMA_NAME: str = "model_prep"
