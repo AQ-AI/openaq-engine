@@ -1,11 +1,10 @@
 import os
 from dataclasses import field
-from typing import Sequence
-
-from pydantic.dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Sequence
 
 import boto3
+from pydantic import StrictStr
+from pydantic.dataclasses import dataclass
 
 
 @dataclass
