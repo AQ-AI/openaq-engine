@@ -5,9 +5,7 @@ import pandas as pd
 
 class Filter:
     @staticmethod
-    def filter_pollutant(
-        df: pd.DataFrame, pollutant_to_predict: str
-    ) -> pd.DataFrame:
+    def filter_pollutant(df: pd.DataFrame, pollutant_to_predict: str) -> pd.DataFrame:
 
         """
         Filter for rows selected pollutant
@@ -22,8 +20,7 @@ class Filter:
             df.assign(
                 selected_pollutant=(
                     df.parameter.apply(
-                        lambda pollutant: pollutant_to_predict
-                        in str(pollutant)
+                        lambda pollutant: pollutant_to_predict in str(pollutant)
                     )
                 )
             )
@@ -44,9 +41,7 @@ class Filter:
         """
         return (
             df.assign(
-                no_coords=(
-                    df.coordinates.apply(lambda coords: str(coords) == "{}")
-                )
+                no_coords=(df.coordinates.apply(lambda coords: str(coords) == "{}"))
             )
             .query("no_coords == False")
             .drop(["no_coords"], axis=1)
@@ -95,9 +90,7 @@ class Filter:
         )
 
     @staticmethod
-    def filter_countries(
-        df: pd.DataFrame, countries: List[str]
-    ) -> pd.DataFrame:
+    def filter_countries(df: pd.DataFrame, countries: List[str]) -> pd.DataFrame:
         """
         Filter for countries
 
@@ -112,8 +105,7 @@ class Filter:
                 filtered_country=(
                     df.country.apply(
                         lambda country: any(
-                            str_ in country[1:-1].split(",")
-                            for str_ in countries
+                            str_ in country[1:-1].split(",") for str_ in countries
                         )
                     )
                 )

@@ -3,9 +3,10 @@ import re
 import warnings
 
 import pandas as pd
-from config.model_settings import CohortBuilderConfig
+from datetime import datetime, timezone
 from shapely.errors import ShapelyDeprecationWarning
 from shapely.geometry import Point
+from config.model_settings import CohortBuilderConfig
 from src.preprocessing.filter import Filter
 
 
@@ -58,7 +59,7 @@ class Preprocess:
         """
         return (
             input_df.pipe(self.filter_data)
-            # .pipe(self.shift_columns)
+            .pipe(self.extract_timestamp)
             .pipe(self.extract_coordinates)
         )
 
@@ -105,6 +106,30 @@ class Preprocess:
             )
         return df
 
+    def extract_timestamp(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Extract timezone into "utc" and "local" timezone columns.
+        """
+        logging.info("Extracting datetime")
+        row["timestamp_utc"] = datetime.fromisoformat(
+            float(
+                re.search("(?<=latitude=)(.*)(?=,)", row["coordinates"]).group(0)[:-1]
+            )
+            .astimezone(timezone.utc)
+            .strftime("%Y-%m-%d %H:%M:%S")
+        )
+        row["timestamp_local"] = datetime.fromisoformat(
+            float(
+                re.search("(?<=longitude=)(.*)(?=})", row["coordinates"]).group(0)[:-1]
+            )
+            .astimezone(timezone.utc)
+            .strftime("%Y-%m-%d %H:%M:%S")
+        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
+            row["pnt"] = Point(row["x"], row["y"])
+            return row
+
     def extract_coordinates(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Extract coordinates into 'x' and 'y' columns from point objects in 'pnt'.
@@ -132,8 +157,6 @@ class Preprocess:
             re.search("(?<=longitude=)(.*)(?=})", row["coordinates"]).group(0)
         )
         with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", category=ShapelyDeprecationWarning
-            )
+            warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
             row["pnt"] = Point(row["x"], row["y"])
             return row

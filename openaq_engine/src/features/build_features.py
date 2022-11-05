@@ -14,7 +14,7 @@ class BuildFeatureBase(ABC):
         ...
 
 
-class BuildFeaturesRandomForest(BuildFeatureBase):
+class BuildFeatures(BuildFeatureBase):
     def __init__(
         self,
         target_col: str,
@@ -57,6 +57,4 @@ def get_feature_builder(algorithm: str) -> Type[BuildFeatureBase]:
         return BuildFeaturesRandomForest
 
     else:
-        raise ValueError(
-            "The algorithm provided has no registered feature builder!"
-        )
+        raise ValueError("The algorithm provided has no registered feature builder!")
