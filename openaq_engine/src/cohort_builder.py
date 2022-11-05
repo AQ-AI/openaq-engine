@@ -1,13 +1,12 @@
 import logging
 from abc import ABC
 from itertools import chain
-from typing import List, Dict, Any
-import boto3
+from typing import Dict, Any
 import pandas as pd
 from joblib import Parallel, delayed
 
 from config.model_settings import CohortBuilderConfig
-from src.utils.utils import query_results, read_csv
+from src.utils.utils import query_results, get_data
 
 
 class CohortBuilderBase(ABC):
