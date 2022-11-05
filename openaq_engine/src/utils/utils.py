@@ -10,12 +10,6 @@ import pandas as pd
 from setup_environment import connect_to_db
 
 
-def date_range(start, end):
-    delta = end - start  # as timedelta
-    days = [start + timedelta(days=i) for i in range(delta.days + 1)]
-    return days
-
-
 def read_csv(path: str, **kwargs: Any) -> pd.DataFrame:
     """
     Read csv ensuring that nan's are not parsed
