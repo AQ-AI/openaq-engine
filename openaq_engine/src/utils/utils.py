@@ -1,13 +1,7 @@
 import json
 import time
-<<<<<<< HEAD
-import json
-from typing import Any, List
-from pydantic.json import pydantic_encoder
-=======
 from typing import Any, List
 
->>>>>>> 19-preprocessing-to-further-clean-openaq-data
 import boto3
 import numpy as np
 import pandas as pd
