@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 19-preprocessing-to-further-clean-openaq-data
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -122,9 +118,3 @@ venv.bak/
 
 # vscode
 .vscode/
-<<<<<<< HEAD
-=======
-.env
->>>>>>> 439c1497e597374ac6ad704dc0c4817830731891
-=======
->>>>>>> 19-preprocessing-to-further-clean-openaq-data
