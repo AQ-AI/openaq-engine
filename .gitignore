@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -118,3 +119,6 @@ venv.bak/
 
 # vscode
 .vscode/
+=======
+.env
+>>>>>>> 439c1497e597374ac6ad704dc0c4817830731891
