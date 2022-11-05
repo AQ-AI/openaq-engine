@@ -1,4 +1,5 @@
 import click
+import datetime
 from config.model_settings import (
     TimeSplitterConfig,
     CohortBuilderConfig,
@@ -6,6 +7,7 @@ from config.model_settings import (
 from src.time_splitter import TimeSplitter
 from src.cohort_builder import CohortBuilder
 from setup_environment import get_dbengine
+from src.utils.utils import get_data
 
 
 class TimeSplitterFlow:
@@ -26,6 +28,8 @@ class CohortBuilderFlow:
         return CohortBuilder.from_dataclass_config(
             self.config,
         )
+
+
 class CohortBuilderFlow:
     def __init__(self):
         self.config = CohortBuilderConfig()
@@ -36,10 +40,10 @@ class CohortBuilderFlow:
         )
 
 
-
 @click.command("time-splitter", help="Splits csvs for time splits")
 def time_splitter():
-    TimeSplitterFlow().execute()
+    time_splitter = TimeSplitterFlow().execute()
+    train_validation_list = time_splitter.execute()
 
 
 @click.command("cohort-builder", help="Generate cohorts for time splits")
@@ -47,10 +51,12 @@ def cohort_builder():
     # initialize engine
     engine = get_dbengine()
     time_splitter = TimeSplitterFlow().execute()
-    train_validation_list = time_splitter.execute()
+    train_validation_dict = time_splitter.execute()
 
+    cohort_query = """select * from public.cohorts;"""
+    cohorts_df = get_data(cohort_query)
     cohort_builder = CohortBuilderFlow().execute()
-    cohort_builder.execute(train_validation_list, engine)
+    cohort_builder.execute(train_validation_dict, engine)
 
 
 @click.group("openaq-engine", help="Library to query openaq data")

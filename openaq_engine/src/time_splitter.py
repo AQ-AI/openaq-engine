@@ -39,7 +39,7 @@ class TimeSplitterBase(ABC):
             date_col=self.date_col,
             target_variable=self.target_variable,
         )
-        response_query_result = self._build_response(params, sql_query)
+        response_query_result = self._build_response_from_aws(params, sql_query)
 
         return datetime.strptime(
             f"{response_query_result}", "%Y-%m-%d %H:%M:%S.000 UTC"
@@ -55,12 +55,12 @@ class TimeSplitterBase(ABC):
             target_variable=self.target_variable,
         )
 
-        response_query_result = self._build_response(params, sql_query)
+        response_query_result = self._build_response_from_aws(params, sql_query)
         return datetime.strptime(
             f"{response_query_result}", "%Y-%m-%d %H:%M:%S.000 UTC"
         ).date()
 
-    def _build_response(self, params, sql_query):
+    def _build_response_from_aws(self, params, sql_query):
         response_query_result = query_results(params, sql_query)
         response_query_result["ResultSet"]["Rows"][0]
         rows = response_query_result["ResultSet"]["Rows"][1:]
@@ -99,9 +99,7 @@ class TimeSplitter(TimeSplitterBase):
         )
 
     @classmethod
-    def from_dataclass_config(
-        cls, config: TimeSplitterConfig
-    ) -> "TimeSplitter":
+    def from_dataclass_config(cls, config: TimeSplitterConfig) -> "TimeSplitter":
         return cls(
             time_window_length=config.TIME_WINDOW_LENGTH,
             within_window_sampler=config.WITHIN_WINDOW_SAMPLER,
@@ -169,13 +167,10 @@ class TimeSplitter(TimeSplitterBase):
         """Gets start date of window based on the window length and
         the number of sample months used in the window"""
         return window_date - relativedelta(
-            months=+window_no * self.time_window_length
-            + self.within_window_sampler
+            months=+window_no * self.time_window_length + self.within_window_sampler
         )
 
     def _get_end_time_windows(self, window_start_date):
         """Gets end date of window based on the window length
         and the number of sample months used in the window"""
-        return window_start_date + relativedelta(
-            months=+self.within_window_sampler
-        )
+        return window_start_date + relativedelta(months=+self.within_window_sampler)
