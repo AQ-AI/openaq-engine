@@ -105,6 +105,20 @@ class Preprocess:
             )
         return df
 
+    def extract_timestamp(self, row):
+        row["y"] = float(
+            re.search("(?<=latitude=)(.*)(?=,)", row["coordinates"]).group(0)
+        )
+        row["x"] = float(
+            re.search("(?<=longitude=)(.*)(?=})", row["coordinates"]).group(0)
+        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", category=ShapelyDeprecationWarning
+            )
+            row["pnt"] = Point(row["x"], row["y"])
+            return row
+
     def extract_coordinates(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Extract coordinates into 'x' and 'y' columns from point objects in 'pnt'.

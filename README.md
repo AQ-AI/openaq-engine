@@ -9,10 +9,6 @@ ssh -i "{path/to/your/kaypair.cer}" ec2-44-208-167-138.compute-1.amazonaws.com
 You will need to have an `AWS_ACCESS_KEY` and `AWS_SECRET_ACCESS_KEY` generated, see this [getting started documentation](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-prereqs.html)
 Complete the environmental variables needed in `.env.sample` and move to `.env`
 run the following command:
-```
-aws configure
-```
-and interactualy populate the values as required:
 
 ### Configuring AWS CLI
 run the command 
@@ -79,6 +75,7 @@ git clone git@github.com:AQ-AI/openaq-engine.git
 ```
 
 ### Create Postgres User and database;
+#### This only needs to be done once, skip ahead to Login
 
 ```
 CREATE ROLE openaq WITH LOGIN PASSWORD 'openaq';
@@ -93,9 +90,49 @@ sudo systemctl restart postgresql-12.service
 ```
 ### Login
 ```
- psql -U openaq -d openaq_db -h localhost -W 
- ```
- 
+psql -U openaq -d openaq_db -h localhost -W 
+```
+### Setting up pyenv
+```
+curl https://pyenv.run | bash
+```
+Export `pyenv` variables
+Add pyenv initializer to shell startup script.
+
+```
+echo -e 'export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init --path)"
+eval "$(pyenv init -)"' >> ~/.bash_profile
+```
+### Reload your profile.
+```
+source ~/.bash_profile
+```
+#### Install poetry via curl
+curl -sSL https://install.python-poetry.org | python3 -
+
+### Add poetry to your shell
+```
+export PATH="$HOME/.poetry/bin:$PATH"
+```
+### For tab completion in your shell, see the documentation
+```
+poetry help completions
+```
+#### Configure poetry to create virtual environments inside the project's root directory
+```
+poetry config virtualenvs.in-project true
+```
+#### Install packages via poetry
+```
+poetry install
+```
+## Exporting environment variables
+```
+export $(grep -v '^#' .env | xargs -d '\n')
+```
+## 
 ## Setting up with Docker
 
 ### Adding aws ssh keypair to github repos 
