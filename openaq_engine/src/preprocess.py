@@ -1,4 +1,5 @@
 import logging
+
 import pandas as pd
 from config.model_settings import CohortBuilderConfig
 from src.preprocessing.cohort_filter import Filter

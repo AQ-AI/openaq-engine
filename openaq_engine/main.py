@@ -1,13 +1,8 @@
 import click
-from config.model_settings import (
-    HistoricOpenAQConfig,
-    TimeSplitterConfig,
-    CohortBuilderConfig,
-)
-from src.historic_openaq import HistoricOpenAQ
-from src.time_splitter import TimeSplitter
-from src.cohort_builder import CohortBuilder
+from config.model_settings import CohortBuilderConfig, TimeSplitterConfig
 from setup_environment import get_dbengine
+from src.cohort_builder import CohortBuilder
+from src.time_splitter import TimeSplitter
 
 
 class TimeSplitterFlow:

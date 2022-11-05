@@ -1,4 +1,5 @@
 from datetime import datetime
+
 from config.model_settings import HistoricOpenAQConfig
 from src.utils.utils import query_results
 
