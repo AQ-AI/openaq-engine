@@ -1,7 +1,13 @@
 import logging
+import re
+import warnings
+
 import pandas as pd
+from shapely.geometry import Point
+from shapely.errors import ShapelyDeprecationWarning
+
 from config.model_settings import CohortBuilderConfig
-from src.preprocessing.cohort_filter import Filter
+from src.preprocessing.filter import Filter
 
 
 class Preprocess:
@@ -10,12 +16,14 @@ class Preprocess:
         filter_pollutant: bool = True,
         filter_non_null_values: bool = True,
         filter_extreme_values: bool = True,
+        filter_no_coordinates: bool = True,
         filter_countries: bool = False,
         filter_cities: bool = False,
     ):
         self.filter_pollutant = filter_pollutant
         self.filter_non_null_values = filter_non_null_values
         self.filter_extreme_values = filter_extreme_values
+        self.filter_no_coordinates = filter_no_coordinates
         self.filter_countries = filter_countries
         self.filter_cities = filter_cities
 
@@ -26,6 +34,7 @@ class Preprocess:
                 "filter_pollutant",
                 "filter_non_null_values",
                 "filter_extreme_values",
+                "filter_no_coordinates",
             ],
             False,
         )
@@ -33,99 +42,78 @@ class Preprocess:
             filter_default[filter_] = True
         return cls(**filter_default)
 
-    def execute(self, training_validation_df: pd.DataFrame, **kwargs):
-        filtered_training_validation_df = self.filter_data(
-            training_validation_df
-        )
-        preprocessed_training_validation_df = self.preprocess_data(
-            filtered_training_validation_df
-        )
-        return preprocessed_training_validation_df
+    def execute(self, input_df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        Preprocess raw input data by filtering for specific pollutants,
+        cleaning columns and extracting location.
 
-    def filter_data(self, training_validation_df: pd.DataFrame):
+        Parameters
+        ----------
+        input_df : pd.DataFrame
+            Unprocessed raw data in a dataframe
+
+        Returns
+        -------
+        pd.DataFrame
+            Processed data after all processing steps have been applied sequentially
+        """
+        return (
+            input_df.pipe(self.filter_data)
+            # .pipe(self.shift_columns)
+            .pipe(self.extract_coordinates)
+        )
+
+    def filter_data(self, df: pd.DataFrame):
         if self.filter_pollutant:
-            training_validation_df = Filter.filter_pollutant(
-                training_validation_df,
+            df = Filter.filter_pollutant(
+                df,
                 CohortBuilderConfig.POLLUTANT_TO_PREDICT,
             )
             logging.info(
                 f"""Total number of pollutant values left after
                 filtering for specific pollutant:
-                {len(training_validation_df)}"""
+                {len(df)}"""
+            )
+        if self.filter_no_coordinates:
+            df = df.pipe(Filter.filter_no_coordinates)
+            logging.info(
+                f"""Total number of pollutant values left after
+                filtering no coordinates {len(df)}"""
             )
         if self.filter_extreme_values:
-            training_validation_df = training_validation_df.pipe(
-                Filter.filter_extreme_pollution_values
-            )
+            df = df.pipe(Filter.filter_extreme_pollution_values)
             logging.info(
                 f"""Total number of pollutant values left after
-                filtering extreme values {len(training_validation_df)}"""
+                filtering extreme values {len(df)}"""
             )
         if self.filter_non_null_values:
-            training_validation_df = training_validation_df.pipe(
-                Filter.filter_non_null_pm25_values
-            )
+            df = df.pipe(Filter.filter_non_null_pm25_values)
             logging.info(
                 f"""Total number of pollutant values left after
-                filtering non-null values : {len(training_validation_df)}"""
+                filtering non-null values : {len(df)}"""
             )
         if self.filter_countries:
-            training_validation_df = training_validation_df.pipe(
-                Filter.filter_countries
-            )
+            df = df.pipe(Filter.filter_countries)
             logging.info(
                 f"""Total number of pollutant values left after
-                filtering countries: {len(training_validation_df)}"""
+                filtering countries: {len(df)}"""
             )
         if self.filter_cities:
-            training_validation_df = training_validation_df.pipe(
-                Filter.filter_cities
-            )
+            df = df.pipe(Filter.filter_cities)
             logging.info(
                 f"""Total number of pollutant values left after
-                filtering cities: {len(training_validation_df)}"""
+                filtering cities: {len(df)}"""
             )
-        return training_validation_df
-
-    def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
         return df
 
-    def _shift_columns(df: pd.DataFrame) -> pd.DataFrame:
-        """
-        This function checks the format of each column
-        and the following column to see whether results
-        have "shifted" one columns over.
-        """
-        for col_name in df.columns:
-            if col_name == "averagingperiod":
-                df.assign(
-                    rows_to_shift=(
-                        df.col_name.apply(lambda row: "unit" not in str(row))
-                    )
-                    .query("rows_to_shift == True")
-                    .averagingperiod.shift(1, axis=1, fill_value="{}")
-                    .drop(["rows_to_shift"], axis=1)
-                )
-
-            if col_name == "coordinates":
-                df.assign(
-                    rows_to_drop=(
-                        df.col_name.apply(
-                            lambda row: "latitude" not in str(row)
-                        )
-                    )
-                    .query("rows_to_drop == False")
-                    .drop(["rows_to_drop"], axis=1)
-                )
-
-        return df
-
-    def _extract_coordinates(self, df: pd.DataFrame) -> pd.DataFrame:
+    def extract_coordinates(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Extract coordinates into 'x' and 'y' columns from point objects in 'pnt'.
         Filters out rows with invalid point representations.
         """
+        logging.info(f"""Extracting coordinates""")
         # Filter out any invalid points
+        df = df.apply(lambda row: self._extract_lat_lng(row), axis=1)
         df["point_is_valid"] = df.pnt.apply(lambda x: x.wkt != "POINT EMPTY")
 
         if not all(df.point_is_valid):
@@ -135,8 +123,16 @@ class Preprocess:
             )
 
         df_valid = df[df.point_is_valid]
-
-        df_valid.loc[:, "x"] = df_valid.pnt.apply(lambda pnt: pnt.y)
-        df_valid.loc[:, "y"] = df_valid.pnt.apply(lambda pnt: pnt.x)
-
         return df_valid.drop(["pnt", "point_is_valid"], axis=1)
+
+    def _extract_lat_lng(self, row):
+        row["y"] = float(
+            re.search("(?<=latitude=)(.*)(?=,)", row["coordinates"]).group(0)
+        )
+        row["x"] = float(
+            re.search("(?<=longitude=)(.*)(?=})", row["coordinates"]).group(0)
+        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
+            row["pnt"] = Point(row["x"], row["y"])
+            return row
