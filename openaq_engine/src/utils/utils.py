@@ -1,19 +1,18 @@
+import json
 import time
+<<<<<<< HEAD
 import json
 from typing import Any, List
 from pydantic.json import pydantic_encoder
+=======
+from typing import Any, List
+
+>>>>>>> 19-preprocessing-to-further-clean-openaq-data
 import boto3
 import numpy as np
-from datetime import timedelta
-
 import pandas as pd
+from pydantic.json import pydantic_encoder
 from setup_environment import connect_to_db
-
-
-def date_range(start, end):
-    delta = end - start  # as timedelta
-    days = [start + timedelta(days=i) for i in range(delta.days + 1)]
-    return days
 
 
 def read_csv(path: str, **kwargs: Any) -> pd.DataFrame:

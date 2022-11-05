@@ -1,12 +1,11 @@
-from abc import ABC
-from typing import Any, Dict, List
 import logging
+from abc import ABC
 from datetime import datetime
-from dateutil.relativedelta import relativedelta
+from typing import Any, Dict, List
 
 import pandas as pd
-
 from config.model_settings import TimeSplitterConfig
+from dateutil.relativedelta import relativedelta
 from src.utils.utils import query_results
 
 logging.basicConfig(level=logging.INFO)
@@ -39,7 +38,9 @@ class TimeSplitterBase(ABC):
             date_col=self.date_col,
             target_variable=self.target_variable,
         )
-        response_query_result = self._build_response(params, sql_query)
+        response_query_result = self._build_response_from_aws(
+            params, sql_query
+        )
 
         return datetime.strptime(
             f"{response_query_result}", "%Y-%m-%d %H:%M:%S.000 UTC"
@@ -55,12 +56,14 @@ class TimeSplitterBase(ABC):
             target_variable=self.target_variable,
         )
 
-        response_query_result = self._build_response(params, sql_query)
+        response_query_result = self._build_response_from_aws(
+            params, sql_query
+        )
         return datetime.strptime(
             f"{response_query_result}", "%Y-%m-%d %H:%M:%S.000 UTC"
         ).date()
 
-    def _build_response(self, params, sql_query):
+    def _build_response_from_aws(self, params, sql_query):
         response_query_result = query_results(params, sql_query)
         response_query_result["ResultSet"]["Rows"][0]
         rows = response_query_result["ResultSet"]["Rows"][1:]

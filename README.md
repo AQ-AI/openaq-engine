@@ -23,7 +23,7 @@ Default output format [None]: {format} # e.g. json
 ### Enter `psql`
 ```
 sudo su - postgres 
-psql --connect
+psql
 ```
 
 
@@ -34,8 +34,13 @@ CREATE ROLE openaq WITH LOGIN PASSWORD 'openaq';
 CREATE DATABASE openaq_db;
 GRANT ALL PRIVILEGES ON DATABASE openaq_db TO openaq;
 ALTER ROLE openaq SUPERUSER;
+SELECT pg_reload_conf();
 ```
-### Researt postgres
+### Restart postgres
 ```
 sudo systemctl restart postgresql-12.service
 ```
+### Login
+```
+ psql -U openaq -d openaq_db -h localhost -W 
+ ```
