@@ -111,14 +111,14 @@ class Preprocess:
         Extract coordinates into 'x' and 'y' columns from point objects in 'pnt'.
         Filters out rows with invalid point representations.
         """
-        logging.info(f"""Extracting coordinates""")
+        logging.info("Extracting coordinates")
         # Filter out any invalid points
         df = df.apply(lambda row: self._extract_lat_lng(row), axis=1)
         df["point_is_valid"] = df.pnt.apply(lambda x: x.wkt != "POINT EMPTY")
 
         if not all(df.point_is_valid):
             num_invalid_pnts = len(df[~df.point_is_valid])
-            logger.info(
+            logging.info(
                 f"There were {num_invalid_pnts} rows with invalid points and were filtered out"
             )
 
