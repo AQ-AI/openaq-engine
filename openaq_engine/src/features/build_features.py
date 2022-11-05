@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Type
 
 import pandas as pd
-
 from revenue_prediction_model.config.model_settings import feature_config
 
 

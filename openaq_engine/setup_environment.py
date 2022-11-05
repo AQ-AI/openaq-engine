@@ -7,8 +7,9 @@ database.
 
 """
 
-from contextlib import contextmanager
 import os
+from contextlib import contextmanager
+
 import pandas as pd
 import psycopg2
 from sqlalchemy.engine import create_engine

@@ -1,12 +1,11 @@
-from abc import ABC
-from typing import Any, Dict, List
 import logging
+from abc import ABC
 from datetime import datetime
-from dateutil.relativedelta import relativedelta
+from typing import Any, Dict, List
 
 import pandas as pd
-
 from config.model_settings import TimeSplitterConfig
+from dateutil.relativedelta import relativedelta
 from src.utils.utils import query_results
 
 logging.basicConfig(level=logging.INFO)

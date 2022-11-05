@@ -1,12 +1,11 @@
-import time
 import json
+import time
 from typing import Any, List
-from pydantic.json import pydantic_encoder
+
 import boto3
 import numpy as np
-from datetime import timedelta
-
 import pandas as pd
+from pydantic.json import pydantic_encoder
 from setup_environment import connect_to_db
 
 
