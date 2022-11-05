@@ -1,5 +1,5 @@
 import click
-from config.model_settings import TimeSplitterConfig
+from config.model_settings import TimeSplitterConfig, CohortBuilderConfig
 from src.time_splitter import TimeSplitter
 from src.cohort_builder import CohortBuilder
 
