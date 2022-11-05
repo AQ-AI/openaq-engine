@@ -1,12 +1,11 @@
 import os
 from dataclasses import field
 from typing import Any, Dict, List, Sequence
-from pydantic import StrictStr
-
-from pydantic.dataclasses import dataclass
-from src.utils.utils import date_range
 
 import boto3
+from pydantic import StrictStr
+from pydantic.dataclasses import dataclass
+from src.utils.utils import date_range
 
 
 @dataclass

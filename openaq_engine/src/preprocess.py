@@ -3,10 +3,9 @@ import re
 import warnings
 
 import pandas as pd
-from shapely.geometry import Point
-from shapely.errors import ShapelyDeprecationWarning
-
 from config.model_settings import CohortBuilderConfig
+from shapely.errors import ShapelyDeprecationWarning
+from shapely.geometry import Point
 from src.preprocessing.filter import Filter
 
 
