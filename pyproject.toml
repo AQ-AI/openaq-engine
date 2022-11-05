@@ -5,19 +5,23 @@ description = ""
 authors = ["ChristinaLast <christina.last@outlook.com>"]
 
 [tool.poetry.dependencies]
-python = ">=3.8"
-boto3 = "^1.24.16"
-pydantic = "^1.9.1"
-black = "^22.3.0"
-awscli = "^1.25.17"
-flake8 = "^4.0.1"
-isort = "^5.10.1"
-pandas = "^1.4.3"
-joblib = "^1.1.0"
-python-lambda-local = "^0.1.13"
+python = "^3.8"
+boto3 = "^1.26.0"
+pandas = "^1.5.1"
+pydantic = "^1.10.2"
+psycopg2-binary = "^2.9.5"
+SQLAlchemy = "^1.4.42"
+joblib = "^1.2.0"
+pyathena = "^2.14.0"
+awscli = "^1.27.2"
+pytest = "^7.2.0"
+shapely = "^1.8.5"
 
 [tool.poetry.dev-dependencies]
-pytest = "^5.2"
+black = "^22.10.0"
+autoflake8 = "^0.4.0"
+autopep8 = "^2.0.0"
+flake8 = "^5.0.4"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
