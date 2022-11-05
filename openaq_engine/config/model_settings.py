@@ -1,29 +1,64 @@
 import os
 from dataclasses import field
-from typing import Sequence
-
-from pydantic.dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Sequence
 
 import boto3
+from pydantic import StrictStr
+from pydantic.dataclasses import dataclass
+
+
+@dataclass
+class FeatureConfig:
+    CATEGORICAL_FEATURES: List[StrictStr] = field(
+        default_factory=lambda: [
+            "city",
+            "country",
+            "sourcetype",
+        ]
+    )
+    CORE_FEATURES: List[StrictStr] = field(
+        default_factory=lambda: [
+            "city",
+            "country",
+            "pca_lat",
+            "pca_lng",
+            "sourcetype",
+            "mobile",
+        ]
+    )
+    SATELLITE_FEATURES = []
+
+    @property
+    def ALL_MODEL_FEATURES(self) -> List[str]:
+        """Return all features to be fed into the model"""
+        return list(
+            set((self.CORE_FEATURES + self.CATEGORICAL_FEATURES))
+            - set(self.EXCLUDE_FEATURES)
+        )
 
 
 @dataclass
 class CohortBuilderConfig:
-    ENTITY_ID_COLS: Sequence[str] = field(default_factory=lambda: ["unique_id"])
+    ENTITY_ID_COLS: Sequence[str] = field(
+        default_factory=lambda: ["unique_id"]
+    )
     DATE_COL: str = "date.utc"
-    TABLE_NAME: str = "openaq"
+    REGION = "us-east-1"
+    TABLE_NAME = "openaq"
     SCHEMA_NAME: str = "model_output"
     FILTER_DICT: Dict[str, Any] = field(
         default_factory=lambda: dict(
-            filter_null_pollution_values=["parameter"],
-            # filter_non_standard_codes=["category"],
+            filter_pollutant=["parameter"],
+            filter_non_null_values=["value"],
+            filter_extreme_values=["value"],
+            filter_no_coordinates=["coordinates"],
+            # filter_countries=["country"],
+            # filter_cities=["city"],
         ),
     )
-    PRIORITY_SCHEMA_NAME = "raw"
-    PRIORITY_TABLE_NAME = "priority_codes"
-    NO_OF_OCCURENCES = 500
+    POLLUTANT_TO_PREDICT = "pm25"
     S3_BUCKET = os.getenv("S3_BUCKET_OPENAQ")
+    S3_OUTPUT = os.getenv("S3_OUTPUT_OPENAQ")
 
 
 @dataclass
