@@ -122,7 +122,7 @@ class Preprocess:
             )
 
         df_valid = df[df.point_is_valid]
-        return df_valid.drop(["pnt", "point_is_valid"], axis=1)
+        return df_valid.drop(["pnt"
 
     def _extract_lat_lng(self, row):
         row["y"] = float(
