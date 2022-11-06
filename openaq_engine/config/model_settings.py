@@ -39,9 +39,7 @@ class FeatureConfig:
 
 @dataclass
 class CohortBuilderConfig:
-    ENTITY_ID_COLS: Sequence[str] = field(
-        default_factory=lambda: ["unique_id"]
-    )
+    ENTITY_ID_COLS: Sequence[str] = field(default_factory=lambda: ["unique_id"])
     DATE_COL: str = "date.utc"
     REGION = "us-east-1"
     TABLE_NAME = "openaq"
@@ -51,6 +49,7 @@ class CohortBuilderConfig:
             filter_pollutant=["parameter"],
             filter_non_null_values=["value"],
             filter_extreme_values=["value"],
+            filter_no_coordinates=["coordinates"],
             # filter_countries=["country"],
             # filter_cities=["city"],
         ),
