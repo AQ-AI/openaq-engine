@@ -1,4 +1,4 @@
-name: Linting with black and flake8
+name: Workflows for github actions
 
 on: [push]
 
@@ -24,4 +24,9 @@ jobs:
           black $(git ls-files '*.py')
       - name: Analysing the code with flake8
         run: |
-          flake8 $(git ls-files '*.py')
+          flake8 $(git ls-files '*.py') --ignore=E501,W503
+      - name: Testing
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          poetry install
+          poetry run pytest
