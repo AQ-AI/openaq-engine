@@ -27,19 +27,19 @@ class CohortBuilderFlow:
 
 @click.command("time-splitter", help="Splits csvs for time splits")
 def time_splitter():
-    TimeSplitterFlow().execute()
+    time_splitter = TimeSplitterFlow().execute()
+    time_splitter.execute()
 
 
 @click.command("cohort-builder", help="Generate cohorts for time splits")
 def cohort_builder():
     # initialize engine
     engine = get_dbengine()
-    print(engine)
     time_splitter = TimeSplitterFlow().execute()
-    train_validation_list = time_splitter.execute()
+    train_validation_dict = time_splitter.execute()
 
     cohort_builder = CohortBuilderFlow().execute()
-    cohort_builder.execute(train_validation_list, engine)
+    cohort_builder.execute(train_validation_dict, engine)
 
 
 @click.group("openaq-engine", help="Library to query openaq data")
@@ -50,5 +50,7 @@ def cli(ctx):
 
 cli.add_command(time_splitter)
 cli.add_command(cohort_builder)
+
+
 if __name__ == "__main__":
     cli()
