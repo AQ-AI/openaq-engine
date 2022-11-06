@@ -1,15 +1,12 @@
-from abc import ABC
-from typing import Any, Dict, List
 import logging
-import io
+from abc import ABC
 from datetime import datetime
-from dateutil.relativedelta import relativedelta
+from typing import Any, Dict, List
 
-import boto3
 import pandas as pd
-
 from config.model_settings import TimeSplitterConfig
-from src.utils.utils import read_csv, query_results
+from dateutil.relativedelta import relativedelta
+from src.utils.utils import query_results
 
 logging.basicConfig(level=logging.INFO)
 
@@ -32,51 +29,39 @@ class TimeSplitterBase(ABC):
         self.bucket = bucket
         self.s3_output = s3_output
 
-    def _obtain_df_from_s3(self, filepath):
-
-        s3 = boto3.client("s3", region_name=self.region_name)
-
-        obj = s3.get_object(Bucket=self.bucket, Key=filepath)
-
-        # response = self.resource.Bucket(self.bucket).Object(key=filepath).get()
-
-        return read_csv(obj)
-
     def create_end_date(self, params) -> pd.DataFrame:
-        sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime 
-        FROM {table} WHERE parameter='{target_variable}' 
-        AND from_iso8601_timestamp({date_col}) <= DATE(NOW()) 
+        sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime
+        FROM {table} WHERE parameter='{target_variable}'
+        AND from_iso8601_timestamp({date_col}) <= DATE(NOW())
         ORDER BY {date_col} DESC limit 1;""".format(
             table=self.table_name,
             date_col=self.date_col,
             target_variable=self.target_variable,
         )
-        response_query_result = self._build_response(params, sql_query)
-        logging.info(response_query_result)
+        response_query_result = self._build_response_from_aws(params, sql_query)
 
         return datetime.strptime(
             f"{response_query_result}", "%Y-%m-%d %H:%M:%S.000 UTC"
         ).date()
 
     def create_start_date(self, params: Dict[str, Any]) -> datetime:
-        sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime 
-        FROM {table} WHERE parameter='{target_variable}' 
-        AND from_iso8601_timestamp({date_col}) <= DATE(NOW()) 
+        sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime
+        FROM {table} WHERE parameter='{target_variable}'
+        AND from_iso8601_timestamp({date_col}) <= DATE(NOW())
         ORDER BY {date_col} ASC limit 1;""".format(
             table=self.table_name,
             date_col=self.date_col,
             target_variable=self.target_variable,
         )
 
-        response_query_result = self._build_response(params, sql_query)
-
+        response_query_result = self._build_response_from_aws(params, sql_query)
         return datetime.strptime(
             f"{response_query_result}", "%Y-%m-%d %H:%M:%S.000 UTC"
         ).date()
 
-    def _build_response(self, params, sql_query):
+    def _build_response_from_aws(self, params, sql_query):
         response_query_result = query_results(params, sql_query)
-        header = response_query_result["ResultSet"]["Rows"][0]
+        response_query_result["ResultSet"]["Rows"][0]
         rows = response_query_result["ResultSet"]["Rows"][1:]
         for row in rows:
             return self._get_var_char_values(row)
@@ -129,7 +114,8 @@ class TimeSplitter(TimeSplitterBase):
         Input
         ----
         creates list of dates between start and end date of each time
-        window within a given window time length and a given number of months to sample
+        window within a given window time length and a given number of
+        months to sample
         ----
         The start and end dates for each time window
         """
@@ -148,12 +134,13 @@ class TimeSplitter(TimeSplitterBase):
                 end_date, window_no
             )
             logging.info(
-                f"Getting cohort between {window_start_date} and {window_end_date}"
+                f"""Getting cohort between {window_start_date}
+                and {window_end_date}"""
             )
             if window_start_date < start_date:
                 logging.warning(
-                    f"""Date: {window_start_date.date()} is ealier than the first date
-                     within data: {start_date.date()}"""
+                    f"""Date: {window_start_date.date()} is earlier than
+                    the first date within data: {start_date.date()}"""
                 )
                 window_no += 1
             else:
@@ -176,13 +163,13 @@ class TimeSplitter(TimeSplitterBase):
         return window_start_date, window_end_date
 
     def _get_start_time_windows(self, window_date, window_no):
-        """Gets start date of window based on the window length and the number of sample
-        months used in the window"""
+        """Gets start date of window based on the window length and
+        the number of sample months used in the window"""
         return window_date - relativedelta(
             months=+window_no * self.time_window_length + self.within_window_sampler
         )
 
     def _get_end_time_windows(self, window_start_date):
-        """Gets end date of window based on the window length and the number of sample
-        months used in the window"""
+        """Gets end date of window based on the window length
+        and the number of sample months used in the window"""
         return window_start_date + relativedelta(months=+self.within_window_sampler)
