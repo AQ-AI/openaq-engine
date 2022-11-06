@@ -122,7 +122,7 @@ class Preprocess:
             )
 
         df_valid = df[df.point_is_valid]
-        return df_valid.drop(["pnt"
+        return df_valid.drop(["pnt", "point_is_valid"], axis=1)
 
     def _extract_lat_lng(self, row):
         row["y"] = float(
@@ -132,8 +132,6 @@ class Preprocess:
             re.search("(?<=longitude=)(.*)(?=})", row["coordinates"]).group(0)
         )
         with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", category=ShapelyDeprecationWarning
-            )
+            warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
             row["pnt"] = Point(row["x"], row["y"])
             return row
