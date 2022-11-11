@@ -29,12 +29,54 @@ AWS Secret Access Key [None]: {AWS_SECRET_ACCESS_KEY}
 Default region name [None]: {region} # e.g. us-east-1
 Default output format [None]: {format} # e.g. json
 ```
-### Enter `psql`
+
+### Adding new user
+Outside the instance run the following:
 ```
-sudo su - postgres 
-psql
+ssh-keygen -y -f /path_to_key_pair/key-pair-name.cer
+```
+Connect to the instance. When inside, run the following:
+```
+sudo adduser newuser
+```
+Switch to the new account so that the directory and file have the proper ownership:
+```
+sudo su - newuser
+```
+The prompt changes from `ec2-user` to newuser to indicate that you have switched the shell session to the new account.
+Create a `.ssh` directory in the newuser home directory and change its file permissions to `700` (only the owner can read, write, or open the directory).
+```
+mkdir .ssh
+chmod 700 .ssh
+```
+Create a file named authorized_keys in the `.ssh` directory and change its file permissions to 600 (only the owner can read or write to the file).
+
+```
+touch .ssh/authorized_keys
+chmod 600 .ssh/authorized_keys
 ```
 
+Open the authorized_keys file using your favorite text editor (such as vim or nano).
+```
+vi .ssh/authorized_keys
+```
+Paste the public key that you retrieved in Step 2 into the file and save the changes.
+
+### Connecting Github to the Ec2 Instance over ssh
+Run the following commands to generate your SSH keys on the EC2 instance
+```
+ssh-keygen -t rsa -C "your-email@gmail.com"
+```
+Switch to the root user and access your SSH public key by using the command below:
+```
+cat ~/.ssh/id_rsa.pub
+```
+Add the Public SSH key to your Github Account [using these instructions](https://help.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account)
+
+Clone the repo in your chosen directory on the instance
+```
+git clone git@github.com:AQ-AI/openaq-engine.git
+```
 
 ### Create Postgres User and database;
 
