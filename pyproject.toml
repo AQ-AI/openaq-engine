@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openaq-engine"
-version = "0.1.0"
+version = "0.0.0"
 description = ""
 authors = ["ChristinaLast <christina.last@outlook.com>"]
 
@@ -23,9 +23,16 @@ autoflake8 = "^0.4.0"
 autopep8 = "^2.0.0"
 flake8 = "^5.0.4"
 
-[tool.poetry.group.dev.dependencies]
-black = "^22.10.0"
-
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=1.1.13"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.semantic_release]
+version_variable = [
+    "openaq_engine/__init__.py:__version__",
+    "pyproject.toml:version"
+]
+branch = "develop"
+upload_to_pypi = false
+upload_to_release = true
+build_command = "pip install poetry && poetry build"
