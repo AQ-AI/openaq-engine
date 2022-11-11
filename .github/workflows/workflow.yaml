@@ -24,7 +24,7 @@ jobs:
           poetry run black $(git ls-files '*.py')
       - name: Analysing the code with flake8
         run: |
-          flake8 $(git ls-files '*.py') --ignore=E501,W503
+          poetry run flake8 $(git ls-files '*.py') --ignore=E501,W503
       - name: Testing
         run: |
           poetry run pytest
