@@ -2,7 +2,7 @@
 Generate a key pair and download the certficiate onto your local machine. 
 Using the path to where you downloaded the certificate, connect to the server:
 ```
-ssh -i "{path/to/your/kaypair.cer}" ec2-44-208-167-138.compute-1.amazonaws.com
+ssh -i "{path/to/your/keypair.cer}" ec2-44-208-167-138.compute-1.amazonaws.com
 ```
 
 ## Configure AWS
