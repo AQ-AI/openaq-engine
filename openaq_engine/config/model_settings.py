@@ -38,6 +38,66 @@ class FeatureConfig:
 
 
 @dataclass
+class EEConfig:
+    DATE_COL: str = "date"
+    TABLE_NAME = "cohorts"
+    LANDSAT_IMAGE_COLLECTION: str = "LANDSAT/LC08/C01/T1"
+    LANDSAT_IMAGE_BAND: Sequence[str] = field(
+        default_factory=lambda: ["B4", "B3", "B2"]
+    )
+
+    NIGHTTIME_LIGHT_IMAGE_COLLECTION: str = "NOAA/VIIRS/DNB/MONTHLY_V1/VCMCFG"
+    NIGHTTIME_LIGHT_IMAGE_BAND: Sequence[str] = field(
+        default_factory=lambda: ["avg_rad"]
+    )
+
+    METEROLOGICAL_IMAGE_COLLECTION: str = "NOAA/GFS0P25"
+    METEROLOGICAL_IMAGE_BAND: Sequence[str] = field(
+        default_factory=lambda: [
+            "temperature_2m_above_ground",
+            "relative_humidity_2m_above_ground",
+            "total_precipitation_surface",
+            "total_cloud_cover_entire_atmosphere",
+            "u_component_of_wind_10m_above_ground",
+            "v_component_of_wind_10m_above_ground",
+        ]
+    )
+
+    POPULATION_IMAGE_COLLECTION: str = (
+        "CIESIN/GPWv411/GPW_Basic_Demographic_Characteristics"
+    )
+    POPULATION_IMAGE_BAND: Sequence[str] = field(
+        default_factory=lambda: ["basic_demographic_characteristics"]
+    )
+
+    LAND_COVER_IMAGE_COLLECTION: str = "COPERNICUS/Landcover/100m/Proba-V-C3/Global"
+    LAND_COVER_IMAGE_BAND: Sequence[str] = field(
+        default_factory=lambda: ["discrete_classification"≠≠]
+    )
+    BUCKET_NAME = "earthengine-bucket"
+
+    @property
+    def ALL_SATELITTES(self) -> zip(List[str], List[str]):
+        """Return all features to be fed into the model"""
+        return zip(
+            [
+                self.LANDSAT_IMAGE_COLLECTION,
+                self.NIGHTTIME_LIGHT_IMAGE_COLLECTION,
+                self.METEROLOGICAL_IMAGE_COLLECTION,
+                self.POPULATION_IMAGE_COLLECTION,
+                self.LAND_COVER_IMAGE_COLLECTION,
+            ],
+            [
+                self.LANDSAT_IMAGE_BAND,
+                self.NIGHTTIME_LIGHT_IMAGE_BAND,
+                self.METEROLOGICAL_IMAGE_BAND,
+                self.POPULATION_IMAGE_BAND,
+                self.LAND_COVER_IMAGE_BAND,
+            ],
+        )
+
+
+@dataclass
 class CohortBuilderConfig:
     ENTITY_ID_COLS: Sequence[str] = field(default_factory=lambda: ["unique_id"])
     DATE_COL: str = "date.utc"
