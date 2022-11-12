@@ -132,8 +132,6 @@ class Preprocess:
             re.search("(?<=longitude=)(.*)(?=})", row["coordinates"]).group(0)
         )
         with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", category=ShapelyDeprecationWarning
-            )
+            warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
             row["pnt"] = Point(row["x"], row["y"])
             return row
