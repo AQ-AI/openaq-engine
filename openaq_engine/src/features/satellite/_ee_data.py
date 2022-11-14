@@ -44,7 +44,7 @@ class EEData:
             table=self.table_name,
             date_col=self.date_col,
         )
-
+        ee.Authenticate()
         end_date = get_data(end_date_query)
         start_date = get_data(start_date_query)
         s_datetime = self._generate_date(str(start_date["datetime"][0]))
