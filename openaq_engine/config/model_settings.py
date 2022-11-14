@@ -72,7 +72,7 @@ class EEConfig:
 
     LAND_COVER_IMAGE_COLLECTION: str = "COPERNICUS/Landcover/100m/Proba-V-C3/Global"
     LAND_COVER_IMAGE_BAND: Sequence[str] = field(
-        default_factory=lambda: ["discrete_classification"≠≠]
+        default_factory=lambda: ["discrete_classification"]
     )
     BUCKET_NAME = "earthengine-bucket"
 
