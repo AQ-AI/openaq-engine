@@ -56,8 +56,8 @@ class EEData:
             for collection, image_bands in self.all_satellites
         )
 
-    def execute_for_collection(self, 
-        collection, image_bands, s_datetime, e_datetime, save_images
+    def execute_for_collection(
+        self, collection, image_bands, s_datetime, e_datetime, save_images
     ):
         """
         Input
