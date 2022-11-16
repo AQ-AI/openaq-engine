@@ -2,13 +2,21 @@
 Generate a key pair and download the certficiate onto your local machine. 
 Using the path to where you downloaded the certificate, connect to the server:
 ```
-ssh -i "{path/to/your/kaypair.cer}" ec2-44-208-167-138.compute-1.amazonaws.com
+ssh -i "{path/to/your/keypair.cer}" ec2-44-208-167-138.compute-1.amazonaws.com
 ```
 
 ## Configure AWS
 You will need to have an `AWS_ACCESS_KEY` and `AWS_SECRET_ACCESS_KEY` generated, see this [getting started documentation](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-prereqs.html)
 Complete the environmental variables needed in `.env.sample` and move to `.env`
 run the following command:
+
+### Configuring AWS CLI
+run the command 
+
+```
+aws configure
+```
+and interactualy populate the values as required:
 
 ### Configuring AWS CLI
 run the command 
@@ -24,6 +32,22 @@ AWS Access Key ID [None]: {AWS_ACCESS_KEY}
 AWS Secret Access Key [None]: {AWS_SECRET_ACCESS_KEY}
 Default region name [None]: {region} # e.g. us-east-1
 Default output format [None]: {format} # e.g. json
+```
+
+### Install the gloud
+```
+sudo tee -a /etc/yum.repos.d/google-cloud-sdk.repo << EOM
+[google-cloud-cli]
+name=Google Cloud CLI
+baseurl=https://packages.cloud.google.com/yum/repos/cloud-sdk-el8-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=0
+gpgkey=https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOM
+```
+```
+sudo yum install google-cloud-cli
 ```
 
 ### Adding new user
