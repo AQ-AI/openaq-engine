@@ -389,6 +389,20 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "isort"
+version = "5.10.1"
+description = "A Python utility / library to sort Python imports."
+category = "dev"
+optional = false
+python-versions = ">=3.6.1,<4.0"
+
+[package.extras]
+pipfile_deprecated_finder = ["pipreqs", "requirementslib"]
+requirements_deprecated_finder = ["pipreqs", "pip-api"]
+colors = ["colorama (>=0.4.3,<0.5.0)"]
+plugins = ["setuptools"]
+
+[[package]]
 name = "jmespath"
 version = "1.0.1"
 description = "JSON Matching Expressions"
@@ -780,7 +794,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "07069db35d7ac737750e17bd7256c7b71fde74a32cfa7101b7aad5b8d1a8ad0c"
+content-hash = "89e65561225a0ab773a3b01fcb2d0d69dd5a12efe6ba809bea23f621a10eb774"
 
 [metadata.files]
 attrs = []
@@ -813,6 +827,7 @@ greenlet = []
 httplib2 = []
 idna = []
 iniconfig = []
+isort = []
 jmespath = []
 joblib = []
 mccabe = []

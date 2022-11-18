@@ -1,6 +1,7 @@
 import datetime
-from typing import Sequence, Tuple, List
 import re
+from typing import List, Sequence, Tuple
+
 import ee
 from ee.ee_exception import EEException
 from googleapiclient.errors import HttpError

@@ -1,9 +1,11 @@
 import click
-from config.model_settings import CohortBuilderConfig, TimeSplitterConfig, EEConfig
+
+from config.model_settings import (CohortBuilderConfig, EEConfig,
+                                   TimeSplitterConfig)
 from setup_environment import get_dbengine
 from src.cohort_builder import CohortBuilder
-from src.time_splitter import TimeSplitter
 from src.features.satellite._ee_data import EEData
+from src.time_splitter import TimeSplitter
 
 
 class TimeSplitterFlow:

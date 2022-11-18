@@ -5,8 +5,9 @@ from itertools import chain
 from typing import Any, Dict
 
 import pandas as pd
-from config.model_settings import CohortBuilderConfig
 from joblib import Parallel, delayed
+
+from config.model_settings import CohortBuilderConfig
 from src.preprocess import Preprocess
 from src.utils.utils import query_results, write_to_db
 

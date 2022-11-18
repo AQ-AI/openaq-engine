@@ -1,11 +1,12 @@
 import logging
 import re
 import warnings
+from datetime import datetime, timezone
 
 import pandas as pd
-from datetime import datetime, timezone
 from shapely.errors import ShapelyDeprecationWarning
 from shapely.geometry import Point
+
 from config.model_settings import CohortBuilderConfig
 from src.preprocessing.filter import Filter
 
