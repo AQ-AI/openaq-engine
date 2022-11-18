@@ -39,7 +39,7 @@ class FeatureConfig:
 
 @dataclass
 class EEConfig:
-    DATE_COL: str = "date"
+    DATE_COL: str = "timestamp_utc"
     TABLE_NAME = "cohorts"
     LANDSAT_IMAGE_COLLECTION: str = "LANDSAT/LC08/C01/T1"
     LANDSAT_IMAGE_BAND: Sequence[str] = field(

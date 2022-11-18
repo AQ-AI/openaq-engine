@@ -17,6 +17,7 @@ awscli = "^1.27.2"
 pytest = "^7.2.0"
 shapely = "^1.8.5"
 earthengine-api = "^0.1.331"
+google-cloud-storage = "^2.6.0"
 
 [tool.poetry.dev-dependencies]
 black = "^22.10.0"
