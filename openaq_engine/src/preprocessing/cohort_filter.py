@@ -15,9 +15,7 @@ class Filter:
 
         return (
             df.assign(
-                null_values=(
-                    df.value.apply(lambda pm25_value: float(pm25_value) >= 0)
-                )
+                null_values=(df.value.apply(lambda pm25_value: float(pm25_value) >= 0))
             )
             .query("null_values == False")
             .drop(["null_values"], axis=1)
