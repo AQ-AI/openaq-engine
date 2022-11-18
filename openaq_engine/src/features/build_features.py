@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Type
 
 import pandas as pd
+
 from config.model_settings import FeatureConfig
 
 
@@ -57,6 +58,4 @@ def get_feature_builder(algorithm: str) -> Type[BuildFeatureBase]:
         return BuildFeaturesRandomForest
 
     else:
-        raise ValueError(
-            "The algorithm provided has no registered feature builder!"
-        )
+        raise ValueError("The algorithm provided has no registered feature builder!")
