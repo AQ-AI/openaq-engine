@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Type
 
 import pandas as pd
-from revenue_prediction_model.config.model_settings import feature_config
+from config.model_settings import FeatureConfig
 
 
 class BuildFeatureBase(ABC):
@@ -14,7 +14,7 @@ class BuildFeatureBase(ABC):
         ...
 
 
-class BuildFeatures(BuildFeatureBase):
+class BuildFeaturesRandomForest(BuildFeatureBase):
     def __init__(
         self,
         target_col: str,
@@ -24,7 +24,7 @@ class BuildFeatures(BuildFeatureBase):
         super().__init__(target_col)
         self.categorical_features = categorical_features
         self._all_model_features = (
-            all_model_features or feature_config.ALL_MODEL_FEATURES
+            all_model_features or FeatureConfig.ALL_MODEL_FEATURES
         )
 
     def build(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -57,4 +57,6 @@ def get_feature_builder(algorithm: str) -> Type[BuildFeatureBase]:
         return BuildFeaturesRandomForest
 
     else:
-        raise ValueError("The algorithm provided has no registered feature builder!")
+        raise ValueError(
+            "The algorithm provided has no registered feature builder!"
+        )
