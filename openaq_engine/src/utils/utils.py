@@ -6,6 +6,7 @@ import boto3
 import numpy as np
 import pandas as pd
 from pydantic.json import pydantic_encoder
+
 from setup_environment import connect_to_db
 
 

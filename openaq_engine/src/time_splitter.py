@@ -4,8 +4,9 @@ from datetime import datetime
 from typing import Any, Dict, List
 
 import pandas as pd
-from config.model_settings import TimeSplitterConfig
 from dateutil.relativedelta import relativedelta
+
+from config.model_settings import TimeSplitterConfig
 from src.utils.utils import query_results
 
 logging.basicConfig(level=logging.INFO)
