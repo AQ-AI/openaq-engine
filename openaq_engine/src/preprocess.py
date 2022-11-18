@@ -59,7 +59,7 @@ class Preprocess:
         """
         return (
             input_df.pipe(self.filter_data)
-            .pipe(self.extract_timestamp)
+            .pipe(self.get_timestamps)
             .pipe(self.extract_coordinates)
         )
 
@@ -106,29 +106,31 @@ class Preprocess:
             )
         return df
 
-    def extract_timestamp(self, df: pd.DataFrame) -> pd.DataFrame:
+    def get_timestamps(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Extract timezone into "utc" and "local" timezone columns.
         """
         logging.info("Extracting datetime")
-        row["timestamp_utc"] = datetime.fromisoformat(
-            float(
-                re.search("(?<=latitude=)(.*)(?=,)", row["coordinates"]).group(0)[:-1]
+        return df.apply(lambda row: self._extract_timestamp(row), axis=1)
+
+    def _extract_timestamp(self, row: pd.Series) -> pd.Series:
+        """
+        Extract timezone into "utc" and "local" timezone columns.
+        """
+        row["timestamp_utc"] = (
+            datetime.fromisoformat(
+                re.search("(?<=utc=)(.*)(?=,)", row["date"]).group(0)[:-1]
             )
             .astimezone(timezone.utc)
-            .strftime("%Y-%m-%d %H:%M:%S")
+            .strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         )
-        row["timestamp_local"] = datetime.fromisoformat(
-            float(
-                re.search("(?<=longitude=)(.*)(?=})", row["coordinates"]).group(0)[:-1]
+        row["timestamp_local"] = (
+            datetime.fromisoformat(
+                re.search("(?<=local=)(.*)(?=})", row["date"]).group(0),
             )
             .astimezone(timezone.utc)
-            .strftime("%Y-%m-%d %H:%M:%S")
+            .strftime("%Y-%m-%dT%H:%M:%S%z")
         )
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
-            row["pnt"] = Point(row["x"], row["y"])
-            return row
 
     def extract_coordinates(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -143,13 +145,18 @@ class Preprocess:
         if not all(df.point_is_valid):
             num_invalid_pnts = len(df[~df.point_is_valid])
             logging.info(
-                f"There were {num_invalid_pnts} rows with invalid points and were filtered out"
+                f"There were {num_invalid_pnts} rows with invalid points and"
+                " were filtered out"
             )
 
         df_valid = df[df.point_is_valid]
         return df_valid.drop(["pnt", "point_is_valid"], axis=1)
 
     def _extract_lat_lng(self, row):
+        print(row)
+        print(
+            re.search("(?<=latitude=)(.*)(?=,)", row["coordinates"]).group(0)
+        )
         row["y"] = float(
             re.search("(?<=latitude=)(.*)(?=,)", row["coordinates"]).group(0)
         )
@@ -157,6 +164,8 @@ class Preprocess:
             re.search("(?<=longitude=)(.*)(?=})", row["coordinates"]).group(0)
         )
         with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
+            warnings.filterwarnings(
+                "ignore", category=ShapelyDeprecationWarning
+            )
             row["pnt"] = Point(row["x"], row["y"])
             return row
