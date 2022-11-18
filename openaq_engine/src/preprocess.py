@@ -161,9 +161,7 @@ class Preprocess:
 
     def _extract_lat_lng(self, row: pd.Series) -> pd.Series:
         print(row)
-        print(
-            re.search("(?<=latitude=)(.*)(?=,)", row["coordinates"]).group(0)
-        )
+        print(re.search("(?<=latitude=)(.*)(?=,)", row["coordinates"]).group(0))
         row["y"] = float(
             re.search("(?<=latitude=)(.*)(?=,)", row["coordinates"]).group(0)
         )
@@ -171,8 +169,6 @@ class Preprocess:
             re.search("(?<=longitude=)(.*)(?=})", row["coordinates"]).group(0)
         )
         with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", category=ShapelyDeprecationWarning
-            )
+            warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
             row["pnt"] = Point(row["x"], row["y"])
             return row
