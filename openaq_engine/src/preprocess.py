@@ -61,6 +61,7 @@ class Preprocess:
             input_df.pipe(self.filter_data)
             .pipe(self.get_timestamps)
             .pipe(self.extract_coordinates)
+            .pipe(self.validate_point)
         )
 
     def filter_data(self, df: pd.DataFrame):
@@ -111,7 +112,8 @@ class Preprocess:
         Extract timezone into "utc" and "local" timezone columns.
         """
         logging.info("Extracting datetime")
-        return df.apply(lambda row: self._extract_timestamp(row), axis=1)
+        df = df.apply(lambda row: self._extract_timestamp(row), axis=1)
+        return df
 
     def _extract_timestamp(self, row: pd.Series) -> pd.Series:
         """
@@ -131,6 +133,7 @@ class Preprocess:
             .astimezone(timezone.utc)
             .strftime("%Y-%m-%dT%H:%M:%S%z")
         )
+        return row
 
     def extract_coordinates(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -139,7 +142,11 @@ class Preprocess:
         """
         logging.info("Extracting coordinates")
         # Filter out any invalid points
-        df = df.apply(lambda row: self._extract_lat_lng(row), axis=1)
+        print(df)
+        return df.apply(lambda row: self._extract_lat_lng(row), axis=1)
+
+    def validate_point(self, df: pd.DataFrame) -> pd.DataFrame:
+        """filters invalid geometries"""
         df["point_is_valid"] = df.pnt.apply(lambda x: x.wkt != "POINT EMPTY")
 
         if not all(df.point_is_valid):
@@ -152,7 +159,7 @@ class Preprocess:
         df_valid = df[df.point_is_valid]
         return df_valid.drop(["pnt", "point_is_valid"], axis=1)
 
-    def _extract_lat_lng(self, row):
+    def _extract_lat_lng(self, row: pd.Series) -> pd.Series:
         print(row)
         print(
             re.search("(?<=latitude=)(.*)(?=,)", row["coordinates"]).group(0)
