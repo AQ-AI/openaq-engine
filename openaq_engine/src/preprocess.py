@@ -83,13 +83,13 @@ class Preprocess:
                 filtering no coordinates {len(df)}"""
             )
         if self.filter_extreme_values:
-            df = df.pipe(Filter.filter_extreme_pollution_values)
+            df = df.pipe(Filter.filter_extreme_values)
             logging.info(
                 f"""Total number of pollutant values left after
                 filtering extreme values {len(df)}"""
             )
         if self.filter_non_null_values:
-            df = df.pipe(Filter.filter_non_null_pm25_values)
+            df = df.pipe(Filter.filter_non_null_values)
             logging.info(
                 f"""Total number of pollutant values left after
                 filtering non-null values : {len(df)}"""
@@ -143,7 +143,6 @@ class Preprocess:
         """
         logging.info("Extracting coordinates")
         # Filter out any invalid points
-        print(df)
         return df.apply(lambda row: self._extract_lat_lng(row), axis=1)
 
     def validate_point(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -161,8 +160,7 @@ class Preprocess:
         return df_valid.drop(["pnt", "point_is_valid"], axis=1)
 
     def _extract_lat_lng(self, row: pd.Series) -> pd.Series:
-        print(row)
-        print(re.search("(?<=latitude=)(.*)(?=,)", row["coordinates"]).group(0))
+        """Regex extraction of"""
         row["y"] = float(
             re.search("(?<=latitude=)(.*)(?=,)", row["coordinates"]).group(0)
         )
@@ -170,6 +168,8 @@ class Preprocess:
             re.search("(?<=longitude=)(.*)(?=})", row["coordinates"]).group(0)
         )
         with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
+            warnings.filterwarnings(
+                "ignore", category=ShapelyDeprecationWarning
+            )
             row["pnt"] = Point(row["x"], row["y"])
             return row
