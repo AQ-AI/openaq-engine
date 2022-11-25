@@ -25,3 +25,6 @@ jobs:
       - name: Analysing the code with flake8
         run: |
           poetry run flake8 $(git ls-files '*.py') --ignore=E501,W503
+      - name: Testing
+        run: |
+          pytest --cov --cov-fail-under=0 openaq_engine/
