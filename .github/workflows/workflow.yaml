@@ -25,6 +25,3 @@ jobs:
       - name: Analysing the code with flake8
         run: |
           poetry run flake8 $(git ls-files '*.py') --ignore=E501,W503
-      - name: Testing
-        run: |
-          poetry run pytest

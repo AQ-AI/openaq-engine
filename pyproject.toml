@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openaq-engine"
-version = "0.0.0"
+version = "0.1.0"
 description = ""
 authors = ["ChristinaLast <christina.last@outlook.com>"]
 
@@ -36,7 +36,7 @@ version_variable = [
     "openaq_engine/__init__.py:__version__",
     "pyproject.toml:version"
 ]
-branch = "develop"
-upload_to_pypi = false
+branch = "master"
+upload_to_pypi = true
 upload_to_release = true
 build_command = "pip install poetry && poetry build"
