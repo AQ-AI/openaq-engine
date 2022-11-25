@@ -46,6 +46,7 @@ class EEFeatures:
 
     def execute(self, df, save_images):
         ee.Authenticate()
+        ee.Initialize()
         # end_date, start_date = self._generate_timerange()
         satellite_df = pd.concat(
             Parallel(n_jobs=-1, backend="multiprocessing", verbose=5)(
@@ -229,6 +230,24 @@ class EEFeatures:
             filtered_image_collection = image_collection.filterDate(
                 day_of_interest, day_of_interest.advance(period, "day")
             )
+            info = filtered_image_collection.getRegion(
+                centroid_point, resolution
+            ).getInfo()
+            return info
+        except (EEException, HttpError):
+            # logging.warning(
+            #     f"""Centroid location and date does not
+            #     match any existing ee.Image."""
+            # )
+            pass
+
+    def _get_value_from_static_collection(
+        self, image_collection, day_of_interest, centroid_point, resolution
+    ):
+        try:
+            filtered_image_collection = image_collection.filterDate(
+                "2000-01-01", day_of_interest
+            ).get_first()
             info = filtered_image_collection.getRegion(
                 centroid_point, resolution
             ).getInfo()
