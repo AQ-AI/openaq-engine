@@ -99,6 +99,9 @@ git clone git@github.com:AQ-AI/openaq-engine.git
 ```
 
 ### Create Postgres User and database;
+```
+psql -U postgres
+```
 #### This only needs to be done once, skip ahead to Login
 
 ```
@@ -156,7 +159,10 @@ poetry install
 ```
 export $(grep -v '^#' .env | xargs -d '\n')
 ```
-## 
+## Earth engine signup
+Please signup for Google Earth engine to rtreve satellite imagery, visit https://signup.earthengine.google.com/.
+
+I
 ## Setting up with Docker
 
 ### Adding aws ssh keypair to github repos 
