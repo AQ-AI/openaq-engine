@@ -12,12 +12,12 @@ from config.model_settings import EEConfig
 from src.utils.utils import get_data, ee_array_to_df
 
 
-class EEVariableFeatures:
+class EEFeatures:
     def __init__(
         self,
         date_col: int,
         table_name: int,
-        all_satellites: zip(List[str], List[str]),
+        variable_satellites: zip(List[str]),
         bucket_name: str,
         path_to_private_key: str,
         service_account: str,
@@ -25,7 +25,7 @@ class EEVariableFeatures:
 
         self.date_col = date_col
         self.table_name = table_name
-        self.all_satellites = all_satellites
+        self.variable_satellites = variable_satellites
         self.bucket_name = bucket_name
         self.path_to_private_key = path_to_private_key
         self.service_account = service_account
@@ -54,7 +54,57 @@ class EEVariableFeatures:
 
         print(features_df)
 
-    def execute_for_collection(
+    def execute_for_location(self, lon, lat, day, save_images):
+        """
+        Input
+        ----
+        Takes the name of a satellite image collection and the bands
+        (fields) to extract data for, and for a given date range writes the
+        extracted satellite `.tiff` files to a google file structure.
+
+        Arguments:
+        ----
+        collection:
+            A str of satellite to query
+        lon:
+            the longitude of a  sensor location
+        lat:
+            the latitude of a sensor location
+        datetime:
+            the date the sensor reading was taken
+        """
+        df_list = []
+        for (
+            collection,
+            image_bands,
+            period,
+            resolution,
+        ) in self.variable_satellites:
+            image_collection = self.execute_for_variable_collection(
+                collection,
+                image_bands,
+                save_images,
+            )
+            day_of_interest = ee.Date(day)
+            centroid_point = ee.Geometry.Point(lon, lat)
+            satellite_value = self._get_value_from_collection(
+                image_collection,
+                day_of_interest,
+                centroid_point,
+                period,
+                resolution,
+            )
+            try:
+                ee_df = ee_array_to_df(satellite_value, image_bands)
+                ee_df["x"] = lon
+                ee_df["y"] = lat
+                ee_df["date"] = day
+                df_list.append(ee_df)
+            except IndexError:
+                pass
+        return pd.concat(df_list)
+
+    def execute_for_variable_collection(
         self,
         collection,
         image_bands,
@@ -108,58 +158,20 @@ class EEVariableFeatures:
             )
             pass
 
-    def execute_for_location(self, lon, lat, day, save_images):
-        """
-        Input
-        ----
-        Takes the name of a satellite image collection and the bands
-        (fields) to extract data for, and for a given date range writes the
-        extracted satellite `.tiff` files to a google file structure.
-
-        Arguments:
-        ----
-        collection:
-            A str of satellite to query
-        lon:
-            the longitude of a  sensor location
-        lat:
-            the latitude of a sensor location
-        datetime:
-            the date the sensor reading was taken
-        """
-        df_list = []
-        for collection, image_bands, period, resolution in self.all_satellites:
-            image_collection = self.execute_for_collection(
-                collection,
-                image_bands,
-                save_images,
-            )
-            day_of_interest = ee.Date(day)
-            centroid_point = ee.Geometry.Point(lon, lat)
-            satellite_value = self._get_value_from_collection(
-                image_collection,
-                day_of_interest,
-                centroid_point,
-                period,
-                resolution,
-            )
-            try:
-                ee_df = ee_array_to_df(satellite_value, image_bands)
-                ee_df["x"] = lon
-                ee_df["y"] = lat
-                ee_df["date"] = day
-                df_list.append(ee_df)
-            except IndexError:
-                pass
-        return pd.concat(df_list)
-
     def generate_features(self, satellite_df):
         features_df = (
             satellite_df.drop(
                 labels=["time", "datetime", "longitude", "latitude"], axis=1
             )
-            .groupby(["x", "y", "date"], as_index=False)
+            .groupby(
+                [
+                    "x",
+                    "y",
+                ],
+                as_index=False,
+            )
             .agg(["mean"])
+            .reset_index()
         )
 
         print(features_df)
