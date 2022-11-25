@@ -1,11 +1,10 @@
 name: Publish using semantic release
-# TODO: make it run only on merge to master
 # TODO: make sure the files are updated to allow for auto build & version to be dynamic
 on:
   push:
     branches:
-      - 'main'
-      - 'releases/**'
+      - "master"
+      - "releases/**"
 
 jobs:
   build:
