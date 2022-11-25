@@ -6,9 +6,9 @@ from datetime import datetime, timezone
 import pandas as pd
 from shapely.errors import ShapelyDeprecationWarning
 from shapely.geometry import Point
+from src.preprocessing.filter import Filter
 
 from config.model_settings import CohortBuilderConfig
-from src.preprocessing.filter import Filter
 
 
 class Preprocess:
@@ -168,8 +168,6 @@ class Preprocess:
             re.search("(?<=longitude=)(.*)(?=})", row["coordinates"]).group(0)
         )
         with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", category=ShapelyDeprecationWarning
-            )
+            warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
             row["pnt"] = Point(row["x"], row["y"])
             return row

@@ -1,14 +1,14 @@
 import click
-
-from config.model_settings import (
-    CohortBuilderConfig,
-    BuildFeaturesConfig,
-    TimeSplitterConfig,
-)
 from setup_environment import get_dbengine
 from src.cohort_builder import CohortBuilder
 from src.features.build_features import BuildFeaturesRandomForest
 from src.time_splitter import TimeSplitter
+
+from config.model_settings import (
+    BuildFeaturesConfig,
+    CohortBuilderConfig,
+    TimeSplitterConfig,
+)
 
 
 class TimeSplitterFlow:

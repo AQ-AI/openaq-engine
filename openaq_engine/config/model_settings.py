@@ -32,7 +32,7 @@ class BuildFeaturesConfig:
     @property
     def ALL_MODEL_FEATURES(self) -> List[str]:
         """Return all features to be fed into the model"""
-        return list(set((self.CORE_FEATURES + self.CATEGORICAL_FEATURES)))
+        return list(set(self.CORE_FEATURES + self.CATEGORICAL_FEATURES))
 
 
 @dataclass
@@ -41,10 +41,8 @@ class EEConfig:
     TABLE_NAME = "cohorts"
 
     AOD_IMAGE_COLLECTION: str = "MODIS/006/MCD19A2_GRANULES"
-    AOD_IMAGE_BAND: Sequence[str] = field(
-        default_factory=lambda: ["Optical_Depth_047"]
-    )
-    AOD_IMAGE_PERIOD = 1
+    AOD_IMAGE_BAND: Sequence[str] = field(default_factory=lambda: ["Optical_Depth_047"])
+    AOD_IMAGE_PERIOD = 2
     AOD_IMAGE_RES = 1000
     LANDSAT_IMAGE_COLLECTION: str = "LANDSAT/LC08/C01/T1"
     LANDSAT_IMAGE_BAND: Sequence[str] = field(
@@ -78,9 +76,7 @@ class EEConfig:
         default_factory=lambda: ["basic_demographic_characteristics"]
     )
     POPULATION_IMAGE_RES = 1000
-    LAND_COVER_IMAGE_COLLECTION: str = (
-        "COPERNICUS/Landcover/100m/Proba-V-C3/Global"
-    )
+    LAND_COVER_IMAGE_COLLECTION: str = "COPERNICUS/Landcover/100m/Proba-V-C3/Global"
     LAND_COVER_IMAGE_BAND: Sequence[str] = field(
         default_factory=lambda: ["discrete_classification"]
     )
@@ -90,8 +86,8 @@ class EEConfig:
     SERVICE_ACCOUNT = "earth-engine@unicef-367711.iam.gserviceaccount.com"
 
     @property
-    def ALL_SATELITTES(self) -> zip(List[str], List[str]):
-        """Return all features to be fed into the model"""
+    def VARIABLE_SATELLITES(self) -> zip(List[str], List[str]):
+        """Return varying satellites to be fed into the model"""
         return zip(
             [
                 self.AOD_IMAGE_COLLECTION,
@@ -119,6 +115,7 @@ class EEConfig:
             ],
         )
 
+    @property
     def STATIC_SATELLITES(self) -> zip(List[str], List[str]):
         return zip(
             [
@@ -129,14 +126,16 @@ class EEConfig:
                 self.POPULATION_IMAGE_BAND,
                 self.LAND_COVER_IMAGE_BAND,
             ],
+            [
+                self.POPULATION_IMAGE_RES,
+                self.LAND_COVER_IMAGE_RES,
+            ],
         )
 
 
 @dataclass
 class CohortBuilderConfig:
-    ENTITY_ID_COLS: Sequence[str] = field(
-        default_factory=lambda: ["unique_id"]
-    )
+    ENTITY_ID_COLS: Sequence[str] = field(default_factory=lambda: ["unique_id"])
     DATE_COL: str = "date.utc"
     REGION = "us-east-1"
     TABLE_NAME = "openaq"

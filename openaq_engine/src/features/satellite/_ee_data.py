@@ -2,14 +2,14 @@ import logging
 from typing import List, Tuple
 
 import ee
-from ee.ee_exception import EEException
-from googleapiclient.errors import HttpError
-from geetools import batch
 import pandas as pd
+from ee.ee_exception import EEException
+from geetools import batch
+from googleapiclient.errors import HttpError
 from joblib import Parallel, delayed
+from src.utils.utils import ee_array_to_df, get_data
 
 from config.model_settings import EEConfig
-from src.utils.utils import get_data, ee_array_to_df
 
 
 class EEFeatures:
@@ -18,6 +18,7 @@ class EEFeatures:
         date_col: int,
         table_name: int,
         variable_satellites: zip(List[str]),
+        static_satellites: zip(List[str]),
         bucket_name: str,
         path_to_private_key: str,
         service_account: str,
@@ -26,16 +27,18 @@ class EEFeatures:
         self.date_col = date_col
         self.table_name = table_name
         self.variable_satellites = variable_satellites
+        self.static_satellites = static_satellites
         self.bucket_name = bucket_name
         self.path_to_private_key = path_to_private_key
         self.service_account = service_account
 
     @classmethod
-    def from_dataclass_config(cls, config: EEConfig) -> "EEData":
+    def from_dataclass_config(cls, config: EEConfig) -> "EEFeatures":
         return cls(
             date_col=config.DATE_COL,
             table_name=config.TABLE_NAME,
-            all_satellites=config.ALL_SATELITTES,
+            variable_satellites=config.VARIABLE_SATELLITES,
+            static_satellites=config.STATIC_SATELLITES,
             bucket_name=config.BUCKET_NAME,
             path_to_private_key=config.PATH_TO_PRIVATE_KEY,
             service_account=config.SERVICE_ACCOUNT,
@@ -74,20 +77,21 @@ class EEFeatures:
             the date the sensor reading was taken
         """
         df_list = []
+
+        day_of_interest = ee.Date(day)
+        centroid_point = ee.Geometry.Point(lon, lat)
         for (
             collection,
             image_bands,
             period,
             resolution,
         ) in self.variable_satellites:
-            image_collection = self.execute_for_variable_collection(
+            image_collection = self.execute_for_collection(
                 collection,
                 image_bands,
                 save_images,
             )
-            day_of_interest = ee.Date(day)
-            centroid_point = ee.Geometry.Point(lon, lat)
-            satellite_value = self._get_value_from_collection(
+            satellite_value = self._get_value_from_variable_collection(
                 image_collection,
                 day_of_interest,
                 centroid_point,
@@ -102,9 +106,33 @@ class EEFeatures:
                 df_list.append(ee_df)
             except IndexError:
                 pass
+        for (
+            collection,
+            image_bands,
+            resolution,
+        ) in self.static_satellites:
+            image_collection = self.execute_for_collection(
+                collection,
+                image_bands,
+                save_images,
+            )
+            satellite_value = self._get_value_from_static_collection(
+                image_collection,
+                day_of_interest,
+                centroid_point,
+                resolution,
+            )
+            try:
+                ee_df = ee_array_to_df(satellite_value, image_bands)
+                ee_df["x"] = lon
+                ee_df["y"] = lat
+                ee_df["date"] = day
+                df_list.append(ee_df)
+            except IndexError:
+                pass
         return pd.concat(df_list)
 
-    def execute_for_variable_collection(
+    def execute_for_collection(
         self,
         collection,
         image_bands,
@@ -135,9 +163,7 @@ class EEFeatures:
         try:
             logging.info(f"Downloading: {collection}")
 
-            image_collection = ee.ImageCollection(collection).select(
-                image_bands
-            )
+            image_collection = ee.ImageCollection(collection).select(image_bands)
 
             if save_images is True:
                 down_args = {
@@ -191,7 +217,7 @@ class EEFeatures:
         start_date = str(get_data(start_date_query)["datetime"][0])
         return end_date, start_date
 
-    def _get_value_from_collection(
+    def _get_value_from_variable_collection(
         self,
         image_collection,
         day_of_interest,
