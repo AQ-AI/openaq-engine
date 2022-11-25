@@ -118,3 +118,6 @@ venv.bak/
 
 # vscode
 .vscode/
+
+# Data
+local_data/*
