@@ -160,7 +160,7 @@ class Preprocess:
         return df_valid.drop(["pnt", "point_is_valid"], axis=1)
 
     def _extract_lat_lng(self, row: pd.Series) -> pd.Series:
-        """Regex extraction of"""
+        """Regex extraction of latitude and longtitude from string"""
         row["y"] = float(
             re.search("(?<=latitude=)(.*)(?=,)", row["coordinates"]).group(0)
         )
