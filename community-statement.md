@@ -25,23 +25,14 @@ Our interdisciplinary work gives you ample opportunity to contribute. We look fo
 **Youth-led** community to help us evaluate their local surrounding by augmenting data and demography to understand how air quality is affecting them.
 
 <p align="center"> <b>If you breathe, you already need to be part of a cleaner air ecosystem.</b> <p>
- 
 
 
-## Vision Statement 
 
-Ensuring and informing the right to cleaner & better for all air quality with open data 
+## Vision Statement
+
+Ensuring and informing the right to cleaner & better for all air quality with open data
 
 
 ## Mission Statement
 
 We aim to deliver the world's first open-source model measuring air pollution exposure anywhere in the world so that people can make informed decisions.
-
-
-
-
-
-
-
-
-
