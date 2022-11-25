@@ -3,7 +3,9 @@ from typing import Any, Dict, List, Optional, Type
 
 import pandas as pd
 
-from config.model_settings import FeatureConfig
+from config.model_settings import BuildFeaturesConfig, EEConfig
+from src.features.satellite._ee_data import EEFeatures
+from src.utils.utils import get_data
 
 
 class BuildFeatureBase(ABC):
@@ -11,27 +13,40 @@ class BuildFeatureBase(ABC):
         self.target_col = target_col
 
     @abstractmethod
-    def build(self, *args: Any) -> pd.DataFrame:
+    def execute(self, *args: Any) -> pd.DataFrame:
         ...
 
 
 class BuildFeaturesRandomForest(BuildFeatureBase):
     def __init__(
         self,
-        target_col: str,
         categorical_features: Dict[str, List[Any]],
-        all_model_features: Optional[List[str]] = None,
-    ):
-        super().__init__(target_col)
+        all_model_features: Optional[List[str]],
+    ) -> None:
         self.categorical_features = categorical_features
-        self._all_model_features = (
-            all_model_features or FeatureConfig.ALL_MODEL_FEATURES
+        self._all_model_features = all_model_features
+        super().__init__(BuildFeaturesConfig.TARGET_COL)
+
+    @classmethod
+    def from_dataclass_config(
+        cls, config: BuildFeaturesConfig
+    ) -> "BuildFeaturesRandomForest":
+        return cls(
+            categorical_features=config.CATEGORICAL_FEATURES,
+            all_model_features=config.ALL_MODEL_FEATURES,
         )
 
-    def build(self, df: pd.DataFrame) -> pd.DataFrame:
-        return df.pipe(self._add_year).pipe(self._change_to_categorical_type)[
-            self.all_model_features
-        ]
+    def execute(
+        self,
+        df: pd.DataFrame,
+    ) -> pd.DataFrame:
+        cohort_query = """select * from "cohorts";"""
+        df = get_data(cohort_query)
+        return (
+            df.pipe(self._add_ee_variable_features)
+            .pipe(self._add_ee_static_features)
+            .pipe(self._change_to_categorical_type)[self.all_model_features]
+        )
 
     @property
     def all_model_features(self):
@@ -42,6 +57,11 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
         if not all(type(feat) == str for feat in features):
             raise ValueError("All the feature names should be strings!")
         self._all_model_features = features
+
+    def _add_ee_variable_features(self, df):
+        return EEFeatures.from_dataclass_config(EEConfig()).execute(
+            df, save_images=False
+        )
 
     def _add_year(self, df: pd.DataFrame) -> pd.DataFrame:
         return df.assign(year=lambda df: pd.to_datetime(df.listed_at).dt.year)
@@ -58,4 +78,6 @@ def get_feature_builder(algorithm: str) -> Type[BuildFeatureBase]:
         return BuildFeaturesRandomForest
 
     else:
-        raise ValueError("The algorithm provided has no registered feature builder!")
+        raise ValueError(
+            "The algorithm provided has no registered feature builder!"
+        )
