@@ -1,5 +1,5 @@
 ### Connecting to EC2
-Generate a key pair and download the certficiate onto your local machine. 
+Generate a key pair and download the certficiate onto your local machine.
 Using the path to where you downloaded the certificate, connect to the server:
 ```
 ssh -i "{path/to/your/keypair.cer}" ec2-44-208-167-138.compute-1.amazonaws.com
@@ -11,7 +11,7 @@ Complete the environmental variables needed in `.env.sample` and move to `.env`
 run the following command:
 
 ### Configuring AWS CLI
-run the command 
+run the command
 
 ```
 aws configure
@@ -19,7 +19,7 @@ aws configure
 and interactualy populate the values as required:
 
 ### Configuring AWS CLI
-run the command 
+run the command
 
 ```
 aws configure
@@ -117,7 +117,7 @@ sudo systemctl restart postgresql-12.service
 ```
 ### Login
 ```
-psql -U openaq -d openaq_db -h localhost -W 
+psql -U openaq -d openaq_db -h localhost -W
 ```
 ### Setting up pyenv
 ```
@@ -136,9 +136,12 @@ eval "$(pyenv init -)"' >> ~/.bash_profile
 ```
 source ~/.bash_profile
 ```
-#### Install poetry via curl
-curl -sSL https://install.python-poetry.org | python3 -
+# Install dependenies
 
+#### Install poetry via curl
+```
+curl -sSL https://install.python-poetry.org | python3 -
+```
 ### Add poetry to your shell
 ```
 export PATH="$HOME/.poetry/bin:$PATH"
@@ -155,17 +158,23 @@ poetry config virtualenvs.in-project true
 ```
 poetry install
 ```
-## Exporting environment variables
+## `pre-commit` hooks
+We use `pre-commit` to check the formatting of our commits.
 ```
-export $(grep -v '^#' .env | xargs -d '\n')
+pre-commit install
 ```
-## Earth engine signup
+Test the pre-commit works:
+```
+pre-commit run --all-files
+```
+
+# Earth engine signup
 Please signup for Google Earth engine to rtreve satellite imagery, visit https://signup.earthengine.google.com/.
 
 I
 ## Setting up with Docker
 
-### Adding aws ssh keypair to github repos 
+### Adding aws ssh keypair to github repos
 
 On your local machine, generate a ssh keypair using the following command:
 
@@ -193,7 +202,7 @@ Then copy
 $ cat ~/.ssh/id_rsa.pub   # copy to clipboard
 ```
 
-Add this key to your settings on [github](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account) 
+Add this key to your settings on [github](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account)
 
 
 ### Add user to docker group
@@ -208,8 +217,8 @@ sudo usermod -aG docker $USER
 docker build openaq-engine -t openaq_engine_app --build-arg ssh_prv_key="$(cat ~/.ssh/id_rsa)" --build-arg ssh_pub_key="$(cat ~/.ssh/id_rsa.pub)"
 ```
 
-### Executing docker 
-To enter the docker development environment run the following 
+### Executing docker
+To enter the docker development environment run the following
 
 ```
 docker exec -it {name_of_your_docker_container} bash
