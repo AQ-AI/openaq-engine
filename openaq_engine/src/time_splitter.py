@@ -5,9 +5,9 @@ from typing import Any, Dict, List
 
 import pandas as pd
 from dateutil.relativedelta import relativedelta
+from src.utils.utils import query_results
 
 from config.model_settings import TimeSplitterConfig
-from src.utils.utils import query_results
 
 logging.basicConfig(level=logging.INFO)
 

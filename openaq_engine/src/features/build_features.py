@@ -2,10 +2,10 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Type
 
 import pandas as pd
-
-from config.model_settings import BuildFeaturesConfig, EEConfig
 from src.features.satellite._ee_data import EEFeatures
 from src.utils.utils import get_data
+
+from config.model_settings import BuildFeaturesConfig, EEConfig
 
 
 class BuildFeatureBase(ABC):
@@ -78,6 +78,4 @@ def get_feature_builder(algorithm: str) -> Type[BuildFeatureBase]:
         return BuildFeaturesRandomForest
 
     else:
-        raise ValueError(
-            "The algorithm provided has no registered feature builder!"
-        )
+        raise ValueError("The algorithm provided has no registered feature builder!")
