@@ -30,8 +30,7 @@ Our interdisciplinary work gives you ample opportunity to contribute. We look fo
 
 ## Vision Statement
 
-Ensuring and informing the right to cleaner & better for all air quality with open data
-
+Ensuring and informing about the right to cleaner & better air quality with open data for all.
 
 ## Mission Statement
 
