@@ -127,7 +127,7 @@ Export `pyenv` variables
 Add pyenv initializer to shell startup script.
 
 ```
-echo -e 'export PYENV_ROOT="$HOME/.pyenv"
+echo -e 'export PYENV_ROOT="$HOME/.pyenv" '
 export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init --path)"
 eval "$(pyenv init -)"' >> ~/.bash_profile
