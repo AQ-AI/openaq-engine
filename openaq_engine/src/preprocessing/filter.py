@@ -6,7 +6,6 @@ import pandas as pd
 class Filter:
     @staticmethod
     def filter_pollutant(df: pd.DataFrame, pollutant_to_predict: str) -> pd.DataFrame:
-
         """
         Filter for rows selected pollutant
 
@@ -30,7 +29,6 @@ class Filter:
 
     @staticmethod
     def filter_no_coordinates(df: pd.DataFrame) -> pd.DataFrame:
-
         """
         Filter for rows selected pollutant
 
@@ -48,7 +46,7 @@ class Filter:
         )
 
     @staticmethod
-    def filter_non_null_pm25_values(df: pd.DataFrame) -> pd.DataFrame:
+    def filter_non_null_values(df: pd.DataFrame) -> pd.DataFrame:
         """
         Filter out rows which are non null
 
@@ -69,7 +67,7 @@ class Filter:
         )
 
     @staticmethod
-    def filter_extreme_pollution_values(df: pd.DataFrame) -> pd.DataFrame:
+    def filter_extreme_values(df: pd.DataFrame) -> pd.DataFrame:
         """
         Filter out rows which contain extremely high pm25 values
 

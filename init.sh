@@ -1,6 +1,6 @@
 FROM ubuntu:20.04
 
-RUN DEBIAN_FRONTEND="noninteractive" TZ="America/New_York" 
+RUN DEBIAN_FRONTEND="noninteractive" TZ="America/New_York"
 
 RUN apt-get update && apt-get install -y python3.10 python3-pip curl
 
@@ -25,7 +25,7 @@ ENV PATH "$PATH:/root/.local/bin/"
 COPY pyproject.toml* ./
 COPY poetry.lock* ./
 RUN poetry init --no-interaction; (exit 0) # Does nothing if pyproject.toml exists
-RUN poetry install 
+RUN poetry install
 
 # Provide a known path for the virtual environment by creating a symlink
 RUN ln -s $(poetry env info --path) /var/my-venv
@@ -41,5 +41,3 @@ RUN echo 'source /var/my-venv/bin/activate' >> ~/.bashrc
 
 # AWS configure
 aws configure --profile $AWS_USER
- 
-aws sns subscribe --topic-arn arn:aws:sns:us-east-1:470049585876:NewFetchObject --protocol lambda --notification-endpoint arn:aws:lambda:us-east-1:399143675412:function:openaq-realtime-function  --profile $AWS_USER

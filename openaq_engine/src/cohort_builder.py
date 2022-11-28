@@ -5,10 +5,11 @@ from itertools import chain
 from typing import Any, Dict
 
 import pandas as pd
-from config.model_settings import CohortBuilderConfig
 from joblib import Parallel, delayed
 from src.preprocess import Preprocess
 from src.utils.utils import query_results, write_to_db
+
+from config.model_settings import CohortBuilderConfig
 
 
 class CohortBuilderBase(ABC):
@@ -108,7 +109,7 @@ class CohortBuilder(CohortBuilderBase):
                 FROM {table}
                 WHERE {date_col}
                 BETWEEN '{start_date}'
-                AND '{end_date}' LIMIT 100;""".format(
+                AND '{end_date}';""".format(
                 table=self.table_name,
                 date_col=self.date_col,
                 start_date=date_tuple[0],
