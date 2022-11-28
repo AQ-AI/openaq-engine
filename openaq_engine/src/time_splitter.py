@@ -4,9 +4,10 @@ from datetime import datetime
 from typing import Any, Dict, List
 
 import pandas as pd
-from config.model_settings import TimeSplitterConfig
 from dateutil.relativedelta import relativedelta
 from src.utils.utils import query_results
+
+from config.model_settings import TimeSplitterConfig
 
 logging.basicConfig(level=logging.INFO)
 
