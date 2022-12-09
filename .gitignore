@@ -121,3 +121,6 @@ venv.bak/
 
 # Data
 local_data/*
+
+## Notebooks
+openaq_engine/scripts/plume_labs.ipynb
