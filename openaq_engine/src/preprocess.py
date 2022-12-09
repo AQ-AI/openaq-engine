@@ -1,12 +1,14 @@
 import logging
 import re
 import warnings
+from datetime import datetime, timezone
 
 import pandas as pd
-from config.model_settings import CohortBuilderConfig
 from shapely.errors import ShapelyDeprecationWarning
 from shapely.geometry import Point
 from src.preprocessing.filter import Filter
+
+from config.model_settings import CohortBuilderConfig
 
 
 class Preprocess:
@@ -58,8 +60,9 @@ class Preprocess:
         """
         return (
             input_df.pipe(self.filter_data)
-            # .pipe(self.shift_columns)
+            .pipe(self.get_timestamps)
             .pipe(self.extract_coordinates)
+            .pipe(self.validate_point)
         )
 
     def filter_data(self, df: pd.DataFrame):
@@ -80,13 +83,13 @@ class Preprocess:
                 filtering no coordinates {len(df)}"""
             )
         if self.filter_extreme_values:
-            df = df.pipe(Filter.filter_extreme_pollution_values)
+            df = df.pipe(Filter.filter_extreme_values)
             logging.info(
                 f"""Total number of pollutant values left after
                 filtering extreme values {len(df)}"""
             )
         if self.filter_non_null_values:
-            df = df.pipe(Filter.filter_non_null_pm25_values)
+            df = df.pipe(Filter.filter_non_null_values)
             logging.info(
                 f"""Total number of pollutant values left after
                 filtering non-null values : {len(df)}"""
@@ -105,6 +108,34 @@ class Preprocess:
             )
         return df
 
+    def get_timestamps(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Extract timezone into "utc" and "local" timezone columns.
+        """
+        logging.info("Extracting datetime")
+        df = df.apply(lambda row: self._extract_timestamp(row), axis=1)
+        return df
+
+    def _extract_timestamp(self, row: pd.Series) -> pd.Series:
+        """
+        Extract timezone into "utc" and "local" timezone columns.
+        """
+        row["timestamp_utc"] = (
+            datetime.fromisoformat(
+                re.search("(?<=utc=)(.*)(?=,)", row["date"]).group(0)[:-1]
+            )
+            .astimezone(timezone.utc)
+            .strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        )
+        row["timestamp_local"] = (
+            datetime.fromisoformat(
+                re.search("(?<=local=)(.*)(?=})", row["date"]).group(0),
+            )
+            .astimezone(timezone.utc)
+            .strftime("%Y-%m-%dT%H:%M:%S%z")
+        )
+        return row
+
     def extract_coordinates(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Extract coordinates into 'x' and 'y' columns from point objects in 'pnt'.
@@ -112,19 +143,24 @@ class Preprocess:
         """
         logging.info("Extracting coordinates")
         # Filter out any invalid points
-        df = df.apply(lambda row: self._extract_lat_lng(row), axis=1)
+        return df.apply(lambda row: self._extract_lat_lng(row), axis=1)
+
+    def validate_point(self, df: pd.DataFrame) -> pd.DataFrame:
+        """filters invalid geometries"""
         df["point_is_valid"] = df.pnt.apply(lambda x: x.wkt != "POINT EMPTY")
 
         if not all(df.point_is_valid):
             num_invalid_pnts = len(df[~df.point_is_valid])
             logging.info(
-                f"There were {num_invalid_pnts} rows with invalid points and were filtered out"
+                f"There were {num_invalid_pnts} rows with invalid points and"
+                " were filtered out"
             )
 
         df_valid = df[df.point_is_valid]
         return df_valid.drop(["pnt", "point_is_valid"], axis=1)
 
-    def _extract_lat_lng(self, row):
+    def _extract_lat_lng(self, row: pd.Series) -> pd.Series:
+        """Regex extraction of latitude and longtitude from string"""
         row["y"] = float(
             re.search("(?<=latitude=)(.*)(?=,)", row["coordinates"]).group(0)
         )
