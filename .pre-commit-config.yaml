@@ -36,7 +36,6 @@ repos:
   rev: 4.0.1
 - hooks:
   - id: commitizen
-    stages:
-    - commit-msg
+    stages: [commit-msg]
   repo: https://github.com/commitizen-tools/commitizen
   rev: master
