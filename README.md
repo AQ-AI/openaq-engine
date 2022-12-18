@@ -1,86 +1,3 @@
-### Connecting to EC2
-Generate a key pair and download the certficiate onto your local machine.
-Using the path to where you downloaded the certificate, connect to the server:
-```
-ssh -i "{path/to/your/keypair.cer}" ec2-44-208-167-138.compute-1.amazonaws.com
-```
-
-## Configure AWS
-You will need to have an `AWS_ACCESS_KEY` and `AWS_SECRET_ACCESS_KEY` generated, see this [getting started documentation](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-prereqs.html)
-Complete the environmental variables needed in `.env.sample` and move to `.env`
-run the following command:
-
-### Configuring AWS CLI
-run the command
-
-```
-aws configure
-```
-and interactualy populate the values as required:
-
-### Configuring AWS CLI
-run the command
-
-```
-aws configure
-```
-
-then you will be asked to interactively enter the following details:
-
-```
-AWS Access Key ID [None]: {AWS_ACCESS_KEY}
-AWS Secret Access Key [None]: {AWS_SECRET_ACCESS_KEY}
-Default region name [None]: {region} # e.g. us-east-1
-Default output format [None]: {format} # e.g. json
-```
-
-### Install the gloud
-```
-sudo tee -a /etc/yum.repos.d/google-cloud-sdk.repo << EOM
-[google-cloud-cli]
-name=Google Cloud CLI
-baseurl=https://packages.cloud.google.com/yum/repos/cloud-sdk-el8-x86_64
-enabled=1
-gpgcheck=1
-repo_gpgcheck=0
-gpgkey=https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
-EOM
-```
-```
-sudo yum install google-cloud-cli
-```
-
-### Adding new user
-Outside the instance run the following:
-```
-ssh-keygen -y -f /path_to_key_pair/key-pair-name.cer
-```
-Connect to the instance. When inside, run the following:
-```
-sudo adduser newuser
-```
-Switch to the new account so that the directory and file have the proper ownership:
-```
-sudo su - newuser
-```
-The prompt changes from `ec2-user` to newuser to indicate that you have switched the shell session to the new account.
-Create a `.ssh` directory in the newuser home directory and change its file permissions to `700` (only the owner can read, write, or open the directory).
-```
-mkdir .ssh
-chmod 700 .ssh
-```
-Create a file named authorized_keys in the `.ssh` directory and change its file permissions to 600 (only the owner can read or write to the file).
-
-```
-touch .ssh/authorized_keys
-chmod 600 .ssh/authorized_keys
-```
-
-Open the authorized_keys file using your favorite text editor (such as vim or nano).
-```
-vi .ssh/authorized_keys
-```
-Paste the public key that you retrieved in Step 2 into the file and save the changes.
 
 ### Connecting Github to the Ec2 Instance over ssh
 Run the following commands to generate your SSH keys on the EC2 instance
@@ -127,7 +44,7 @@ Export `pyenv` variables
 Add pyenv initializer to shell startup script.
 
 ```
-echo -e 'export PYENV_ROOT="$HOME/.pyenv"
+echo -e 'export PYENV_ROOT="$HOME/.pyenv" '
 export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init --path)"
 eval "$(pyenv init -)"' >> ~/.bash_profile
@@ -170,9 +87,6 @@ pre-commit run --all-files
 
 # Earth engine signup
 Please signup for Google Earth engine to rtreve satellite imagery, visit https://signup.earthengine.google.com/.
-
-I
-## Setting up with Docker
 
 ### Adding aws ssh keypair to github repos
 
