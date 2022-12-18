@@ -46,7 +46,6 @@ class EEFeatures:
 
     def execute(self, df, save_images):
         ee.Authenticate()
-        ee.Initialize()
         # end_date, start_date = self._generate_timerange()
         satellite_df = pd.concat(
             Parallel(n_jobs=-1, backend="multiprocessing", verbose=5)(
@@ -77,6 +76,8 @@ class EEFeatures:
         datetime:
             the date the sensor reading was taken
         """
+        ee.Initialize()
+
         df_list = []
 
         day_of_interest = ee.Date(day)
