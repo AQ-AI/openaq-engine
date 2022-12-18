@@ -6,36 +6,37 @@ default_stages:
 - commit
 exclude: ^docs/|/local_data/
 repos:
-- hooks:
-  - id: trailing-whitespace
-  - id: end-of-file-fixer
-  - id: check-yaml
-  repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.4.0
-- hooks:
-  - args:
-    - --py38-plus
-    id: pyupgrade
-  repo: https://github.com/asottile/pyupgrade
-  rev: v3.3.1
-- hooks:
-  - id: black
-  repo: https://github.com/psf/black
-  rev: 22.12.0
-- hooks:
-  - id: isort
-  repo: https://github.com/PyCQA/isort
-  rev: v5.11.3
-- hooks:
-  - additional_dependencies:
-    - flake8-isort
-    args:
-    - --config=setup.cfg
-    id: flake8
-  repo: https://github.com/PyCQA/flake8
-  rev: 6.0.0
-# - hooks:
-#   - id: commitizen
-#     stages: [commit-msg]
-#   repo: https://github.com/commitizen-tools/commitizen
-#   rev: v2.38.0
+  - hooks:
+    - id: trailing-whitespace
+    - id: end-of-file-fixer
+    - id: check-yaml
+    - id: detect-private-key
+    repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+  - hooks:
+    - args:
+      - --py38-plus
+      id: pyupgrade
+    repo: https://github.com/asottile/pyupgrade
+    rev: v3.3.1
+  - hooks:
+    - id: black
+      args: [--config=pyproject.toml]
+    repo: https://github.com/psf/black
+    rev: 22.12.0
+  - hooks:
+    - id: isort
+    repo: https://github.com/PyCQA/isort
+    rev: v5.11.3
+  - hooks:
+    - additional_dependencies:
+      - flake8-isort
+      args: [--settings-path=pyproject.toml]
+      id: flake8
+    repo: https://github.com/PyCQA/flake8
+    rev: 6.0.0
+  - hooks:
+    - id: commitizen
+      stages: [commit-msg]
+    repo: https://github.com/commitizen-tools/commitizen
+    rev: v2.38.0
