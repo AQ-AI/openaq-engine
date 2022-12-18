@@ -165,7 +165,9 @@ class EEFeatures:
         try:
             logging.info(f"Downloading: {collection}")
 
-            image_collection = ee.ImageCollection(collection).select(image_bands)
+            image_collection = ee.ImageCollection(collection).select(
+                image_bands
+            )
 
             if save_images is True:
                 down_args = {
