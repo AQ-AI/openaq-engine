@@ -41,7 +41,9 @@ class EEConfig:
     TABLE_NAME = "cohorts"
 
     AOD_IMAGE_COLLECTION: str = "MODIS/006/MCD19A2_GRANULES"
-    AOD_IMAGE_BAND: Sequence[str] = field(default_factory=lambda: ["Optical_Depth_047"])
+    AOD_IMAGE_BAND: Sequence[str] = field(
+        default_factory=lambda: ["Optical_Depth_047"]
+    )
     AOD_IMAGE_PERIOD = 2
     AOD_IMAGE_RES = 1000
     LANDSAT_IMAGE_COLLECTION: str = "LANDSAT/LC08/C01/T1"
@@ -76,7 +78,9 @@ class EEConfig:
         default_factory=lambda: ["basic_demographic_characteristics"]
     )
     POPULATION_IMAGE_RES = 1000
-    LAND_COVER_IMAGE_COLLECTION: str = "COPERNICUS/Landcover/100m/Proba-V-C3/Global"
+    LAND_COVER_IMAGE_COLLECTION: str = (
+        "COPERNICUS/Landcover/100m/Proba-V-C3/Global"
+    )
     LAND_COVER_IMAGE_BAND: Sequence[str] = field(
         default_factory=lambda: ["discrete_classification"]
     )
@@ -135,7 +139,9 @@ class EEConfig:
 
 @dataclass
 class CohortBuilderConfig:
-    ENTITY_ID_COLS: Sequence[str] = field(default_factory=lambda: ["unique_id"])
+    ENTITY_ID_COLS: Sequence[str] = field(
+        default_factory=lambda: ["unique_id"]
+    )
     DATE_COL: str = "date.utc"
     REGION = "us-east-1"
     TABLE_NAME = "openaq"
