@@ -249,11 +249,13 @@ class EEFeatures:
     ):
         try:
             filtered_image_collection = image_collection.filterDate(
-                "2000-01-01", day_of_interest
-            ).get_first()
+                "2019-01-01", day_of_interest
+            )
             info = filtered_image_collection.getRegion(
                 centroid_point, resolution
             ).getInfo()
+            # print(type(info))
+            print(info)
             return info
         except (EEException, HttpError):
             # logging.warning(
