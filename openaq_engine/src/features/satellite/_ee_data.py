@@ -2,6 +2,7 @@ import logging
 from typing import List, Tuple
 
 import ee
+import numpy as np
 import pandas as pd
 from ee.ee_exception import EEException
 from geetools import batch
@@ -22,6 +23,7 @@ class EEFeatures:
         bucket_name: str,
         path_to_private_key: str,
         service_account: str,
+        lookback_n: int,
     ):
 
         self.date_col = date_col
@@ -31,6 +33,7 @@ class EEFeatures:
         self.bucket_name = bucket_name
         self.path_to_private_key = path_to_private_key
         self.service_account = service_account
+        self.lookback_n = lookback_n
 
     @classmethod
     def from_dataclass_config(cls, config: EEConfig) -> "EEFeatures":
@@ -42,6 +45,7 @@ class EEFeatures:
             bucket_name=config.BUCKET_NAME,
             path_to_private_key=config.PATH_TO_PRIVATE_KEY,
             service_account=config.SERVICE_ACCOUNT,
+            lookback_n=config.LOOKBACK_N,
         )
 
     def execute(self, df, save_images):
@@ -94,6 +98,7 @@ class EEFeatures:
                 save_images,
             )
             satellite_value = self._get_value_from_variable_collection(
+                collection,
                 image_collection,
                 day_of_interest,
                 centroid_point,
@@ -119,6 +124,7 @@ class EEFeatures:
                 save_images,
             )
             satellite_value = self._get_value_from_static_collection(
+                collection,
                 image_collection,
                 day_of_interest,
                 centroid_point,
@@ -224,6 +230,7 @@ class EEFeatures:
 
     def _get_value_from_variable_collection(
         self,
+        collection,
         image_collection,
         day_of_interest,
         centroid_point,
@@ -231,31 +238,76 @@ class EEFeatures:
         resolution,
     ):
         try:
+            logging.info(
+                "Finding ee.ImageCollection between",
+                f" {day_of_interest.format().getInfo()} and",
+                f" {day_of_interest.advance(-period, 'days').format().getInfo()}",
+            )
             filtered_image_collection = image_collection.filterDate(
-                day_of_interest, day_of_interest.advance(period, "day")
+                day_of_interest, day_of_interest.advance(-period, "days")
             )
             info = filtered_image_collection.getRegion(
                 centroid_point, resolution
             ).getInfo()
+            print(filtered_image_collection)
             return info
         except (EEException, HttpError):
-            # logging.warning(
-            #     f"""Centroid location and date does not
-            #     match any existing ee.Image."""
-            # )
+            logging.warning(
+                "No ee.ImageCollection between",
+                f" {day_of_interest.format().getInfo()} and",
+                f" {day_of_interest.advance(-period, 'days').format().getInfo()}",
+            )
             pass
+            try:
+                lookback_year = (
+                    day_of_interest.advance(-self.lookback_n, "years")
+                    .format()
+                    .getInfo()
+                )
+                filtered_image_collection = image_collection.filterDate(
+                    day_of_interest,
+                    day_of_interest.advance(-self.lookback_n, "years"),
+                )
+
+                info = filtered_image_collection.getRegion(
+                    centroid_point, resolution
+                ).getInfo()
+
+                return info
+            except (EEException, HttpError):
+
+                logging.warning(
+                    "No ee.ImageCollection between",
+                    f" {day_of_interest.format().getInfo()} and"
+                    f" {lookback_year}",
+                )
+            # recent = filtered_image_collection.sort(
+            #     "system:time_start", "false"
+            # ).limit(self.lookback_n)
 
     def _get_value_from_static_collection(
-        self, image_collection, day_of_interest, centroid_point, resolution
+        self,
+        collection,
+        image_collection,
+        day_of_interest,
+        centroid_point,
+        resolution,
     ):
         try:
-            filtered_image_collection = image_collection.filterDate(
-                "2019-01-01", day_of_interest
+            print(
+                f"finding static image for {collection} between"
+                f" {day_of_interest.format().getInfo()}, and ",
+                f"""and {day_of_interest.advance(-20, "years").format().getInfo()}""",
             )
+            filtered_image_collection = image_collection.filterDate(
+                "2000-01-01", day_of_interest
+            )
+            # recent = filtered_image_collection.sort(
+            #     "system:time_start", "false"
+            # ).limit(self.lookback_n)
             info = filtered_image_collection.getRegion(
                 centroid_point, resolution
             ).getInfo()
-
             return info
         except (EEException, HttpError):
             logging.warning(
@@ -263,3 +315,20 @@ class EEFeatures:
                 " ee.Image."
             )
             pass
+
+    def weighted_average(df, values, weights):
+        return sum(df[weights] * df[values]) / df[weights].sum()
+
+    def _time_weighted_average(df):
+        if df.size == 0:
+            return
+        timestep = 15 * 60
+        indexes = df.index - (df.index[-1] - pd.Timedelta(seconds=timestep))
+        seconds = indexes.seconds
+        weight = [
+            seconds[n] / timestep
+            if n == 0
+            else (seconds[n] - seconds[n - 1]) / timestep
+            for n, k in enumerate(seconds)
+        ]
+        return np.sum(weight * df.values)
