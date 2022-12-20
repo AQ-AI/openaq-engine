@@ -55,7 +55,7 @@ class EEFeatures:
         ).reset_index(drop=True)
         features_df = self.generate_features(satellite_df)
 
-        print(features_df)
+        return features_df
 
     def execute_for_location(self, lon, lat, day, save_images):
         """
@@ -195,6 +195,7 @@ class EEFeatures:
             )
             .groupby(
                 [
+                    "date",
                     "x",
                     "y",
                 ],
@@ -203,8 +204,8 @@ class EEFeatures:
             .agg(["mean"])
             .reset_index()
         )
-
-        print(features_df)
+        features_df.columns = list(map("".join, features_df.columns.values))
+        return features_df
 
     def _generate_timerange(self) -> Tuple[str]:
         start_date_query = """SELECT {date_col} AS datetime
@@ -254,12 +255,11 @@ class EEFeatures:
             info = filtered_image_collection.getRegion(
                 centroid_point, resolution
             ).getInfo()
-            # print(type(info))
-            print(info)
+
             return info
         except (EEException, HttpError):
-            # logging.warning(
-            #     f"""Centroid location and date does not
-            #     match any existing ee.Image."""
-            # )
+            logging.warning(
+                "Centroid location and date does not match any existing"
+                " ee.Image."
+            )
             pass

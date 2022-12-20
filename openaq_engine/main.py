@@ -37,7 +37,9 @@ class BuildFeaturesFlow:
 
     def execute(self):
         # Trigger the authentication flow.
-        return BuildFeaturesRandomForest.from_dataclass_config(self.config)
+        return BuildFeaturesRandomForest.from_dataclass_config(
+            self.config,
+        )
 
 
 @click.command("time-splitter", help="Splits csvs for time splits")
@@ -73,9 +75,9 @@ def run_pipeline():
     train_validation_dict = time_splitter.execute()
 
     cohort_builder = CohortBuilderFlow().execute()
-    df = cohort_builder.execute(train_validation_dict, engine)
+    cohort_builder.execute(train_validation_dict, engine)
     build_features = BuildFeaturesFlow().execute()
-    build_features.execute(df, save_images=False)
+    build_features.execute(engine)
 
 
 @click.group("openaq-engine", help="Library to query openaq data")
