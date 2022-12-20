@@ -31,6 +31,7 @@ class BuildFeaturesConfig:
 
 @dataclass
 class EEConfig:
+    LOOKBACK_N = 2
     DATE_COL: str = "timestamp_utc"
     TABLE_NAME = "cohorts"
 
