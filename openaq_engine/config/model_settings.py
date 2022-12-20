@@ -10,13 +10,7 @@ from pydantic.dataclasses import dataclass
 @dataclass
 class BuildFeaturesConfig:
     TARGET_COL: str = "value"
-    CATEGORICAL_FEATURES: List[StrictStr] = field(
-        default_factory=lambda: [
-            "city",
-            "country",
-            "sourcetype",
-        ]
-    )
+    CATEGORICAL_FEATURES: List[StrictStr] = field(default_factory=lambda: [])
     CORE_FEATURES: List[StrictStr] = field(
         default_factory=lambda: [
             "city",

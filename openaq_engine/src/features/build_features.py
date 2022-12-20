@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Type
 
 import pandas as pd
 from src.features.satellite._ee_data import EEFeatures
-from src.utils.utils import get_data
+from src.utils.utils import get_data, write_to_db
 
 from config.model_settings import BuildFeaturesConfig, EEConfig
 
@@ -36,17 +36,12 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
             all_model_features=config.ALL_MODEL_FEATURES,
         )
 
-    def execute(
-        self,
-        df: pd.DataFrame,
-    ) -> pd.DataFrame:
+    def execute(self, engine) -> pd.DataFrame:
         cohort_query = """select * from "cohorts";"""
         df = get_data(cohort_query)
-        return (
-            df.pipe(self._add_ee_variable_features)
-            .pipe(self._add_ee_static_features)
-            .pipe(self._change_to_categorical_type)[self.all_model_features]
-        )
+        features_df = self._add_ee_features(df)
+        print(type(features_df))
+        self._results_to_db(features_df, engine)
 
     @property
     def all_model_features(self):
@@ -58,7 +53,7 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
             raise ValueError("All the feature names should be strings!")
         self._all_model_features = features
 
-    def _add_ee_variable_features(self, df):
+    def _add_ee_features(self, df):
         return EEFeatures.from_dataclass_config(EEConfig()).execute(
             df, save_images=False
         )
@@ -71,6 +66,17 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
             df.loc[:, cat_col] = df[cat_col].astype("category")
 
         return df
+
+    def _results_to_db(self, features_df, engine):
+        """Write model results to the database for all cohorts"""
+
+        write_to_db(
+            features_df,
+            engine,
+            "features",
+            "public",
+            "replace",
+        )
 
 
 def get_feature_builder(algorithm: str) -> Type[BuildFeatureBase]:

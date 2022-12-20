@@ -88,7 +88,7 @@ class CohortBuilder(CohortBuilderBase):
             .execute(cohorts_df)
         )
 
-        self._results_to_db(engine, filtered_cohorts_df)
+        self._results_to_db(filtered_cohorts_df, engine)
 
     def cohort_builder(
         self, cohort_type, train_validation_dict, filter_cols
@@ -144,8 +144,8 @@ class CohortBuilder(CohortBuilderBase):
         """Write model results to the database for all cohorts"""
 
         write_to_db(
-            engine,
             filtered_cohorts_df,
+            engine,
             "cohorts",
             "public",
             "replace",
