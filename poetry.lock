@@ -11,17 +11,19 @@ test = ["coverage", "flake8", "pexpect", "wheel"]
 
 [[package]]
 name = "attrs"
-version = "22.1.0"
+version = "22.2.0"
 description = "Classes Without Boilerplate"
 category = "main"
 optional = false
-python-versions = ">=3.5"
+python-versions = ">=3.6"
 
 [package.extras]
-dev = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)", "mypy (>=0.900,!=0.940)", "pytest-mypy-plugins", "zope.interface", "furo", "sphinx", "sphinx-notfound-page", "pre-commit", "cloudpickle"]
-docs = ["furo", "sphinx", "zope.interface", "sphinx-notfound-page"]
-tests = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)", "mypy (>=0.900,!=0.940)", "pytest-mypy-plugins", "zope.interface", "cloudpickle"]
-tests_no_zope = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)", "mypy (>=0.900,!=0.940)", "pytest-mypy-plugins", "cloudpickle"]
+cov = ["attrs", "coverage-enable-subprocess", "coverage[toml] (>=5.3)"]
+dev = ["attrs"]
+docs = ["furo", "sphinx", "myst-parser", "zope.interface", "sphinx-notfound-page", "sphinxcontrib-towncrier", "towncrier"]
+tests = ["attrs", "zope.interface"]
+tests-no-zope = ["hypothesis", "pympler", "pytest (>=4.3.0)", "pytest-xdist", "cloudpickle", "mypy (>=0.971,<0.990)", "pytest-mypy-plugins"]
+tests_no_zope = ["hypothesis", "pympler", "pytest (>=4.3.0)", "pytest-xdist", "cloudpickle", "mypy (>=0.971,<0.990)", "pytest-mypy-plugins"]
 
 [[package]]
 name = "autoflake8"
@@ -48,14 +50,14 @@ tomli = "*"
 
 [[package]]
 name = "awscli"
-version = "1.27.32"
+version = "1.27.34"
 description = "Universal Command Line Environment for AWS."
 category = "main"
 optional = false
 python-versions = ">= 3.7"
 
 [package.dependencies]
-botocore = "1.29.32"
+botocore = "1.29.34"
 colorama = ">=0.2.5,<0.4.5"
 docutils = ">=0.10,<0.17"
 PyYAML = ">=3.10,<5.5"
@@ -86,14 +88,14 @@ uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
 name = "boto3"
-version = "1.26.32"
+version = "1.26.34"
 description = "The AWS SDK for Python"
 category = "main"
 optional = false
 python-versions = ">= 3.7"
 
 [package.dependencies]
-botocore = ">=1.29.32,<1.30.0"
+botocore = ">=1.29.34,<1.30.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.6.0,<0.7.0"
 
@@ -102,7 +104,7 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.29.32"
+version = "1.29.34"
 description = "Low-level, data-driven core of boto 3."
 category = "main"
 optional = false
@@ -193,7 +195,7 @@ typing-extensions = ">=4.0.1,<5.0.0"
 
 [[package]]
 name = "coverage"
-version = "6.5.0"
+version = "7.0.0"
 description = "Code coverage measurement for Python"
 category = "dev"
 optional = false
@@ -282,6 +284,37 @@ python-versions = ">=3.6.1"
 mccabe = ">=0.7.0,<0.8.0"
 pycodestyle = ">=2.9.0,<2.10.0"
 pyflakes = ">=2.5.0,<2.6.0"
+
+[[package]]
+name = "fsspec"
+version = "2022.11.0"
+description = "File-system specification"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.extras]
+abfs = ["adlfs"]
+adl = ["adlfs"]
+arrow = ["pyarrow (>=1)"]
+dask = ["dask", "distributed"]
+dropbox = ["dropboxdrivefs", "requests", "dropbox"]
+entrypoints = ["importlib-metadata"]
+fuse = ["fusepy"]
+gcs = ["gcsfs"]
+git = ["pygit2"]
+github = ["requests"]
+gs = ["gcsfs"]
+gui = ["panel"]
+hdfs = ["pyarrow (>=1)"]
+http = ["requests", "aiohttp (!=4.0.0a0,!=4.0.0a1)"]
+libarchive = ["libarchive-c"]
+oci = ["ocifs"]
+s3 = ["s3fs"]
+sftp = ["paramiko"]
+smb = ["smbprotocol"]
+ssh = ["paramiko"]
+tqdm = ["tqdm"]
 
 [[package]]
 name = "future"
@@ -457,6 +490,14 @@ docs = ["sphinx", "docutils (<0.18)"]
 test = ["objgraph", "psutil", "faulthandler"]
 
 [[package]]
+name = "haversine"
+version = "2.7.0"
+description = "Calculate the distance between 2 points on Earth."
+category = "main"
+optional = false
+python-versions = ">=3.5"
+
+[[package]]
 name = "httplib2"
 version = "0.21.0"
 description = "A comprehensive HTTP client library."
@@ -469,7 +510,7 @@ pyparsing = {version = ">=2.4.2,<3.0.0 || >3.0.0,<3.0.1 || >3.0.1,<3.0.2 || >3.0
 
 [[package]]
 name = "identify"
-version = "2.5.10"
+version = "2.5.11"
 description = "File identification library for Python"
 category = "dev"
 optional = false
@@ -496,7 +537,7 @@ python-versions = "*"
 
 [[package]]
 name = "isort"
-version = "5.11.3"
+version = "5.11.4"
 description = "A Python utility / library to sort Python imports."
 category = "dev"
 optional = false
@@ -572,8 +613,8 @@ python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*
 
 [[package]]
 name = "numpy"
-version = "1.23.5"
-description = "NumPy is the fundamental package for array computing with Python."
+version = "1.24.0"
+description = "Fundamental package for array computing in Python"
 category = "main"
 optional = false
 python-versions = ">=3.8"
@@ -702,20 +743,21 @@ pyasn1 = ">=0.4.6,<0.5.0"
 
 [[package]]
 name = "pyathena"
-version = "2.17.0"
+version = "2.18.1"
 description = "Python DB API 2.0 (PEP 249) client for Amazon Athena"
 category = "main"
 optional = false
 python-versions = ">=3.7.1,<4.0.0"
 
 [package.dependencies]
-boto3 = ">=1.21.0"
-botocore = ">=1.24.7"
+boto3 = ">=1.26.4"
+botocore = ">=1.29.4"
+fsspec = "*"
 tenacity = ">=4.1.0"
 
 [package.extras]
 fastparquet = ["fastparquet (>=0.4.0)"]
-pandas = ["pandas (>=1.3.0)", "s3fs (>=2021.09.0)"]
+pandas = ["pandas (>=1.3.0)"]
 arrow = ["pyarrow (>=7.0.0)"]
 sqlalchemy = ["sqlalchemy (>=1.0.0,<2.0.0)"]
 
@@ -1044,7 +1086,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "b30d18ae206461372cad8c47bcb4cc61ff722447afc6395d4f9670be0903700c"
+content-hash = "f082fb1532318cb691d4ddab6c3a37f65b8d87c66c8220ddcb527aa78933eb7b"
 
 [metadata.files]
 argcomplete = []
@@ -1070,6 +1112,7 @@ earthengine-api = []
 exceptiongroup = []
 filelock = []
 flake8 = []
+fsspec = []
 future = []
 geetools = []
 google-api-core = []
@@ -1082,6 +1125,7 @@ google-crc32c = []
 google-resumable-media = []
 googleapis-common-protos = []
 greenlet = []
+haversine = []
 httplib2 = []
 identify = []
 idna = []
