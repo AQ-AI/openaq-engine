@@ -1,12 +1,13 @@
+import datetime
 import logging
 from typing import List, Tuple
 
 import ee
-import numpy as np
 import pandas as pd
 from ee.ee_exception import EEException
 from geetools import batch
 from googleapiclient.errors import HttpError
+from haversine import haversine
 from joblib import Parallel, delayed
 from src.utils.utils import ee_array_to_df, get_data
 
@@ -18,8 +19,7 @@ class EEFeatures:
         self,
         date_col: int,
         table_name: int,
-        variable_satellites: zip(List[str]),
-        static_satellites: zip(List[str]),
+        all_satellites: zip(List[str]),
         bucket_name: str,
         path_to_private_key: str,
         service_account: str,
@@ -28,8 +28,7 @@ class EEFeatures:
 
         self.date_col = date_col
         self.table_name = table_name
-        self.variable_satellites = variable_satellites
-        self.static_satellites = static_satellites
+        self.all_satellites = all_satellites
         self.bucket_name = bucket_name
         self.path_to_private_key = path_to_private_key
         self.service_account = service_account
@@ -40,8 +39,7 @@ class EEFeatures:
         return cls(
             date_col=config.DATE_COL,
             table_name=config.TABLE_NAME,
-            variable_satellites=config.VARIABLE_SATELLITES,
-            static_satellites=config.STATIC_SATELLITES,
+            all_satellites=config.ALL_SATELLITES,
             bucket_name=config.BUCKET_NAME,
             path_to_private_key=config.PATH_TO_PRIVATE_KEY,
             service_account=config.SERVICE_ACCOUNT,
@@ -54,14 +52,15 @@ class EEFeatures:
         satellite_df = pd.concat(
             Parallel(n_jobs=-1, backend="multiprocessing", verbose=5)(
                 delayed(self.execute_for_location)(lon, lat, day, save_images)
-                for lon, lat, day in zip(df.x, df.y, df.day)
+                for lon, lat, day in zip(df.x, df.y, df.timestamp_utc)
             ),
         ).reset_index(drop=True)
+        print(satellite_df)
         features_df = self.generate_features(satellite_df)
 
         return features_df
 
-    def execute_for_location(self, lon, lat, day, save_images):
+    def execute_for_location(self, lon, lat, date_utc, save_images):
         """
         Input
         ----
@@ -84,57 +83,27 @@ class EEFeatures:
 
         df_list = []
 
-        day_of_interest = ee.Date(day)
-        centroid_point = ee.Geometry.Point(lon, lat)
         for (
             collection,
             image_bands,
             period,
             resolution,
-        ) in self.variable_satellites:
+        ) in self.all_satellites:
             image_collection = self.execute_for_collection(
                 collection,
                 image_bands,
                 save_images,
             )
-            satellite_value = self._get_value_from_variable_collection(
-                collection,
+            ee_df = self.get_satellite_data(
                 image_collection,
-                day_of_interest,
-                centroid_point,
+                image_bands,
+                date_utc,
+                lon,
+                lat,
                 period,
                 resolution,
             )
             try:
-                ee_df = ee_array_to_df(satellite_value, image_bands)
-                ee_df["x"] = lon
-                ee_df["y"] = lat
-                ee_df["date"] = day
-                df_list.append(ee_df)
-            except IndexError:
-                pass
-        for (
-            collection,
-            image_bands,
-            resolution,
-        ) in self.static_satellites:
-            image_collection = self.execute_for_collection(
-                collection,
-                image_bands,
-                save_images,
-            )
-            satellite_value = self._get_value_from_static_collection(
-                collection,
-                image_collection,
-                day_of_interest,
-                centroid_point,
-                resolution,
-            )
-            try:
-                ee_df = ee_array_to_df(satellite_value, image_bands)
-                ee_df["x"] = lon
-                ee_df["y"] = lat
-                ee_df["date"] = day
                 df_list.append(ee_df)
             except IndexError:
                 pass
@@ -201,9 +170,9 @@ class EEFeatures:
             )
             .groupby(
                 [
-                    "date",
-                    "x",
-                    "y",
+                    "sensor_datetime",
+                    "sensor_longitude",
+                    "sensor_latitude",
                 ],
                 as_index=False,
             )
@@ -228,107 +197,186 @@ class EEFeatures:
         start_date = str(get_data(start_date_query)["datetime"][0])
         return end_date, start_date
 
-    def _get_value_from_variable_collection(
+    def get_satellite_data(
         self,
-        collection,
         image_collection,
-        day_of_interest,
-        centroid_point,
+        image_bands,
+        day,
+        lon,
+        lat,
         period,
         resolution,
     ):
+        """This function builds an algorithm to compute
+        thr representative satellite value for a sensor location."""
+
         try:
+            logging.info("Getting Most recent image info")
+            ee_df = self.get_most_recent_satellite_data(
+                image_collection,
+                image_bands,
+                lon,
+                lat,
+                resolution,
+                day,
+                period,
+            )
+
+            return ee_df
+        except (EEException, HttpError):
             logging.info(
-                "Finding ee.ImageCollection between",
-                f" {day_of_interest.format().getInfo()} and",
-                f" {day_of_interest.advance(-period, 'days').format().getInfo()}",
+                "Finding ee.ImageCollection between"
+                f" {day} and"
+                f" {self.lookback_n * period} days"
             )
-            filtered_image_collection = image_collection.filterDate(
-                day_of_interest, day_of_interest.advance(-period, "days")
-            )
-            info = filtered_image_collection.getRegion(
-                centroid_point, resolution
-            ).getInfo()
-            print(filtered_image_collection)
-            return info
-        except (EEException, HttpError):
-            logging.warning(
-                "No ee.ImageCollection between",
-                f" {day_of_interest.format().getInfo()} and",
-                f" {day_of_interest.advance(-period, 'days').format().getInfo()}",
-            )
-            pass
             try:
-                lookback_year = (
-                    day_of_interest.advance(-self.lookback_n, "years")
-                    .format()
-                    .getInfo()
+                ee_df = self.get_satellite_data_within_lookback(
+                    image_collection,
+                    image_bands,
+                    lon,
+                    lat,
+                    resolution,
+                    day,
+                    period,
                 )
-                filtered_image_collection = image_collection.filterDate(
-                    day_of_interest,
-                    day_of_interest.advance(-self.lookback_n, "years"),
-                )
-
-                info = filtered_image_collection.getRegion(
-                    centroid_point, resolution
-                ).getInfo()
-
-                return info
+                return ee_df
             except (EEException, HttpError):
+                try:
+                    ee_df = self.get_any_recent_satellite_data(
+                        image_collection,
+                        image_bands,
+                        lon,
+                        lat,
+                        resolution,
+                        day,
+                    )
+                    return ee_df
+                except (EEException, HttpError):
+                    logging.warn(f"No image available for {lon}, {lat}")
+                    pass
 
-                logging.warning(
-                    "No ee.ImageCollection between",
-                    f" {day_of_interest.format().getInfo()} and"
-                    f" {lookback_year}",
-                )
-            # recent = filtered_image_collection.sort(
-            #     "system:time_start", "false"
-            # ).limit(self.lookback_n)
-
-    def _get_value_from_static_collection(
+    def get_most_recent_satellite_data(
         self,
-        collection,
         image_collection,
-        day_of_interest,
-        centroid_point,
+        image_bands,
+        lon,
+        lat,
         resolution,
+        date_utc,
+        period,
     ):
+        """
+        This function takes in an image collection
+        and a set of spatial and temporal parameters
+        to calculate the weighted temporal average
+        value for each satellite query given a time period.
+
+        Arguments
+        -------
+        """
+        centroid_point = ee.Geometry.Point(lon, lat)
+        day_of_interest = ee.Date(date_utc)
+
+        filtered_image_collection = image_collection.filterDate(
+            day_of_interest.advance(-period, "days"), day_of_interest
+        )
+        info = filtered_image_collection.getRegion(
+            centroid_point, resolution
+        ).getInfo()
+
+        return self._create_satellite_dataframe(
+            info, image_bands, date_utc, lon, lat
+        )
+
+    def get_satellite_data_within_lookback(
+        self,
+        image_collection,
+        image_bands,
+        lon,
+        lat,
+        resolution,
+        date_utc,
+        period,
+    ):
+
+        centroid_point = ee.Geometry.Point(lon, lat)
+        day_of_interest = ee.Date(date_utc)
+
+        filtered_image_collection = image_collection.filterDate(
+            day_of_interest.advance(-(self.lookback_n * period), "days"),
+            day_of_interest,
+        )
+        info = filtered_image_collection.getRegion(
+            centroid_point, resolution
+        ).getInfo()
+        return self._create_satellite_dataframe(
+            info, image_bands, date_utc, lon, lat
+        )
+
+    def get_any_recent_satellite_data(
+        self,
+        image_collection,
+        image_bands,
+        lon,
+        lat,
+        resolution,
+        date_utc,
+    ):
+        centroid_point = ee.Geometry.Point(lon, lat)
+        day_of_interest = ee.Date(date_utc)
+        start_date = ee.Date(
+            "2015-01-01",
+        )
+        filtered_image_collection = image_collection.filterDate(
+            start_date,
+            day_of_interest,
+        )
+        filtered_image_collection = image_collection.limit(10)
+        info = filtered_image_collection.getRegion(
+            centroid_point, resolution
+        ).getInfo()
+        return self._create_satellite_dataframe(
+            info, image_bands, date_utc, lon, lat
+        )
+
+    def _create_satellite_dataframe(
+        self, info, image_bands, date_utc, lon, lat
+    ):
+        """Creates a dataframe from returned satellite information and"""
+        """Builds required fields for weighted average calculation"""
+        ee_df = ee_array_to_df(info, image_bands)
+        ee_df = self._calculate_temporal_weighted_average(date_utc, ee_df)
+        ee_df = self._calculate_spatial_weighted_average(ee_df, lon, lat)
+        return ee_df
+
+    def _calculate_temporal_weighted_average(self, date_utc, ee_df):
+        """Calculate the difference between the sensor timestamp and the"""
+        """satellite timestamp for all returned values"""
+        ee_df["sensor_datetime"] = datetime.datetime.strptime(
+            date_utc, "%Y-%m-%dT%H:%M:%S.%fZ"
+        )
+        ee_df["sensor_timestamp"] = ee_df.sensor_datetime.astype("int64")
+        ee_df["satellite_timestamp"] = ee_df.datetime.astype("int64")
+
+        ee_df["timestamp_diff"] = (
+            ee_df["sensor_timestamp"] - ee_df["satellite_timestamp"]
+        )
+        return ee_df
+
+    def _calculate_spatial_weighted_average(self, ee_df, lon, lat):
+        """Calculate the spatially-weighted distance"""
+        ee_df["sensor_longitude"] = lon
+        ee_df["sensor_latitude"] = lat
         try:
-            print(
-                f"finding static image for {collection} between"
-                f" {day_of_interest.format().getInfo()}, and ",
-                f"""and {day_of_interest.advance(-20, "years").format().getInfo()}""",
+            ee_df["distance"] = ee_df.apply(
+                lambda row: haversine(
+                    (row["sensor_longitude"], row["sensor_latitude"]),
+                    (row["longitude"], row["latitude"]),
+                    unit="m",
+                ),
+                axis=1,
             )
-            filtered_image_collection = image_collection.filterDate(
-                "2000-01-01", day_of_interest
-            )
-            # recent = filtered_image_collection.sort(
-            #     "system:time_start", "false"
-            # ).limit(self.lookback_n)
-            info = filtered_image_collection.getRegion(
-                centroid_point, resolution
-            ).getInfo()
-            return info
-        except (EEException, HttpError):
-            logging.warning(
-                "Centroid location and date does not match any existing"
-                " ee.Image."
-            )
+            return ee_df
+
+        except ValueError:
             pass
-
-    def weighted_average(df, values, weights):
-        return sum(df[weights] * df[values]) / df[weights].sum()
-
-    def _time_weighted_average(df):
-        if df.size == 0:
-            return
-        timestep = 15 * 60
-        indexes = df.index - (df.index[-1] - pd.Timedelta(seconds=timestep))
-        seconds = indexes.seconds
-        weight = [
-            seconds[n] / timestep
-            if n == 0
-            else (seconds[n] - seconds[n - 1]) / timestep
-            for n, k in enumerate(seconds)
-        ]
-        return np.sum(weight * df.values)
