@@ -31,7 +31,7 @@ class BuildFeaturesConfig:
 
 @dataclass
 class EEConfig:
-    LOOKBACK_N = 2
+    LOOKBACK_N = 3
     DATE_COL: str = "timestamp_utc"
     TABLE_NAME = "cohorts"
 
@@ -41,7 +41,7 @@ class EEConfig:
     )
     AOD_IMAGE_PERIOD = 2
     AOD_IMAGE_RES = 1000
-    LANDSAT_IMAGE_COLLECTION: str = "LANDSAT/LC08/C01/T1"
+    LANDSAT_IMAGE_COLLECTION: str = "LANDSAT/LC08/C01/T1_8DAY_TOA"
     LANDSAT_IMAGE_BAND: Sequence[str] = field(
         default_factory=lambda: ["B4", "B3", "B2"]
     )
@@ -76,16 +76,18 @@ class EEConfig:
     LAND_COVER_IMAGE_COLLECTION: str = (
         "COPERNICUS/Landcover/100m/Proba-V-C3/Global"
     )
+    POPULATION_IMAGE_PERIOD = 1827
     LAND_COVER_IMAGE_BAND: Sequence[str] = field(
         default_factory=lambda: ["discrete_classification"]
     )
     LAND_COVER_IMAGE_RES = 100
+    LAND_COVER_IMAGE_PERIOD = 365
     BUCKET_NAME = "earthengine-bucket"
     PATH_TO_PRIVATE_KEY = "private_keys/unicef-367711-29676476912d.json"
     SERVICE_ACCOUNT = "earth-engine@unicef-367711.iam.gserviceaccount.com"
 
     @property
-    def VARIABLE_SATELLITES(self) -> zip(List[str], List[str]):
+    def ALL_SATELLITES(self) -> zip(List[str], List[str]):
         """Return varying satellites to be fed into the model"""
         return zip(
             [
@@ -93,39 +95,30 @@ class EEConfig:
                 self.LANDSAT_IMAGE_COLLECTION,
                 self.NIGHTTIME_LIGHT_IMAGE_COLLECTION,
                 self.METEROLOGICAL_IMAGE_COLLECTION,
+                self.POPULATION_IMAGE_COLLECTION,
+                self.LAND_COVER_IMAGE_COLLECTION,
             ],
             [
                 self.AOD_IMAGE_BAND,
                 self.LANDSAT_IMAGE_BAND,
                 self.NIGHTTIME_LIGHT_IMAGE_BAND,
                 self.METEROLOGICAL_IMAGE_BAND,
+                self.POPULATION_IMAGE_BAND,
+                self.LAND_COVER_IMAGE_BAND,
             ],
             [
                 self.AOD_IMAGE_PERIOD,
                 self.LANDSAT_PERIOD,
                 self.NIGHTTIME_LIGHT_PERIOD,
                 self.METEROLOGICAL_IMAGE_PERIOD,
+                self.POPULATION_IMAGE_PERIOD,
+                self.LAND_COVER_IMAGE_PERIOD,
             ],
             [
                 self.AOD_IMAGE_RES,
                 self.LANDSAT_RES,
                 self.NIGHTTIME_LIGHT_RES,
                 self.METEROLOGICAL_IMAGE_RES,
-            ],
-        )
-
-    @property
-    def STATIC_SATELLITES(self) -> zip(List[str], List[str]):
-        return zip(
-            [
-                self.POPULATION_IMAGE_COLLECTION,
-                self.LAND_COVER_IMAGE_COLLECTION,
-            ],
-            [
-                self.POPULATION_IMAGE_BAND,
-                self.LAND_COVER_IMAGE_BAND,
-            ],
-            [
                 self.POPULATION_IMAGE_RES,
                 self.LAND_COVER_IMAGE_RES,
             ],

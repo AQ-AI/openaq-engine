@@ -59,7 +59,7 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
         )
 
     def _add_year(self, df: pd.DataFrame) -> pd.DataFrame:
-        return df.assign(year=lambda df: pd.to_datetime(df.listed_at).dt.year)
+        return df.assign(year=lambda df: pd.to_datetime(df.day).dt.year)
 
     def _change_to_categorical_type(self, df: pd.DataFrame) -> pd.DataFrame:
         for cat_col in self.categorical_features:
