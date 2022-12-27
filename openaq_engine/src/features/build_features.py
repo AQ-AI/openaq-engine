@@ -40,7 +40,6 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
         cohort_query = """select * from "cohorts";"""
         df = get_data(cohort_query)
         features_df = self._add_ee_features(df)
-        print(type(features_df))
         self._results_to_db(features_df, engine)
 
     @property
