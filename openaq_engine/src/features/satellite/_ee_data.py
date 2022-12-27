@@ -1,14 +1,17 @@
 import datetime
 import logging
+from collections import Counter
 from typing import List, Tuple
 
 import ee
+import numpy as np
 import pandas as pd
 from ee.ee_exception import EEException
 from geetools import batch
 from googleapiclient.errors import HttpError
 from haversine import haversine
 from joblib import Parallel, delayed
+from sklearn.preprocessing import MinMaxScaler
 from src.utils.utils import ee_array_to_df, get_data
 
 from config.model_settings import EEConfig
@@ -55,7 +58,6 @@ class EEFeatures:
                 for lon, lat, day in zip(df.x, df.y, df.timestamp_utc)
             ),
         ).reset_index(drop=True)
-        print(satellite_df)
         features_df = self.generate_features(satellite_df)
 
         return features_df
@@ -103,11 +105,14 @@ class EEFeatures:
                 period,
                 resolution,
             )
-            try:
-                df_list.append(ee_df)
-            except IndexError:
+            if df_list is None:
                 pass
-        return pd.concat(df_list)
+            else:
+                df_list.append(ee_df)
+        try:
+            return pd.concat([x for x in df_list if not None])
+        except ValueError:
+            pass
 
     def execute_for_collection(
         self,
@@ -164,22 +169,33 @@ class EEFeatures:
             pass
 
     def generate_features(self, satellite_df):
-        features_df = (
-            satellite_df.drop(
-                labels=["time", "datetime", "longitude", "latitude"], axis=1
-            )
-            .groupby(
-                [
-                    "sensor_datetime",
-                    "sensor_longitude",
-                    "sensor_latitude",
-                ],
-                as_index=False,
-            )
-            .agg(["mean"])
-            .reset_index()
+        groupby_cols = [
+            "sensor_datetime",
+            "sensor_longitude",
+            "sensor_latitude",
+        ]
+
+        weights = ["timestamp_diff", "distance"]
+        cols_to_remove = [
+            "longitude",
+            "latitude",
+            "time",
+            "datetime",
+            "sensor_timestamp",
+            "satellite_timestamp",
+        ]
+        satellite_df = satellite_df.drop(cols_to_remove, axis=1)
+        avg_cols = [
+            i
+            for i in list(satellite_df.columns)
+            if i
+            not in list((Counter(groupby_cols) + Counter(weights)).elements())
+        ]
+
+        features_df = self._weighted_mean_by_lambda(
+            satellite_df, avg_cols, weights, groupby_cols
         )
-        features_df.columns = list(map("".join, features_df.columns.values))
+        print(features_df)
         return features_df
 
     def _generate_timerange(self) -> Tuple[str]:
@@ -273,6 +289,20 @@ class EEFeatures:
 
         Arguments
         -------
+        image_collection: str
+            the string of an image collection
+        image_bands: List[str]
+            the list of image bands used (satellite model features)
+        lon: float
+            Longitude of sensor
+        lat: float
+            Latitude of sensor
+        resolution: float
+            resolution of image and used as satellite search radius
+        date_utc: datetime
+            datetime in utc of sensor reading
+        period: int
+            the number of days between satellite passovers
         """
         centroid_point = ee.Geometry.Point(lon, lat)
         day_of_interest = ee.Date(date_utc)
@@ -298,6 +328,12 @@ class EEFeatures:
         date_utc,
         period,
     ):
+        """
+        This function takes in an image collection
+        and a set of spatial and temporal parameters
+        to calculate the weighted temporal average
+        value for each satellite within a lookback.
+        """
 
         centroid_point = ee.Geometry.Point(lon, lat)
         day_of_interest = ee.Date(date_utc)
@@ -322,6 +358,9 @@ class EEFeatures:
         resolution,
         date_utc,
     ):
+        """This function collects all satellite imagery from
+        between the specified date and the first date for a specific
+        geolocation with no time windor specified"""
         centroid_point = ee.Geometry.Point(lon, lat)
         day_of_interest = ee.Date(date_utc)
         start_date = ee.Date(
@@ -342,16 +381,16 @@ class EEFeatures:
     def _create_satellite_dataframe(
         self, info, image_bands, date_utc, lon, lat
     ):
-        """Creates a dataframe from returned satellite information and"""
-        """Builds required fields for weighted average calculation"""
+        """Creates a dataframe from returned satellite information and
+        builds required fields for weighted average calculation"""
         ee_df = ee_array_to_df(info, image_bands)
         ee_df = self._calculate_temporal_weighted_average(date_utc, ee_df)
         ee_df = self._calculate_spatial_weighted_average(ee_df, lon, lat)
         return ee_df
 
     def _calculate_temporal_weighted_average(self, date_utc, ee_df):
-        """Calculate the difference between the sensor timestamp and the"""
-        """satellite timestamp for all returned values"""
+        """Calculate the difference between the sensor timestamp and the
+        satellite timestamp for all returned values"""
         ee_df["sensor_datetime"] = datetime.datetime.strptime(
             date_utc, "%Y-%m-%dT%H:%M:%S.%fZ"
         )
@@ -380,3 +419,38 @@ class EEFeatures:
 
         except ValueError:
             pass
+
+    def _weighted_mean_by_lambda(
+        self, df, avg_cols, weight_cols, groupby_cols
+    ):
+        def _scale_weight_cols(df, weight_cols):
+            """This takes in a DataFrame and columns used to construct
+            a weight column using the MinMaxScalar() function"""
+            scaler = MinMaxScaler()
+            df[weight_cols] = scaler.fit_transform(df[weight_cols])
+            df["weight"] = df.loc[:, weight_cols].prod(axis=1)
+            return df
+
+        def _weighted_means_by_column_ignoring_NaNs(x, cols, w="weights"):
+            """This takes a DataFrame and averages each data column (cols),
+            weighting observations by column w, but ignoring individual NaN
+            observations within each column.
+            """
+            return pd.Series(
+                [
+                    np.nan
+                    if x.dropna(subset=[c]).empty
+                    else np.average(
+                        x.dropna(subset=[c])[c],
+                        weights=x.dropna(subset=[c])[w],
+                    )
+                    for c in cols
+                ],
+                cols,
+            )
+
+        df = _scale_weight_cols(df, weight_cols)
+
+        return df.groupby(groupby_cols).apply(
+            _weighted_means_by_column_ignoring_NaNs, avg_cols, "weight"
+        )
