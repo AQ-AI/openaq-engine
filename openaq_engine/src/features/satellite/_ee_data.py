@@ -436,21 +436,36 @@ class EEFeatures:
             weighting observations by column w, but ignoring individual NaN
             observations within each column.
             """
-            return pd.Series(
-                [
-                    np.nan
-                    if x.dropna(subset=[c]).empty
-                    else np.average(
-                        x.dropna(subset=[c])[c],
-                        weights=x.dropna(subset=[c])[w],
-                    )
-                    for c in cols
-                ],
-                cols,
-            )
+            try:
+                return pd.Series(
+                    [
+                        np.nan
+                        if x.dropna(subset=[c]).empty
+                        else np.average(
+                            x.dropna(subset=[c])[c],
+                            weights=x.dropna(subset=[c])[w],
+                        )
+                        for c in cols
+                    ],
+                    cols,
+                )
+            except ZeroDivisionError:
+                pd.Series(
+                    [
+                        np.nan
+                        if x.dropna(subset=[c]).empty
+                        else np.average(
+                            x.dropna(subset=[c])[c],
+                        )
+                        for c in cols
+                    ],
+                    cols,
+                )
 
         df = _scale_weight_cols(df, weight_cols)
 
-        return df.groupby(groupby_cols).apply(
-            _weighted_means_by_column_ignoring_NaNs, avg_cols, "weight"
+        return (
+            df.groupby(groupby_cols)
+            .apply(_weighted_means_by_column_ignoring_NaNs, avg_cols, "weight")
+            .reset_index()
         )
