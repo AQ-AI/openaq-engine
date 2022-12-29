@@ -1,4 +1,5 @@
 import click
+from mlflows.cli.time_splitter import time_splitter_options
 from setup_environment import get_dbengine
 from src.cohort_builder import CohortBuilder
 from src.features.build_features import BuildFeaturesRandomForest
@@ -40,10 +41,11 @@ class BuildFeaturesFlow:
         return BuildFeaturesRandomForest.from_dataclass_config(self.config)
 
 
+@time_splitter_options
 @click.command("time-splitter", help="Splits csvs for time splits")
-def time_splitter():
+def time_splitter(countries, pollutant, date):
     time_splitter = TimeSplitterFlow().execute()
-    time_splitter.execute()
+    time_splitter.execute(countries, pollutant, date)
 
 
 @click.command("cohort-builder", help="Generate cohorts for time splits")
