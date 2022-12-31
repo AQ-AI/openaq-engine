@@ -180,6 +180,22 @@ python-versions = ">=3.7"
 colorama = {version = "*", markers = "platform_system == \"Windows\""}
 
 [[package]]
+name = "click-option-group"
+version = "0.5.5"
+description = "Option groups missing in Click"
+category = "main"
+optional = false
+python-versions = ">=3.6,<4"
+
+[package.dependencies]
+Click = ">=7.0,<9"
+
+[package.extras]
+docs = ["sphinx (>=3.0,<6)", "pallets-sphinx-themes", "m2r2"]
+tests = ["pytest"]
+tests_cov = ["pytest", "pytest-cov", "coverage (<6)", "coveralls"]
+
+[[package]]
 name = "cloudpickle"
 version = "2.2.0"
 description = "Extended pickling support for Python objects"
@@ -994,8 +1010,8 @@ optional = false
 python-versions = ">=3.6"
 
 [package.extras]
-testing = ["pytest-benchmark", "pytest"]
-dev = ["tox", "pre-commit"]
+dev = ["pre-commit", "tox"]
+testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "pre-commit"
@@ -1637,7 +1653,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "flake8 (<5)", "pytest-co
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "105e6af1e4fab4e4201185a60a15c8aefefa5f895b1767cc8e7f14568108b51f"
+content-hash = "df893a7fe7e8a9a55c64405abdfd56bf7ae79e1c90138c3295577e03b70f3cb4"
 
 [metadata.files]
 alembic = []
@@ -1654,6 +1670,7 @@ certifi = []
 cfgv = []
 charset-normalizer = []
 click = []
+click-option-group = []
 cloudpickle = []
 colorama = []
 commitizen = []
