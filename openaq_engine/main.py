@@ -41,7 +41,7 @@ class BuildFeaturesFlow:
         return BuildFeaturesRandomForest.from_dataclass_config(self.config)
 
 
-@time_splitter_options
+@time_splitter_options()
 @click.command("time-splitter", help="Splits csvs for time splits")
 def time_splitter(countries, pollutant, date):
     time_splitter = TimeSplitterFlow().execute()
