@@ -7,7 +7,7 @@ from typing import Any, Dict
 import pandas as pd
 from joblib import Parallel, delayed
 from src.preprocess import Preprocess
-from src.utils.utils import query_results, write_to_db
+from src.utils.utils import query_results_from_aws, write_to_db
 
 from config.model_settings import CohortBuilderConfig
 
@@ -26,7 +26,7 @@ class CohortBuilderBase(ABC):
         self.s3_output = s3_output
 
     def _build_response_from_aws(self, params, sql_query):
-        response_query_result = query_results(params, sql_query)
+        response_query_result = query_results_from_aws(params, sql_query)
         header = [
             d["VarCharValue"]
             for d in response_query_result["ResultSet"]["Rows"][0]["Data"]
