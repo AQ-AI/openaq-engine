@@ -252,7 +252,7 @@ test-no-codebase = ["pytest", "matplotlib", "pillow"]
 
 [[package]]
 name = "coverage"
-version = "7.0.1"
+version = "7.0.3"
 description = "Code coverage measurement for Python"
 category = "dev"
 optional = false
@@ -1653,7 +1653,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "flake8 (<5)", "pytest-co
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "df893a7fe7e8a9a55c64405abdfd56bf7ae79e1c90138c3295577e03b70f3cb4"
+content-hash = "779be45a62fc32ea5a75134854e60930f2a17a9d0b18ab3fccd430a1ba475c16"
 
 [metadata.files]
 alembic = []
