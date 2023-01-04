@@ -147,8 +147,8 @@ class TimeSplitterBase(ABC):
         response = query_results_from_api(headers, url)
 
         return datetime.strptime(
-            json.loads(response.text)["results"][0]["lastUpdated"],
-            "%Y-%m-%d %H:%M:%S.000 UTC",
+            json.loads(response)["results"][0]["lastUpdated"],
+            "%Y-%m-%dT%H:%M:%S+00:00",
         ).date()
 
     def create_start_date_from_openaq_api(
@@ -172,10 +172,9 @@ class TimeSplitterBase(ABC):
         headers = {"accept": "application/json"}
 
         response = query_results_from_api(headers, url)
-
         return datetime.strptime(
-            json.loads(response.text)["results"][0]["firstUpdated"],
-            "%Y-%m-%d %H:%M:%S.000 UTC",
+            json.loads(response)["results"][0]["firstUpdated"],
+            "%Y-%m-%dT%H:%M:%S+00:00",
         ).date()
 
 
@@ -221,7 +220,7 @@ class TimeSplitter(TimeSplitterBase):
             source=config.SOURCE,
         )
 
-    def execute(self, country, pollutant, date):
+    def execute(self, country, source, pollutant, date):
         """
         Input
         ----
@@ -238,11 +237,11 @@ class TimeSplitter(TimeSplitterBase):
             "bucket": str(self.bucket),
             "path": f"{self.s3_output}",
         }
-        if self.source == "openaq-aws":
+        if source == "openaq-aws":
             end_date, start_date = self.execute_for_openaq_aws(
                 params, country, pollutant, date
             )
-        if self.source == "openaq-api":
+        if source == "openaq-api":
             end_date, start_date = self.execute_for_openaq_api(
                 country, pollutant, date
             )
@@ -273,12 +272,12 @@ class TimeSplitter(TimeSplitterBase):
                 window_no += 1
         return self.train_validation_dict
 
-    def execute_for_openaq_aws(self, params, country, pollutant, date):
+    def execute_for_openaq_aws(self, params, country, pollutant, latest_date):
         end_date = self.create_end_date_from_aws(
-            params, country, pollutant, date
+            params, country, pollutant, latest_date
         )
         start_date = self.create_start_date_from_aws(
-            params, country, pollutant, date
+            params, country, pollutant, latest_date
         )
         return end_date, start_date
 
@@ -286,9 +285,7 @@ class TimeSplitter(TimeSplitterBase):
         end_date = self.create_end_date_from_openaq_api(
             country, pollutant, latest_date
         )
-        start_date = self.create_start_date_from_openaq_api(
-            country, pollutant, latest_date
-        )
+        start_date = self.create_start_date_from_openaq_api(country, pollutant)
         return end_date, start_date
 
         return
