@@ -23,7 +23,10 @@ def time_splitter_options(fn, countries_option: bool = True):
         "--country",
         default=TimeSplitterConfig.COUNTRY,
         type=click.STRING,
-        help="Load timesplits from specific countries",
+        help=(
+            "Load timesplits from specific countries in the 'Country Code'"
+            " format e.g. 'IN' (India)"
+        ),
     )
     pollutant = time_splitter_config.option(
         "-p",
