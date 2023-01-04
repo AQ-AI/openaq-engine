@@ -45,6 +45,7 @@ def time_splitter_options(fn, countries_option: bool = True):
     latest_date = time_splitter_config.option(
         "-d",
         "--latest-date",
+        hidden=True,
         type=click.STRING,
         help="Date to load data until in format YYYY-MM-DD",
     )
