@@ -43,9 +43,9 @@ class BuildFeaturesFlow:
 
 @time_splitter_options()
 @click.command("time-splitter", help="Splits csvs for time splits")
-def time_splitter(countries, pollutant, date):
+def time_splitter(country, source, pollutant, latest_date):
     time_splitter = TimeSplitterFlow().execute()
-    time_splitter.execute(countries, pollutant, date)
+    time_splitter.execute(country, source, pollutant, latest_date)
 
 
 @click.command("cohort-builder", help="Generate cohorts for time splits")
