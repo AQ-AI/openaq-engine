@@ -18,29 +18,45 @@ def time_splitter_options(fn, countries_option: bool = True):
             "countries and from the date provided"
         ),
     )
-    countries_ = time_splitter_config.option(
+    country_ = time_splitter_config.option(
         "-c",
-        "--countries",
-        default=TimeSplitterConfig.COUNTRY_BOUNDING_BOXES.get("WO"),
+        "--country",
+        default=TimeSplitterConfig.COUNTRY,
         type=click.STRING,
-        help="Countries to load data from",
+        help="Load timesplits from specific countries",
     )
     pollutant = time_splitter_config.option(
         "-p",
         "--pollutant",
-        type=click.STRING,
         default=TimeSplitterConfig.TARGET_VARIABLE,
-        help="Load data with the provided number of bedrooms",
+        type=click.Choice(
+            [
+                "co",
+                "no2",
+                "o3",
+                "pm1",
+                "pm10",
+                "pm25",
+                "so2",
+            ]
+        ),
+        help="Load timesplits from data for the pollutant requested",
     )
     latest_date = time_splitter_config.option(
         "-d",
         "--latest-date",
-        default=TimeSplitterConfig.LATEST_DATE,
         type=click.STRING,
         help="Date to load data until in format YYYY-MM-DD",
     )
-    wrapped_func = pollutant(latest_date(fn))
+    source = time_splitter_config.option(
+        "-s",
+        "--source",
+        default=TimeSplitterConfig.SOURCE,
+        type=click.Choice(["openaq-aws", "openaq-api"]),
+        help="Source to load the openaq data from",
+    )
+    wrapped_func = source(pollutant(latest_date(fn)))
     if countries_option:
-        wrapped_func = countries_(wrapped_func)
+        wrapped_func = country_(wrapped_func)
 
     return wrapped_func
