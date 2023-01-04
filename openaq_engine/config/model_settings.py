@@ -1,6 +1,5 @@
 import os
 from dataclasses import field
-from datetime import datetime
 from typing import Any, Dict, List, Sequence
 
 import boto3
@@ -166,6 +165,8 @@ class CohortBuilderConfig:
 class TimeSplitterConfig:
     DATE_COL: str = "date.utc"
     TARGET_VARIABLE = "pm25"
+    COUNTRY = "WO"
+    SOURCE = "openaq-aws"
     TIME_WINDOW_LENGTH: int = 12
     WITHIN_WINDOW_SAMPLER: int = 3
     WINDOW_COUNT: int = 3  # this will increase for more than one split
@@ -183,7 +184,6 @@ class TimeSplitterConfig:
             training=[],
         )
     )
-    LATEST_DATE = datetime.now()
     COUNTRY_BOUNDING_BOXES = {
         "AF": (
             "Afghanistan",
