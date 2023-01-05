@@ -1,0 +1,137 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Local Postgres setup &#8212; openaq-engine 0.1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Docker setup" href="docker_setup.html" />
+    <link rel="prev" title="Connecting to EC2" href="aws_setup.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="local-postgres-setup">
+<h1>Local Postgres setup<a class="headerlink" href="#local-postgres-setup" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="create-postgres-user-and-database">
+<h2>Create Postgres User and database;<a class="headerlink" href="#create-postgres-user-and-database" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>psql -U postgres
+</pre></div>
+</div>
+<p>This only needs to be done once, skip ahead to Login</p>
+<div class="highlight-psql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span> <span class="k">ROLE</span> <span class="n">openaq</span> <span class="k">WITH</span> <span class="n">LOGIN</span> <span class="k">PASSWORD</span> <span class="s1">&#39;openaq&#39;</span><span class="p">;</span>
+<span class="go">CREATE DATABASE openaq_db;</span>
+<span class="go">GRANT ALL PRIVILEGES ON DATABASE openaq_db TO openaq;</span>
+<span class="go">ALTER ROLE openaq SUPERUSER;</span>
+<span class="go">SELECT pg_reload_conf();</span>
+</pre></div>
+</div>
+<p>Restart postgres:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo systemctl restart postgresql-12.service
+</pre></div>
+</div>
+<p>And Login:</p>
+<div class="highlight-psql notranslate"><div class="highlight"><pre><span></span><span class="n">psql</span> <span class="o">-</span><span class="n">U</span> <span class="n">openaq</span> <span class="o">-</span><span class="n">d</span> <span class="n">openaq_db</span> <span class="o">-</span><span class="n">h</span> <span class="n">localhost</span> <span class="o">-</span><span class="n">W</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">openaq-engine</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="aws_setup.html">Connecting to EC2</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Local Postgres setup</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#create-postgres-user-and-database">Create Postgres User and database;</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="docker_setup.html">Docker setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docker_setup.html#id1">Docker setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="local_env_setup.html">Local Environment Setup</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="aws_setup.html" title="previous chapter">Connecting to EC2</a></li>
+      <li>Next: <a href="docker_setup.html" title="next chapter">Docker setup</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, Christina Last, Prithviraj Pramanik.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/install/postgres_setup.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

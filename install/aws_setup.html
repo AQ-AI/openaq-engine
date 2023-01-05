@@ -1,0 +1,172 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Connecting to EC2 &#8212; openaq-engine 0.1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Local Postgres setup" href="postgres_setup.html" />
+    <link rel="prev" title="Welcome to openaq-engine’s documentation!" href="../index.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="connecting-to-ec2">
+<h1>Connecting to EC2<a class="headerlink" href="#connecting-to-ec2" title="Permalink to this headline">¶</a></h1>
+<p>Generate a key pair and download the certficiate onto your local machine.
+Using the path to where you downloaded the certificate, connect to the server:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ssh -i <span class="s2">&quot;{path/to/your/keypair.cer}&quot;</span> ec2-44-208-167-138.compute-1.amazonaws.com
+</pre></div>
+</div>
+<div class="section" id="configure-aws">
+<h2>Configure AWS<a class="headerlink" href="#configure-aws" title="Permalink to this headline">¶</a></h2>
+<p>You will need to have an <cite>AWS_ACCESS_KEY</cite> and <cite>AWS_SECRET_ACCESS_KEY</cite> generated, see this [getting started documentation](<a class="reference external" href="https://docs.aws.amazon.com/cli/latest/userguide/getting-started-prereqs.html">https://docs.aws.amazon.com/cli/latest/userguide/getting-started-prereqs.html</a>)
+Complete the environmental variables needed in <cite>.env.sample</cite> and move to <cite>.env</cite>
+run the following command:</p>
+<div class="section" id="configuring-aws-cli">
+<h3>Configuring AWS CLI<a class="headerlink" href="#configuring-aws-cli" title="Permalink to this headline">¶</a></h3>
+<p>run the command</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>aws configure
+</pre></div>
+</div>
+<p>and interactualy populate the values as required. Then you will be asked to interactively enter the following details:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>AWS Access Key ID <span class="o">[</span>None<span class="o">]</span>: <span class="o">{</span>AWS_ACCESS_KEY<span class="o">}</span>
+AWS Secret Access Key <span class="o">[</span>None<span class="o">]</span>: <span class="o">{</span>AWS_SECRET_ACCESS_KEY<span class="o">}</span>
+Default region name <span class="o">[</span>None<span class="o">]</span>: <span class="o">{</span>region<span class="o">}</span> <span class="c1"># e.g. us-east-1</span>
+Default output format <span class="o">[</span>None<span class="o">]</span>: <span class="o">{</span>format<span class="o">}</span> <span class="c1"># e.g. json</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="adding-new-user">
+<h2>Adding new user<a class="headerlink" href="#adding-new-user" title="Permalink to this headline">¶</a></h2>
+<p>Outside the instance run the following:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ssh-keygen -y -f /path_to_key_pair/key-pair-name.cer
+</pre></div>
+</div>
+<p>Connect to the instance. When inside, run the following:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo adduser newuser
+</pre></div>
+</div>
+<p>Switch to the new account so that the directory and file have the proper ownership:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo su - newuser
+</pre></div>
+</div>
+<p>The prompt changes from <cite>ec2-user</cite> to newuser to indicate that you have switched the shell session to the new account.
+Create a <cite>.ssh</cite> directory in the newuser home directory and change its file permissions to <cite>700</cite> (only the owner can read, write, or open the directory).</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir .ssh
+chmod <span class="m">700</span> .ssh
+</pre></div>
+</div>
+<p>Create a file named authorized_keys in the <cite>.ssh</cite> directory and change its file permissions to 600 (only the owner can read or write to the file).</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>touch .ssh/authorized_keys
+chmod <span class="m">600</span> .ssh/authorized_keys
+</pre></div>
+</div>
+<p>Open the authorized_keys file using your favorite text editor (such as vim or nano).</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>vi .ssh/authorized_keys
+</pre></div>
+</div>
+<p>Paste the public key that you retrieved in Step 2 into the file and save the changes.</p>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">openaq-engine</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Connecting to EC2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#configure-aws">Configure AWS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#adding-new-user">Adding new user</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="postgres_setup.html">Local Postgres setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docker_setup.html">Docker setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docker_setup.html#id1">Docker setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="local_env_setup.html">Local Environment Setup</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="../index.html" title="previous chapter">Welcome to openaq-engine’s documentation!</a></li>
+      <li>Next: <a href="postgres_setup.html" title="next chapter">Local Postgres setup</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, Christina Last, Prithviraj Pramanik.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/install/aws_setup.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
