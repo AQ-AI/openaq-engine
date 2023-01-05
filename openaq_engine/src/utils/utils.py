@@ -5,6 +5,7 @@ from typing import Any, List
 import boto3
 import numpy as np
 import pandas as pd
+import requests
 from pydantic.json import pydantic_encoder
 from setup_environment import connect_to_db
 
@@ -43,7 +44,16 @@ def write_csv(df: pd.DataFrame, path: str, **kwargs: Any) -> None:
     )
 
 
-def query_results(params, query, wait=True):
+def query_results_from_api(params, query):
+    url = query
+    headers = params
+
+    response = requests.get(url, headers=headers)
+
+    return response.text
+
+
+def query_results_from_aws(params, query, wait=True):
     session = boto3.Session()
 
     client = session.client("athena", params["region"])
