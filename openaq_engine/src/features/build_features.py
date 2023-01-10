@@ -39,9 +39,9 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
     def execute(self, engine) -> pd.DataFrame:
         cohort_query = """select * from "cohorts";"""
         df = get_data(cohort_query)
-        features_df = self._add_ee_features(df)
-        print(type(features_df))
-        self._results_to_db(features_df, engine)
+        return df.pipe(self._add_ee_variable_features).pipe(
+            self._change_to_categorical_type
+        )[self.all_model_features]
 
     @property
     def all_model_features(self):
