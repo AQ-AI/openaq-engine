@@ -69,7 +69,7 @@ class Preprocess:
         if self.filter_pollutant:
             df = Filter.filter_pollutant(
                 df,
-                CohortBuilderConfig.POLLUTANT_TO_PREDICT,
+                CohortBuilderConfig.TARGET_VARIABLE,
             )
             logging.info(
                 f"""Total number of pollutant values left after
