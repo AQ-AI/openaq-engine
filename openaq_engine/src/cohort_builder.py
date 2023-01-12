@@ -7,7 +7,7 @@ from typing import Any, Dict
 import pandas as pd
 from joblib import Parallel, delayed
 from src.preprocess import Preprocess
-from src.utils.utils import query_results, write_to_db
+from src.utils.utils import query_results_from_aws, write_to_db
 
 from config.model_settings import CohortBuilderConfig
 
@@ -26,17 +26,22 @@ class CohortBuilderBase(ABC):
         self.s3_output = s3_output
 
     def _build_response_from_aws(self, params, sql_query):
-        response_query_result = query_results(params, sql_query)
+        response_query_result = query_results_from_aws(params, sql_query)
         header = [
             d["VarCharValue"]
             for d in response_query_result["ResultSet"]["Rows"][0]["Data"]
         ]
         rows = response_query_result["ResultSet"]["Rows"][1:]
-        result = [dict(zip(header, self._get_var_char_values(row))) for row in rows]
+        result = [
+            dict(zip(header, self._get_var_char_values(row))) for row in rows
+        ]
         return pd.DataFrame(result)
 
     def _get_var_char_values(self, row):
-        return [d["VarCharValue"] if "VarCharValue" in d else "{}" for d in row["Data"]]
+        return [
+            d["VarCharValue"] if "VarCharValue" in d else "{}"
+            for d in row["Data"]
+        ]
 
 
 class CohortBuilder(CohortBuilderBase):
@@ -55,7 +60,9 @@ class CohortBuilder(CohortBuilderBase):
         )
 
     @classmethod
-    def from_dataclass_config(cls, config: CohortBuilderConfig) -> "CohortBuilder":
+    def from_dataclass_config(
+        cls, config: CohortBuilderConfig
+    ) -> "CohortBuilder":
         return cls(
             date_col=config.DATE_COL,
             filter_dict=config.FILTER_DICT,
@@ -76,7 +83,9 @@ class CohortBuilder(CohortBuilderBase):
             axis=0,
         ).reset_index(drop=True)
         filtered_cohorts_df = (
-            Preprocess().from_options(list(self.filter_dict.keys())).execute(cohorts_df)
+            Preprocess()
+            .from_options(list(self.filter_dict.keys()))
+            .execute(cohorts_df)
         )
 
         self._results_to_db(engine, filtered_cohorts_df)

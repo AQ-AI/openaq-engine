@@ -5,6 +5,7 @@ from typing import Any, List
 import boto3
 import numpy as np
 import pandas as pd
+import requests
 from pydantic.json import pydantic_encoder
 from setup_environment import connect_to_db
 
@@ -43,7 +44,16 @@ def write_csv(df: pd.DataFrame, path: str, **kwargs: Any) -> None:
     )
 
 
-def query_results(params, query, wait=True):
+def query_results_from_api(params, query):
+    url = query
+    headers = params
+
+    response = requests.get(url, headers=headers)
+
+    return response.text
+
+
+def query_results_from_aws(params, query, wait=True):
     session = boto3.Session()
 
     client = session.client("athena", params["region"])
@@ -52,7 +62,11 @@ def query_results(params, query, wait=True):
         QueryString=query,
         QueryExecutionContext={"Database": "default"},
         ResultConfiguration={
-            "OutputLocation": "s3://" + params["bucket"] + "/" + params["path"] + "/"
+            "OutputLocation": "s3://"
+            + params["bucket"]
+            + "/"
+            + params["path"]
+            + "/"
         },
     )
 
@@ -68,21 +82,27 @@ def query_results(params, query, wait=True):
         while iterations > 0:
             iterations = iterations - 1
             response_get_query_details = client.get_query_execution(
-                QueryExecutionId=response_query_execution_id["QueryExecutionId"]
+                QueryExecutionId=response_query_execution_id[
+                    "QueryExecutionId"
+                ]
             )
-            status = response_get_query_details["QueryExecution"]["Status"]["State"]
+            status = response_get_query_details["QueryExecution"]["Status"][
+                "State"
+            ]
 
             if (status == "FAILED") or (status == "CANCELLED"):
-                failure_reason = response_get_query_details["QueryExecution"]["Status"][
-                    "StateChangeReason"
-                ]
+                failure_reason = response_get_query_details["QueryExecution"][
+                    "Status"
+                ]["StateChangeReason"]
                 print(failure_reason)
                 return False, False
 
             elif status == "SUCCEEDED":
                 # Function to get output results
                 response_query_result = client.get_query_results(
-                    QueryExecutionId=response_query_execution_id["QueryExecutionId"]
+                    QueryExecutionId=response_query_execution_id[
+                        "QueryExecutionId"
+                    ]
                 )
                 return response_query_result
 
@@ -110,7 +130,9 @@ def write_dataclass(dclass: object, path: str) -> None:
     """
     with open(path, "w+") as f:
         f.write(
-            json.dumps(dclass, indent=4, ensure_ascii=True, default=pydantic_encoder)
+            json.dumps(
+                dclass, indent=4, ensure_ascii=True, default=pydantic_encoder
+            )
         )
 
 
