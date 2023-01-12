@@ -1,0 +1,160 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Local Environment Setup &#8212; openaq-engine 0.1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Docker setup" href="docker_setup.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="local-environment-setup">
+<h1>Local Environment Setup<a class="headerlink" href="#local-environment-setup" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="setting-up-pyenv">
+<h2>Setting up pyenv<a class="headerlink" href="#setting-up-pyenv" title="Permalink to this headline">¶</a></h2>
+<p>Curl the following link to download pyenv</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl https://pyenv.run <span class="p">|</span> bash
+</pre></div>
+</div>
+<p>Export <cite>pyenv</cite> variables:
+Add pyenv initializer to shell startup script.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">echo</span> <span class="o">-</span><span class="n">e</span> <span class="s1">&#39;export PYENV_ROOT=&quot;$HOME/.pyenv&quot; &#39;</span>
+<span class="n">export</span> <span class="n">PATH</span><span class="o">=</span><span class="s2">&quot;$PYENV_ROOT/bin:$PATH&quot;</span>
+<span class="nb">eval</span> <span class="s2">&quot;$(pyenv init --path)&quot;</span>
+<span class="nb">eval</span> <span class="s2">&quot;$(pyenv init -)&quot;</span><span class="s1">&#39; &gt;&gt; ~/.bash_profile</span>
+</pre></div>
+</div>
+<p>Reload your profile.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span> ~/.bash_profile
+</pre></div>
+</div>
+</div>
+<div class="section" id="install-dependenies">
+<h2>Install dependenies<a class="headerlink" href="#install-dependenies" title="Permalink to this headline">¶</a></h2>
+<p>Install poetry via curl:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl -sSL https://install.python-poetry.org <span class="p">|</span> python3 -
+</pre></div>
+</div>
+<p>Add <cite>poetry</cite> to your shell</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">PATH</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$HOME</span><span class="s2">/.poetry/bin:</span><span class="nv">$PATH</span><span class="s2">&quot;</span>
+</pre></div>
+</div>
+<p>Configure poetry to create virtual environments inside the project’s root directory</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry config virtualenvs.in-project <span class="nb">true</span>
+</pre></div>
+</div>
+<p>Install packages via poetry</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry install
+</pre></div>
+</div>
+<p>We use <cite>pre-commit</cite> to check the formatting of our commits.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pre-commit install
+</pre></div>
+</div>
+<p>Test the pre-commit works:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pre-commit run --all-files
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">openaq-engine</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="aws_setup.html">Connecting to EC2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="postgres_setup.html">Local Postgres setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docker_setup.html">Docker setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docker_setup.html#id1">Docker setup</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Local Environment Setup</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#setting-up-pyenv">Setting up pyenv</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#install-dependenies">Install dependenies</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="docker_setup.html" title="previous chapter">Docker setup</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, Christina Last, Prithviraj Pramanik.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/install/local_env_setup.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
