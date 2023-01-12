@@ -1,8 +1,6 @@
-import json
 import logging
 import os
 from abc import ABC
-from datetime import datetime
 from itertools import chain
 from typing import Any, Dict, List
 
@@ -10,7 +8,7 @@ import pandas as pd
 from joblib import Parallel, delayed
 from src.preprocess import Preprocess
 from src.utils.utils import (
-    query_results_from_api,
+    api_response_to_df,
     query_results_from_aws,
     write_to_db,
 )
@@ -196,26 +194,30 @@ class CohortBuilder(CohortBuilderBase):
         if pollutant:
             self.target_variable = pollutant
         if country == "WO":
-            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&
-            offset=0&sort=asc&parameter={pollutant}&radius=1000&
-            order_by=firstUpdated&dumpRaw=false""".format(
-                pollutant=self.target_variable
+            url = """https://api.openaq.org/v2/measurements?
+            date_from={date_from}
+            date_to={date_to}
+            limit=100&page=1&offset=0&sort=desc&
+            parameter={pollutant}&radius=1000
+            &order_by=datetime""".format(
+                date_from=date_tuple[0],
+                date_to=date_tuple[1],
+                pollutant=self.target_variable,
             )
         else:
             url = """https://api.openaq.org/v2/measurements?
             date_from={date_from}
             date_to={date_to}
-            limit=100&page=1&offset=0&sort=desc&radius=1000
-            &order_by=datetime""".format(
-                date_from=date_tuple[0], date_to=date_tuple[1]
+            limit=100&page=1&offset=0&sort=desc&
+            parameter={pollutant}&radius=1000
+            &country_id={country}&order_by=datetime""".format(
+                date_from=date_tuple[0],
+                date_to=date_tuple[1],
+                pollutant=self.target_variable,
+                country=country,
             )
-        headers = {"accept": "application/json"}
 
-        response = query_results_from_api(headers, url)
-        return datetime.strptime(
-            json.loads(response)["results"][0]["firstUpdated"],
-            "%Y-%m-%dT%H:%M:%S+00:00",
-        ).date()
+        return api_response_to_df(url)
 
     def _results_to_db(self, filtered_cohorts_df, engine):
         """Write model results to the database for all cohorts"""

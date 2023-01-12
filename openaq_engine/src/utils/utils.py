@@ -1,3 +1,4 @@
+import io
 import json
 import time
 from typing import Any, List
@@ -51,6 +52,11 @@ def query_results_from_api(params, query):
     response = requests.get(url, headers=headers)
 
     return response.text
+
+
+def api_response_to_df(url):
+    urlData = requests.get(url).content
+    return read_csv(io.StringIO(urlData.decode("utf-8")))
 
 
 def query_results_from_aws(params, query, wait=True):
