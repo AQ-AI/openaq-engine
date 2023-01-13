@@ -5,7 +5,7 @@
 
 
 Welcome to openaq-engine's documentation!
-===================================
+=========================================================
 
 The documentation is build up in the following parts: first, there is the
 quickstart tutorial which aims at getting you started with openaq-engine as quickly as

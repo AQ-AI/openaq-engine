@@ -66,3 +66,4 @@ Test the pre-commit works:
 .. code-block:: bash
 
     pre-commit run --all-files
+
