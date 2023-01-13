@@ -8,8 +8,32 @@ Welcome to openaq-engine's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: AQAI:
    
+   **About**
+   Long-term exposure to fine particulate matter (especially PM2.5, i.e. particles with a diameter less than 2.5m) are estimated to cause 8 million excess deaths annually. The impact of air pollution is felt more acutely by the young, with 1 in every 4 deaths under 5 years related to environmental risks.
+   
+   There is a need for public health professionals, humanitarian organizations, governments and health insurance providers to monitor air pollution accurately and assess its health impact on populations. At AQAI, we believe every child has a right to know what they’re breathing. To do this, we develop a machine learning solution to accurately assess the global children populations’ exposure to high levels of air pollution. We generate global predictions of the PM2.5 concentrations (particles with a diameter less than 2.5 micrometers), to augment accurate but limited air pollution data collected using ground sensors with machine learning predictions.
+   
+   **Getting started**
+   
+   *Developers*
+   To set up a developer environment and start contributing, please check our contribution guide.
+
+   *Documentation*
+   Documentation is currently generated in the local development environment.
+
+   *Contributing*
+   This is an open source project and your contribution is very welcome! Please read our contribution guide to know more on how you can contribute.
+
+   Please also mind our :code of conduct before interacting and contributing with our community.
+
+   Built with
+   VS Code
+   Poetry
+   License
+   This project is licensed under XXYY.
+
    install/aws_setup
    install/postgres_setup
    install/docker_setup
