@@ -18,8 +18,14 @@ In case this does not suffice, we also have an API reference, the
 
 If you want to develop for openaq-engine and contribute, check out our guidelines in: https://github.com/AQ-AI/openaq-engine/blob/master/.github/CONTRIBUTING.md
 
-If at any point the documentation does not suffice, you can always get help at
-the 
+Our license is in: https://github.com/AQ-AI/openaq-engine/blob/master/license
+
+Our code of conduct is in: https://github.com/AQ-AI/openaq-engine/blob/master/.github/CODE_OF_CONDUCT.md
+
+Our community statement is in: https://github.com/AQ-AI/openaq-engine/blob/master/community-statement.md
+
+
+If at any point the documentation does not suffice, you can always get help by tweeting at tweeting https://twitter.com/airqualityai (@airqualityai)
 
 Installation
 ------------
