@@ -1,17 +1,20 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
     <title>Connecting to EC2 &#8212; openaq-engine 0.1.0 documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
-    <script src="../_static/language_data.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Local Postgres setup" href="postgres_setup.html" />
@@ -32,20 +35,20 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="connecting-to-ec2">
-<h1>Connecting to EC2<a class="headerlink" href="#connecting-to-ec2" title="Permalink to this headline">¶</a></h1>
+  <section id="connecting-to-ec2">
+<h1>Connecting to EC2<a class="headerlink" href="#connecting-to-ec2" title="Permalink to this heading">¶</a></h1>
 <p>Generate a key pair and download the certficiate onto your local machine.
 Using the path to where you downloaded the certificate, connect to the server:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ssh -i <span class="s2">&quot;{path/to/your/keypair.cer}&quot;</span> ec2-44-208-167-138.compute-1.amazonaws.com
 </pre></div>
 </div>
-<div class="section" id="configure-aws">
-<h2>Configure AWS<a class="headerlink" href="#configure-aws" title="Permalink to this headline">¶</a></h2>
+<section id="configure-aws">
+<h2>Configure AWS<a class="headerlink" href="#configure-aws" title="Permalink to this heading">¶</a></h2>
 <p>You will need to have an <cite>AWS_ACCESS_KEY</cite> and <cite>AWS_SECRET_ACCESS_KEY</cite> generated, see this [getting started documentation](<a class="reference external" href="https://docs.aws.amazon.com/cli/latest/userguide/getting-started-prereqs.html">https://docs.aws.amazon.com/cli/latest/userguide/getting-started-prereqs.html</a>)
 Complete the environmental variables needed in <cite>.env.sample</cite> and move to <cite>.env</cite>
 run the following command:</p>
-<div class="section" id="configuring-aws-cli">
-<h3>Configuring AWS CLI<a class="headerlink" href="#configuring-aws-cli" title="Permalink to this headline">¶</a></h3>
+<section id="configuring-aws-cli">
+<h3>Configuring AWS CLI<a class="headerlink" href="#configuring-aws-cli" title="Permalink to this heading">¶</a></h3>
 <p>run the command</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>aws configure
 </pre></div>
@@ -57,10 +60,10 @@ Default region name <span class="o">[</span>None<span class="o">]</span>: <span 
 Default output format <span class="o">[</span>None<span class="o">]</span>: <span class="o">{</span>format<span class="o">}</span> <span class="c1"># e.g. json</span>
 </pre></div>
 </div>
-</div>
-</div>
-<div class="section" id="adding-new-user">
-<h2>Adding new user<a class="headerlink" href="#adding-new-user" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="adding-new-user">
+<h2>Adding new user<a class="headerlink" href="#adding-new-user" title="Permalink to this heading">¶</a></h2>
 <p>Outside the instance run the following:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ssh-keygen -y -f /path_to_key_pair/key-pair-name.cer
 </pre></div>
@@ -89,8 +92,8 @@ chmod <span class="m">600</span> .ssh/authorized_keys
 </pre></div>
 </div>
 <p>Paste the public key that you retrieved in Step 2 into the file and save the changes.</p>
-</div>
-</div>
+</section>
+</section>
 
 
           </div>
@@ -109,7 +112,7 @@ chmod <span class="m">600</span> .ssh/authorized_keys
 
 
 <h3>Navigation</h3>
-<p class="caption"><span class="caption-text">Contents:</span></p>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Connecting to EC2</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#configure-aws">Configure AWS</a></li>
@@ -135,12 +138,12 @@ chmod <span class="m">600</span> .ssh/authorized_keys
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
 
 
 
@@ -157,7 +160,7 @@ chmod <span class="m">600</span> .ssh/authorized_keys
       &copy;2022, Christina Last, Prithviraj Pramanik.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
