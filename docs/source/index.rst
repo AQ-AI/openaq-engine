@@ -38,7 +38,12 @@ Quick answer:
 
 Long answer:
 We keep more detailed installation instructions (including dependencies)
-up-to-date in a wiki at    
+up-to-date below
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+   
    install/aws_setup
    install/postgres_setup
    install/docker_setup
