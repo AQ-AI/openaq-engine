@@ -138,6 +138,8 @@ class CohortBuilderConfig:
     )
     DATE_COL: str = "date.utc"
     REGION = "us-east-1"
+    S3_BUCKET = os.getenv("S3_BUCKET_OPENAQ")
+    S3_OUTPUT = os.getenv("S3_OUTPUT_OPENAQ")
     TABLE_NAME = "openaq"
     SCHEMA_NAME: str = "model_output"
     FILTER_DICT: Dict[str, Any] = field(
