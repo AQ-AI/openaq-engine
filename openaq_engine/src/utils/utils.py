@@ -190,7 +190,6 @@ def write_to_db(
 ):
     #     with engine.begin() as connection:
     #         connection.execute(text("""SET ROLE "pakistan-ihhn-role" """))
-
     df.to_sql(
         name=table_name,
         schema=schema_name,
