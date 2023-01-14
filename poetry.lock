@@ -254,7 +254,7 @@ test-no-codebase = ["pytest", "matplotlib", "pillow"]
 
 [[package]]
 name = "coverage"
-version = "7.0.3"
+version = "7.0.5"
 description = "Code coverage measurement for Python"
 category = "dev"
 optional = false
@@ -674,6 +674,14 @@ eventlet = ["eventlet (>=0.24.1)"]
 gevent = ["gevent (>=1.4.0)"]
 setproctitle = ["setproctitle"]
 tornado = ["tornado (>=0.2)"]
+
+[[package]]
+name = "haversine"
+version = "2.7.0"
+description = "Calculate the distance between 2 points on Earth."
+category = "main"
+optional = false
+python-versions = ">=3.5"
 
 [[package]]
 name = "httplib2"
@@ -1678,7 +1686,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "flake8 (<5)", "pytest-co
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "b10a8c7b2fb28eaab82adf564a07fb9430108dc506aefef5c3f7b7871b449cee"
+content-hash = "a2974c1b790fec915c42b9a448da255d7b4af05d28a3be700e222702d9f49c2c"
 
 [metadata.files]
 alembic = []
@@ -1730,6 +1738,7 @@ google-resumable-media = []
 googleapis-common-protos = []
 greenlet = []
 gunicorn = []
+haversine = []
 httplib2 = []
 identify = []
 idna = []

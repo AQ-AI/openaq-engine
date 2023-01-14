@@ -1,4 +1,3 @@
-import io
 import json
 import time
 from typing import Any, List
@@ -49,14 +48,19 @@ def query_results_from_api(params, query):
     url = query
     headers = params
 
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=headers, timeout=None)
 
     return response.text
 
 
 def api_response_to_df(url):
-    urlData = requests.get(url).content
-    return read_csv(io.StringIO(urlData.decode("utf-8")))
+
+    headers = {"accept": "application/json"}
+    response = query_results_from_api(headers, url)
+    try:
+        return pd.DataFrame(json.loads(response)["results"])
+    except KeyError:
+        pass
 
 
 def query_results_from_aws(params, query, wait=True):
@@ -68,11 +72,7 @@ def query_results_from_aws(params, query, wait=True):
         QueryString=query,
         QueryExecutionContext={"Database": "default"},
         ResultConfiguration={
-            "OutputLocation": "s3://"
-            + params["bucket"]
-            + "/"
-            + params["path"]
-            + "/"
+            "OutputLocation": f"s3://{params['bucket']}/{params['path']}/"
         },
     )
 
