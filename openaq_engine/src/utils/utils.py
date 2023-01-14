@@ -48,9 +48,19 @@ def query_results_from_api(params, query):
     url = query
     headers = params
 
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=headers, timeout=None)
 
     return response.text
+
+
+def api_response_to_df(url):
+
+    headers = {"accept": "application/json"}
+    response = query_results_from_api(headers, url)
+    try:
+        return pd.DataFrame(json.loads(response)["results"])
+    except KeyError:
+        pass
 
 
 def query_results_from_aws(params, query, wait=True):
@@ -62,11 +72,7 @@ def query_results_from_aws(params, query, wait=True):
         QueryString=query,
         QueryExecutionContext={"Database": "default"},
         ResultConfiguration={
-            "OutputLocation": "s3://"
-            + params["bucket"]
-            + "/"
-            + params["path"]
-            + "/"
+            "OutputLocation": f"s3://{params['bucket']}/{params['path']}/"
         },
     )
 
@@ -184,7 +190,6 @@ def write_to_db(
 ):
     #     with engine.begin() as connection:
     #         connection.execute(text("""SET ROLE "pakistan-ihhn-role" """))
-
     df.to_sql(
         name=table_name,
         schema=schema_name,

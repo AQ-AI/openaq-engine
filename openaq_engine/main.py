@@ -1,4 +1,5 @@
 import click
+from mlflows.cli.cohort_builder import cohort_builder_options
 from mlflows.cli.time_splitter import time_splitter_options
 from setup_environment import get_dbengine
 from src.cohort_builder import CohortBuilder
@@ -50,15 +51,20 @@ def time_splitter(country, source, pollutant, latest_date):
     time_splitter.execute(country, source, pollutant, latest_date)
 
 
+@cohort_builder_options()
 @click.command("cohort-builder", help="Generate cohorts for time splits")
-def cohort_builder():
+def cohort_builder(country, source, pollutant, latest_date):
     # initialize engine
     engine = get_dbengine()
     time_splitter = TimeSplitterFlow().execute()
-    train_validation_dict = time_splitter.execute()
+    train_validation_dict = time_splitter.execute(
+        country, source, pollutant, latest_date
+    )
 
     cohort_builder = CohortBuilderFlow().execute()
-    cohort_builder.execute(train_validation_dict, engine)
+    cohort_builder.execute(
+        train_validation_dict, engine, country, source, pollutant
+    )
 
 
 @click.command("feature-builder", help="Generate features for cohorts")
