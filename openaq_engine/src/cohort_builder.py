@@ -2,12 +2,16 @@ import logging
 import os
 from abc import ABC
 from itertools import chain
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import pandas as pd
 from joblib import Parallel, delayed
 from src.preprocess import Preprocess
-from src.utils.utils import query_results_from_aws, write_to_db
+from src.utils.utils import (
+    api_response_to_df,
+    query_results_from_aws,
+    write_to_db,
+)
 
 from config.model_settings import CohortBuilderConfig
 
@@ -25,7 +29,7 @@ class CohortBuilderBase(ABC):
         self.bucket = bucket
         self.s3_output = s3_output
 
-    def _build_response_from_aws(self, params, sql_query):
+    def build_response_from_aws(self, params, sql_query):
         response_query_result = query_results_from_aws(params, sql_query)
         header = [
             d["VarCharValue"]
@@ -49,9 +53,15 @@ class CohortBuilder(CohortBuilderBase):
         self,
         date_col: str,
         filter_dict: Dict[str, Any],
+        target_variable: List[str],
+        country: str,
+        source: str,
     ) -> None:
         self.date_col = date_col
         self.filter_dict = filter_dict
+        self.targete_variable = target_variable
+        self.country = country
+        self.source = source
         super().__init__(
             CohortBuilderConfig.TABLE_NAME,
             CohortBuilderConfig.REGION,
@@ -66,9 +76,14 @@ class CohortBuilder(CohortBuilderBase):
         return cls(
             date_col=config.DATE_COL,
             filter_dict=config.FILTER_DICT,
+            target_variable=config.TARGET_VARIABLE,
+            country=config.COUNTRY,
+            source=config.SOURCE,
         )
 
-    def execute(self, train_validation_dict, engine):
+    def execute(
+        self, train_validation_dict, engine, country, source, pollutant
+    ):
         filter_cols = ", ".join(
             set(list(chain.from_iterable(self.filter_dict.values())))
         )
@@ -76,22 +91,33 @@ class CohortBuilder(CohortBuilderBase):
         cohorts_df = pd.concat(
             Parallel(n_jobs=-1, backend="multiprocessing", verbose=5)(
                 delayed(self.cohort_builder)(
-                    cohort_type, train_validation_dict, filter_cols
+                    cohort_type,
+                    train_validation_dict,
+                    filter_cols,
+                    country,
+                    source,
+                    pollutant,
                 )
                 for cohort_type in train_validation_dict.keys()
             ),
             axis=0,
         ).reset_index(drop=True)
+
         filtered_cohorts_df = (
             Preprocess()
             .from_options(list(self.filter_dict.keys()))
-            .execute(cohorts_df)
+            .execute(cohorts_df, source)
         )
-
         self._results_to_db(filtered_cohorts_df, engine)
 
     def cohort_builder(
-        self, cohort_type, train_validation_dict, filter_cols
+        self,
+        cohort_type,
+        train_validation_dict,
+        filter_cols,
+        country,
+        source,
+        pollutant,
     ) -> pd.DataFrame:
         """
         Retrieve coded er data data from train data.
@@ -106,33 +132,23 @@ class CohortBuilder(CohortBuilderBase):
         """
         date_tup_list = list(train_validation_dict[f"{cohort_type}"])
         df_list = []
-        params = {
-            "region": str(self.region_name),
-            "database": str(os.getenv("DB_NAME_OPENAQ")),
-            "bucket": str(self.bucket),
-            "path": f"{self.s3_output}/cohorts",
-        }
 
         for index, date_tuple in enumerate(date_tup_list):
-            query = """SELECT DISTINCT *
-                FROM {table}
-                WHERE {date_col}
-                BETWEEN '{start_date}'
-                AND '{end_date}';""".format(
-                table=self.table_name,
-                date_col=self.date_col,
-                start_date=date_tuple[0],
-                end_date=date_tuple[1],
-            )
-
-            df = self._build_response_from_aws(params, query)
+            if source == "openaq-aws":
+                df = self.execute_for_openaq_aws(
+                    date_tuple, country, pollutant
+                )
+            if source == "openaq-api":
+                df = self.execute_for_openaq_api(
+                    date_tuple, country, pollutant
+                )
             df["train_validation_set"] = index
             df["cohort"] = f"{index}_{date_tuple[0]}_{date_tuple[1]}"
             df["cohort_type"] = f"{cohort_type}"
             if df.empty:
                 logging.info(
                     f"""No openaq data found for
-                    {date_tuple[0].date()}_{date_tuple[1].date()}
+                    {date_tuple[0]}_{date_tuple[1]}
                     time window"""
                 )
 
@@ -140,9 +156,67 @@ class CohortBuilder(CohortBuilderBase):
         cohort_df = pd.concat(df_list, axis=0).reset_index(drop=True)
         return cohort_df
 
+    def execute_for_openaq_aws(self, date_tuple, country, pollutant):
+        params = {
+            "region": str(self.region_name),
+            "database": str(os.getenv("DB_NAME_OPENAQ")),
+            "bucket": str(os.getenv("S3_BUCKET_OPENAQ")),
+            "path": f"{str(os.getenv('S3_OUTPUT_OPENAQ'))}/cohorts",
+        }
+        if pollutant:
+            self.target_variable = pollutant
+        if country == "WO":
+            query = """SELECT DISTINCT *
+                FROM {table}
+                WHERE parameter='{target_variable}' AND {date_col}
+                BETWEEN '{start_date}'
+                AND '{end_date}';""".format(
+                table=self.table_name,
+                target_variable=self.target_variable,
+                date_col=self.date_col,
+                start_date=date_tuple[0],
+                end_date=date_tuple[1],
+            )
+
+        else:
+            query = """SELECT DISTINCT *
+                FROM {table}
+                WHERE parameter='{target_variable}' AND country='{country}'
+                AND {date_col} BETWEEN '{start_date}' AND '{end_date}';""".format(
+                table=self.table_name,
+                target_variable=self.target_variable,
+                date_col=self.date_col,
+                start_date=date_tuple[0],
+                end_date=date_tuple[1],
+                country=country,
+            )
+        return self.build_response_from_aws(params, query)
+
+    def execute_for_openaq_api(
+        self,
+        date_tuple,
+        country,
+        pollutant,
+    ):
+        if pollutant:
+            self.target_variable = pollutant
+        if country == "WO":
+            url = """https://api.openaq.org/v2/measurements?date_from={date_from}&date_to={date_to}&limit=100&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&order_by=datetime""".format(
+                date_from=date_tuple[0],
+                date_to=date_tuple[1],
+                pollutant=self.target_variable,
+            )
+        else:
+            url = """https://api.openaq.org/v2/measurements?date_from={date_from}&date_to={date_to}&limit=100&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&country_id={country}&order_by=datetime""".format(
+                date_from=date_tuple[0],
+                date_to=date_tuple[1],
+                pollutant=self.target_variable,
+                country=country,
+            )
+        return api_response_to_df(url)
+
     def _results_to_db(self, filtered_cohorts_df, engine):
         """Write model results to the database for all cohorts"""
-
         write_to_db(
             filtered_cohorts_df,
             engine,

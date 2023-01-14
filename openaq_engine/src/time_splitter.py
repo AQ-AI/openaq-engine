@@ -130,22 +130,16 @@ class TimeSplitterBase(ABC):
 
     def create_end_date_from_openaq_api(self, country, pollutant, latest_date):
         if country == "WO":
-            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&
-            offset=0&sort=desc&parameter={pollutant}&radius=1000&
-            order_by=lastUpdated&dumpRaw=false""".format(
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&order_by=lastUpdated&dumpRaw=false""".format(
                 pollutant=pollutant
             )
         else:
-            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&
-            offset=0&sort=desc&parameter={pollutant}&radius=1000&country_id={country}
-            &order_by=lastUpdated&dumpRaw=false""".format(
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&country_id={country}&order_by=lastUpdated&dumpRaw=false""".format(
                 country=country, pollutant=pollutant
             )
 
         headers = {"accept": "application/json"}
-
         response = query_results_from_api(headers, url)
-
         return datetime.strptime(
             json.loads(response)["results"][0]["lastUpdated"],
             "%Y-%m-%dT%H:%M:%S+00:00",
@@ -157,21 +151,18 @@ class TimeSplitterBase(ABC):
         pollutant,
     ):
         if country == "WO":
-            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&
-            offset=0&sort=asc&parameter={pollutant}&radius=1000&
-            order_by=firstUpdated&dumpRaw=false""".format(
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=asc&parameter={pollutant}&radius=1000&order_by=firstUpdated&dumpRaw=false""".format(
                 pollutant=pollutant
             )
         else:
-            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&
-            offset=0&sort=asc&parameter={pollutant}&radius=1000&country_id={country}
-            &order_by=firstUpdated&dumpRaw=false""".format(
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=asc&parameter={pollutant}&radius=1000&country_id={country}&order_by=firstUpdated&dumpRaw=false""".format(
                 country=country, pollutant=pollutant
             )
 
         headers = {"accept": "application/json"}
 
         response = query_results_from_api(headers, url)
+
         return datetime.strptime(
             json.loads(response)["results"][0]["firstUpdated"],
             "%Y-%m-%dT%H:%M:%S+00:00",
