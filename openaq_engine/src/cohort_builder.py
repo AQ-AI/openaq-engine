@@ -102,13 +102,12 @@ class CohortBuilder(CohortBuilderBase):
             ),
             axis=0,
         ).reset_index(drop=True)
-        print(cohorts_df)
+
         filtered_cohorts_df = (
             Preprocess()
             .from_options(list(self.filter_dict.keys()))
-            .execute(cohorts_df)
+            .execute(cohorts_df, source)
         )
-
         self._results_to_db(filtered_cohorts_df, engine)
 
     def cohort_builder(
@@ -143,7 +142,6 @@ class CohortBuilder(CohortBuilderBase):
                 df = self.execute_for_openaq_api(
                     date_tuple, country, pollutant
                 )
-                print(df)
             df["train_validation_set"] = index
             df["cohort"] = f"{index}_{date_tuple[0]}_{date_tuple[1]}"
             df["cohort_type"] = f"{cohort_type}"
@@ -219,7 +217,6 @@ class CohortBuilder(CohortBuilderBase):
 
     def _results_to_db(self, filtered_cohorts_df, engine):
         """Write model results to the database for all cohorts"""
-
         write_to_db(
             filtered_cohorts_df,
             engine,
