@@ -1,17 +1,20 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
     <title>Local Environment Setup &#8212; openaq-engine 0.1.0 documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
-    <script src="../_static/language_data.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="prev" title="Docker setup" href="docker_setup.html" />
@@ -31,10 +34,10 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="local-environment-setup">
-<h1>Local Environment Setup<a class="headerlink" href="#local-environment-setup" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="setting-up-pyenv">
-<h2>Setting up pyenv<a class="headerlink" href="#setting-up-pyenv" title="Permalink to this headline">¶</a></h2>
+  <section id="local-environment-setup">
+<h1>Local Environment Setup<a class="headerlink" href="#local-environment-setup" title="Permalink to this heading">¶</a></h1>
+<section id="setting-up-pyenv">
+<h2>Setting up pyenv<a class="headerlink" href="#setting-up-pyenv" title="Permalink to this heading">¶</a></h2>
 <p>Curl the following link to download pyenv</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl https://pyenv.run <span class="p">|</span> bash
 </pre></div>
@@ -51,9 +54,9 @@ Add pyenv initializer to shell startup script.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span> ~/.bash_profile
 </pre></div>
 </div>
-</div>
-<div class="section" id="install-dependenies">
-<h2>Install dependenies<a class="headerlink" href="#install-dependenies" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="install-dependenies">
+<h2>Install dependenies<a class="headerlink" href="#install-dependenies" title="Permalink to this heading">¶</a></h2>
 <p>Install poetry via curl:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl -sSL https://install.python-poetry.org <span class="p">|</span> python3 -
 </pre></div>
@@ -78,8 +81,8 @@ Add pyenv initializer to shell startup script.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pre-commit run --all-files
 </pre></div>
 </div>
-</div>
-</div>
+</section>
+</section>
 
 
           </div>
@@ -98,7 +101,7 @@ Add pyenv initializer to shell startup script.</p>
 
 
 <h3>Navigation</h3>
-<p class="caption"><span class="caption-text">Contents:</span></p>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="aws_setup.html">Connecting to EC2</a></li>
 <li class="toctree-l1"><a class="reference internal" href="postgres_setup.html">Local Postgres setup</a></li>
@@ -123,12 +126,12 @@ Add pyenv initializer to shell startup script.</p>
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
 
 
 
@@ -145,7 +148,7 @@ Add pyenv initializer to shell startup script.</p>
       &copy;2022, Christina Last, Prithviraj Pramanik.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
