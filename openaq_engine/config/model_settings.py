@@ -1,10 +1,17 @@
 import os
 from dataclasses import field
+from datetime import datetime
 from typing import Any, Dict, List, Sequence
 
 import boto3
 from pydantic import StrictStr
 from pydantic.dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class ArtifactOutputConfig:
+    cohort_builder: str = "cohort_builder.csv.gz"
+    build_features: str = "build_features.csv.gz"
 
 
 @dataclass
@@ -159,6 +166,7 @@ class TimeSplitterConfig:
     DATE_COL: str = "date.utc"
     TARGET_VARIABLE = "pm25"
     COUNTRY = "WO"
+    LATEST_DATE = datetime.now()
     SOURCE = "openaq-aws"
     TIME_WINDOW_LENGTH: int = 12
     WITHIN_WINDOW_SAMPLER: int = 3

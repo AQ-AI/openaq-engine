@@ -1,7 +1,7 @@
 import click
-from mlflows.cli.cohort_builder import cohort_builder_options
-from mlflows.cli.features.build_features import feature_builder_options
-from mlflows.cli.time_splitter import time_splitter_options
+from mlflows.cli.cohort_builder_cli import cohort_builder_options
+from mlflows.cli.features.build_features_cli import feature_builder_options
+from mlflows.cli.time_splitter_cli import time_splitter_options
 from setup_environment import get_dbengine
 from src.cohort_builder import CohortBuilder
 from src.features.build_features import BuildFeaturesRandomForest

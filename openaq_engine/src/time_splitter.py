@@ -51,7 +51,7 @@ class TimeSplitterBase(ABC):
                 table=self.table_name,
                 date_col=self.date_col,
                 target_variable=self.target_variable,
-                latest_date=latest_date,
+                latest_date=latest_date.isoformat(),
             )
         else:
             sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime
@@ -63,7 +63,7 @@ class TimeSplitterBase(ABC):
                 date_col=self.date_col,
                 target_variable=self.target_variable,
                 country=country_info,
-                latest_date=latest_date,
+                latest_date=latest_date.isoformat(),
             )
         response_query_result = self.build_response_from_aws(params, sql_query)
 
@@ -92,7 +92,7 @@ class TimeSplitterBase(ABC):
                 table=self.table_name,
                 date_col=self.date_col,
                 target_variable=self.target_variable,
-                latest_date=latest_date,
+                latest_date=latest_date.isoformat(),
             )
         else:
             sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime
@@ -104,7 +104,7 @@ class TimeSplitterBase(ABC):
                 date_col=self.date_col,
                 target_variable=self.target_variable,
                 country=country_info,
-                latest_date=latest_date,
+                latest_date=latest_date.isoformat(),
             )
         if self.source == "openaq-aws":
             response_query_result = self.build_response_from_aws(
