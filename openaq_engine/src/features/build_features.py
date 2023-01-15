@@ -47,7 +47,7 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
         df = get_data(cohort_query)
         df = df.pipe(self._add_ee_features).pipe(
             self._change_to_categorical_type
-        )[self.all_model_features]
+        )[self.categorical_features]
         self._results_to_db(df, engine)
 
     @property
