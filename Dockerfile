@@ -37,15 +37,15 @@ RUN echo "$ssh_prv_key" > /root/.ssh/id_rsa && \
 
 ENV SHELL=/bin/bash \
     USERNAME=openaq_engine \
-    DB_NAME_OPENAQ=openaq \
-    S3_OUTPUT_OPENAQ=pm25-month \
-    S3_BUCKET_OPENAQ=openaq-pm25-historic \
-    AWS_PROFILE=default \
-    AWS_ACCESS_KEY=AKIAVZ3WREYKEIAIMAPJ \
-    AWS_SECRET_ACCESS_KEY=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 \
-    PGDATABASE=openaq_db \ 
-    PGUSER=postgres \
-    PGPASSWORD=postgres
+    DB_NAME_OPENAQ=${DB_NAME_OPENAQ} \
+    S3_OUTPUT_OPENAQ=${S3_OUTPUT_OPENAQ} \
+    S3_BUCKET_OPENAQ=${S3_BUCKET_OPENAQ} \
+    AWS_PROFILE=${AWS_PROFILE} \
+    AWS_ACCESS_KEY=${AWS_ACCESS_KEY} \
+    AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
+    PGDATABASE=${PGDATABASE} \ 
+    PGUSER=${PGUSER} \
+    PGPASSWORD=${PGPASSWORD}
 
 RUN adduser \
     --disabled-password \
