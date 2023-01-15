@@ -34,6 +34,7 @@ class BuildFeaturesConfig:
 
 @dataclass
 class EEConfig:
+    LOOKBACK_N = 1
     DATE_COL: str = "timestamp_utc"
     TABLE_NAME = "cohorts"
     # Satellite configurations
@@ -74,7 +75,7 @@ class EEConfig:
     POPULATION_IMAGE_BAND: Sequence[str] = field(
         default_factory=lambda: ["basic_demographic_characteristics"]
     )
-    POPULATION_PERIOD = 1000
+    POPULATION_PERIOD = 1100
     POPULATION_IMAGE_RES = 1000
     LAND_COVER_IMAGE_COLLECTION: str = (
         "COPERNICUS/Landcover/100m/Proba-V-C3/Global"
@@ -83,6 +84,7 @@ class EEConfig:
         default_factory=lambda: ["discrete_classification"]
     )
     LAND_COVER_IMAGE_RES = 100
+    LAND_COVER_PERIOD = 1500
     BUCKET_NAME = "earthengine-bucket"
     PATH_TO_PRIVATE_KEY = "private_keys/unicef-367711-29676476912d.json"
     SERVICE_ACCOUNT = "earth-engine@unicef-367711.iam.gserviceaccount.com"
@@ -112,29 +114,14 @@ class EEConfig:
                 self.LANDSAT_PERIOD,
                 self.NIGHTTIME_LIGHT_PERIOD,
                 self.METEROLOGICAL_IMAGE_PERIOD,
+                self.POPULATION_PERIOD,
+                self.LAND_COVER_PERIOD,
             ],
             [
                 self.AOD_IMAGE_RES,
                 self.LANDSAT_RES,
                 self.NIGHTTIME_LIGHT_RES,
                 self.METEROLOGICAL_IMAGE_RES,
-                self.POPULATION_IMAGE_RES,
-                self.LAND_COVER_IMAGE_RES,
-            ],
-        )
-
-    @property
-    def STATIC_SATELLITES(self) -> zip(List[str], List[str]):
-        return zip(
-            [
-                self.POPULATION_IMAGE_COLLECTION,
-                self.LAND_COVER_IMAGE_COLLECTION,
-            ],
-            [
-                self.POPULATION_IMAGE_BAND,
-                self.LAND_COVER_IMAGE_BAND,
-            ],
-            [
                 self.POPULATION_IMAGE_RES,
                 self.LAND_COVER_IMAGE_RES,
             ],

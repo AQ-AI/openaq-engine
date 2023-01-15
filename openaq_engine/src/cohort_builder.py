@@ -120,10 +120,7 @@ class CohortBuilder(CohortBuilderBase):
         pollutant,
     ) -> pd.DataFrame:
         """
-        Retrieve coded er data data from train data.
-
-        Ensures that dataframe always has columns mentioned in
-        ENTITY_ID_COLUMNS even if dataframe is empty.
+        Retrieve data for cohorts pre-defined timesplits.
 
         Returns
         -------
