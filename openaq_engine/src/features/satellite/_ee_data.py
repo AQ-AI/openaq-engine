@@ -195,7 +195,6 @@ class EEFeatures:
         features_df = self._weighted_mean_by_lambda(
             satellite_df, avg_cols, weights, groupby_cols
         )
-        print(features_df)
         return features_df
 
     def _generate_timerange(self) -> Tuple[str]:
