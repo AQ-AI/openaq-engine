@@ -1,5 +1,6 @@
 import click
 from mlflows.cli.cohort_builder import cohort_builder_options
+from mlflows.cli.features.build_features import feature_builder_options
 from mlflows.cli.time_splitter import time_splitter_options
 from setup_environment import get_dbengine
 from src.cohort_builder import CohortBuilder
@@ -67,25 +68,31 @@ def cohort_builder(country, source, pollutant, latest_date):
     )
 
 
+@feature_builder_options()
 @click.command("feature-builder", help="Generate features for cohorts")
-def feature_builder():
+def feature_builder(country, pollutant):
     engine = get_dbengine()
 
     build_features = BuildFeaturesFlow().execute()
-    build_features.execute(engine)
+    build_features.execute(engine, country, pollutant)
 
 
+@time_splitter_options()
 @click.command("run-pipeline", help="Run all pipeline")
-def run_pipeline():
+def run_pipeline(country, source, pollutant, latest_date):
     # initialize engine
     engine = get_dbengine()
     time_splitter = TimeSplitterFlow().execute()
-    train_validation_dict = time_splitter.execute()
+    train_validation_dict = time_splitter.execute(
+        country, source, pollutant, latest_date
+    )
 
     cohort_builder = CohortBuilderFlow().execute()
-    cohort_builder.execute(train_validation_dict, engine)
+    cohort_builder.execute(
+        train_validation_dict, engine, country, source, pollutant
+    )
     build_features = BuildFeaturesFlow().execute()
-    build_features.execute(engine)
+    build_features.execute(engine, country, pollutant)
 
 
 @click.group("openaq-engine", help="Library to query openaq data")
@@ -97,6 +104,7 @@ def cli(ctx):
 cli.add_command(time_splitter)
 cli.add_command(cohort_builder)
 cli.add_command(feature_builder)
+cli.add_command(run_pipeline)
 
 
 if __name__ == "__main__":

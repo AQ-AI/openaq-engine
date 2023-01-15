@@ -36,12 +36,19 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
             all_model_features=config.ALL_MODEL_FEATURES,
         )
 
-    def execute(self, engine) -> pd.DataFrame:
-        cohort_query = """select * from "cohorts";"""
+    def execute(self, engine, country, pollutant) -> pd.DataFrame:
+        if country == "WO":
+            cohort_query = (
+                f"""select * from "cohorts" where parameter="{pollutant}";"""
+            )
+        else:
+            cohort_query = f"""select * from "cohorts" where parameter='{pollutant}' and country='{country}';"""
+
         df = get_data(cohort_query)
-        return df.pipe(self._add_ee_variable_features).pipe(
+        df = df.pipe(self._add_ee_features).pipe(
             self._change_to_categorical_type
         )[self.all_model_features]
+        self._results_to_db(df, engine)
 
     @property
     def all_model_features(self):
