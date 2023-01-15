@@ -10,6 +10,9 @@ from pydantic.dataclasses import dataclass
 @dataclass
 class BuildFeaturesConfig:
     TARGET_COL: str = "value"
+    TARGET_VARIABLE = "pm25"
+    COUNTRY = "WO"
+
     CATEGORICAL_FEATURES: List[StrictStr] = field(default_factory=lambda: [])
     CORE_FEATURES: List[StrictStr] = field(
         default_factory=lambda: [
@@ -33,7 +36,7 @@ class BuildFeaturesConfig:
 class EEConfig:
     DATE_COL: str = "timestamp_utc"
     TABLE_NAME = "cohorts"
-
+    # Satellite configurations
     AOD_IMAGE_COLLECTION: str = "MODIS/006/MCD19A2_GRANULES"
     AOD_IMAGE_BAND: Sequence[str] = field(
         default_factory=lambda: ["Optical_Depth_047"]
@@ -71,6 +74,7 @@ class EEConfig:
     POPULATION_IMAGE_BAND: Sequence[str] = field(
         default_factory=lambda: ["basic_demographic_characteristics"]
     )
+    POPULATION_PERIOD = 1000
     POPULATION_IMAGE_RES = 1000
     LAND_COVER_IMAGE_COLLECTION: str = (
         "COPERNICUS/Landcover/100m/Proba-V-C3/Global"
@@ -84,7 +88,7 @@ class EEConfig:
     SERVICE_ACCOUNT = "earth-engine@unicef-367711.iam.gserviceaccount.com"
 
     @property
-    def VARIABLE_SATELLITES(self) -> zip(List[str], List[str]):
+    def ALL_SATELLITES(self) -> zip(List[str], List[str]):
         """Return varying satellites to be fed into the model"""
         return zip(
             [
@@ -92,12 +96,16 @@ class EEConfig:
                 self.LANDSAT_IMAGE_COLLECTION,
                 self.NIGHTTIME_LIGHT_IMAGE_COLLECTION,
                 self.METEROLOGICAL_IMAGE_COLLECTION,
+                self.POPULATION_IMAGE_COLLECTION,
+                self.LAND_COVER_IMAGE_COLLECTION,
             ],
             [
                 self.AOD_IMAGE_BAND,
                 self.LANDSAT_IMAGE_BAND,
                 self.NIGHTTIME_LIGHT_IMAGE_BAND,
                 self.METEROLOGICAL_IMAGE_BAND,
+                self.POPULATION_IMAGE_BAND,
+                self.LAND_COVER_IMAGE_BAND,
             ],
             [
                 self.AOD_IMAGE_PERIOD,
@@ -110,6 +118,8 @@ class EEConfig:
                 self.LANDSAT_RES,
                 self.NIGHTTIME_LIGHT_RES,
                 self.METEROLOGICAL_IMAGE_RES,
+                self.POPULATION_IMAGE_RES,
+                self.LAND_COVER_IMAGE_RES,
             ],
         )
 
