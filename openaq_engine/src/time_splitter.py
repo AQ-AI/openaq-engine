@@ -4,6 +4,7 @@ from abc import ABC
 from datetime import datetime
 from typing import Any, Dict, List
 
+import mlflow
 from dateutil.relativedelta import relativedelta
 from src.utils.utils import query_results_from_api, query_results_from_aws
 
@@ -221,6 +222,14 @@ class TimeSplitter(TimeSplitterBase):
         ----
         The start and end dates for each time window
         """
+        mlflow.log_param("time_window_length", self.time_window_length)
+        mlflow.log_param("within_window_sampler", self.within_window_sampler)
+        mlflow.log_param("window_count", self.window_count)
+        mlflow.log_param("train_validation_dict", self.train_validation_dict)
+        mlflow.log_param("target_variable", self.target_variable)
+        mlflow.log_param("country", self.country)
+        mlflow.log_param("source", self.source)
+
         window_no = 0
         params = {
             "region": str(self.region_name),
@@ -261,6 +270,7 @@ class TimeSplitter(TimeSplitterBase):
                     (start_date, window_start_date)
                 ]
                 window_no += 1
+        mlflow.log_params("train_validation_dict", self.train_validation_dict)
         return self.train_validation_dict
 
     def execute_for_openaq_aws(self, params, country, pollutant, latest_date):
