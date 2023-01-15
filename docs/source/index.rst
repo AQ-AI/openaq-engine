@@ -36,6 +36,11 @@ Quick answer:
 	$ git clone git@github.com:AQ-AI/openaq-engine.git
 	$ poetry install
 
+Remember to define your psql environment variables and export them using:
+::
+	$ source .env 
+
+
 Long answer:
 We keep more detailed installation instructions (including dependencies)
 up-to-date below

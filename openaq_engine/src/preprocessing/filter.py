@@ -16,7 +16,6 @@ class Filter:
         df : pd.DataFrame
             Dataframe with selected `pollutant`
         """
-
         return (
             df.assign(
                 selected_pollutant=(
