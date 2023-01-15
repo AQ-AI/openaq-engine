@@ -45,9 +45,8 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
             cohort_query = f"""select * from "cohorts" where parameter='{pollutant}' and country='{country}';"""
 
         df = get_data(cohort_query)
-        df = df.pipe(self._add_ee_features).pipe(
-            self._change_to_categorical_type
-        )[self.categorical_features]
+        df = self._add_ee_features(df)
+        df = self._change_to_categorical_type(df)
         self._results_to_db(df, engine)
 
     @property
