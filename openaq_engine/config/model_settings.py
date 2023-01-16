@@ -158,8 +158,8 @@ class CohortBuilderConfig:
 class TimeSplitterConfig:
     DATE_COL: str = "date.utc"
     TARGET_VARIABLE = "pm25"
-    COUNTRY = "WO"
-    SOURCE = "openaq-aws"
+    COUNTRY = "IN"
+    SOURCE = "openaq-api"
     TIME_WINDOW_LENGTH: int = 12
     WITHIN_WINDOW_SAMPLER: int = 3
     WINDOW_COUNT: int = 3  # this will increase for more than one split

@@ -119,12 +119,13 @@ class CohortBuilder(CohortBuilderBase):
         mlflow.log_param("source", source)
 
         with tempfile.TemporaryDirectory("w+") as dir_name:
+
             filtered_cohorts_df_path = os.path.join(
                 dir_name, "filtered_cohorts_df.csv.gz"
             )
 
             write_csv(filtered_cohorts_df, filtered_cohorts_df_path)
-
+            mlflow.get_artifact_uri()
             mlflow.log_artifact(filtered_cohorts_df_path)
         self._results_to_db(filtered_cohorts_df, engine)
 
