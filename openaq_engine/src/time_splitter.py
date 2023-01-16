@@ -225,7 +225,6 @@ class TimeSplitter(TimeSplitterBase):
         mlflow.log_param("time_window_length", self.time_window_length)
         mlflow.log_param("within_window_sampler", self.within_window_sampler)
         mlflow.log_param("window_count", self.window_count)
-        mlflow.log_param("train_validation_dict", self.train_validation_dict)
         mlflow.log_param("target_variable", self.target_variable)
         mlflow.log_param("country", self.country)
         mlflow.log_param("source", self.source)
