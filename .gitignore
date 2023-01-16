@@ -124,3 +124,5 @@ local_data/*
 
 ## Notebooks
 openaq_engine/scripts/plume_labs.ipynb
+
+/home/ec2-user/openaq-engine/openssl-1.1.1k/
