@@ -1,15 +1,18 @@
 import logging
 import os
+import tempfile
 from abc import ABC
 from itertools import chain
 from typing import Any, Dict, List
 
+import mlflow
 import pandas as pd
 from joblib import Parallel, delayed
 from src.preprocess import Preprocess
 from src.utils.utils import (
     api_response_to_df,
     query_results_from_aws,
+    write_csv,
     write_to_db,
 )
 
@@ -108,6 +111,21 @@ class CohortBuilder(CohortBuilderBase):
             .from_options(list(self.filter_dict.keys()))
             .execute(cohorts_df, source)
         )
+        mlflow.log_param("length of original cohorts", len(cohorts_df))
+        mlflow.log_param("length of filtered cohort", len(filtered_cohorts_df))
+        mlflow.log_param("filters applied", list(self.filter_dict.keys()))
+        mlflow.log_param("target_variable", pollutant)
+        mlflow.log_param("country", country)
+        mlflow.log_param("source", source)
+
+        with tempfile.TemporaryDirectory("w+") as dir_name:
+            filtered_cohorts_df_path = os.path.join(
+                dir_name, "filtered_cohorts_df.csv.gz"
+            )
+
+            write_csv(filtered_cohorts_df, filtered_cohorts_df_path)
+
+            mlflow.log_artifact(filtered_cohorts_df_path)
         self._results_to_db(filtered_cohorts_df, engine)
 
     def cohort_builder(
