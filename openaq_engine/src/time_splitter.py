@@ -270,7 +270,7 @@ class TimeSplitter(TimeSplitterBase):
                     (start_date, window_start_date)
                 ]
                 window_no += 1
-        mlflow.log_params("train_validation_dict", self.train_validation_dict)
+        mlflow.log_params(self.train_validation_dict)
         return self.train_validation_dict
 
     def execute_for_openaq_aws(self, params, country, pollutant, latest_date):

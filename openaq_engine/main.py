@@ -2,6 +2,7 @@ import os
 
 import click
 import mlflow
+from datetime import datetime
 from mlflows.cli.cohort_builder import cohort_builder_options
 from mlflows.cli.features.build_features import feature_builder_options
 from mlflows.cli.time_splitter import time_splitter_options
@@ -55,11 +56,9 @@ class BuildFeaturesFlow:
 @time_splitter_options()
 @click.command("time-splitter", help="Splits csvs for time splits")
 def time_splitter(country, source, pollutant, latest_date):
-    experiment_id = mlflow.create_experiment(
-        "time-splitter", os.getenv("MLFLOW_S3_BUCKET")
-    )
-    mlflow.set_experiment(experiment_id)
-    with mlflow.start_run(experiment_id=experiment_id):
+    experiment_id = mlflow.create_experiment(f"time_splitter_{str(datetime.now())}")
+
+    with mlflow.start_run(experiment_id=experiment_id) as run:
         time_splitter = TimeSplitterFlow().execute()
         time_splitter.execute(country, source, pollutant, latest_date)
 
