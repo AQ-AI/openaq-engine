@@ -37,7 +37,7 @@ def write_csv(df: pd.DataFrame, path: str, **kwargs: Any) -> None:
         index=False,
         na_rep="",
         sep=",",
-        line_terminator="\n",
+        lineterminator="\n",
         encoding="utf-8",
         escapechar="\r",
         **kwargs,

@@ -1,9 +1,12 @@
+import os
+import tempfile
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Type
 
+import mlflow
 import pandas as pd
 from src.features.satellite._ee_data import EEFeatures
-from src.utils.utils import get_data, write_to_db
+from src.utils.utils import get_data, write_csv, write_to_db
 
 from config.model_settings import BuildFeaturesConfig, EEConfig
 
@@ -47,6 +50,15 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
         df = get_data(cohort_query)
         df = self._add_ee_features(df)
         df = self._change_to_categorical_type(df)
+        mlflow.log_param("target_variable", pollutant)
+        mlflow.log_param("country", country)
+
+        with tempfile.TemporaryDirectory("w+") as dir_name:
+            features_df_path = os.path.join(dir_name, "features_df.csv.gz")
+
+            write_csv(df, features_df_path)
+
+            mlflow.log_artifact(features_df_path)
         self._results_to_db(df, engine)
 
     @property
