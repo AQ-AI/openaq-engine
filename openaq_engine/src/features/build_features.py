@@ -1,12 +1,9 @@
-import os
-import tempfile
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Type
 
-import mlflow
 import pandas as pd
 from src.features.satellite._ee_data import EEFeatures
-from src.utils.utils import get_data, write_csv, write_to_db
+from src.utils.utils import write_to_db
 
 from config.model_settings import BuildFeaturesConfig, EEConfig
 
@@ -39,27 +36,19 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
             all_model_features=config.ALL_MODEL_FEATURES,
         )
 
-    def execute(self, engine, country, pollutant) -> pd.DataFrame:
-        if country == "WO":
-            cohort_query = (
-                f"""select * from "cohorts" where parameter="{pollutant}";"""
-            )
-        else:
-            cohort_query = f"""select * from "cohorts" where parameter='{pollutant}' and country='{country}';"""
-
-        df = get_data(cohort_query)
-        df = self._add_ee_features(df)
+    def execute(self, engine, cohort_df) -> pd.DataFrame:
+        df = self._add_ee_features(cohort_df)
         df = self._change_to_categorical_type(df)
-        mlflow.log_param("target_variable", pollutant)
-        mlflow.log_param("country", country)
-
-        with tempfile.TemporaryDirectory("w+") as dir_name:
-            features_df_path = os.path.join(dir_name, "features_df.csv.gz")
-
-            write_csv(df, features_df_path)
-
-            mlflow.log_artifact(features_df_path)
         self._results_to_db(df, engine)
+
+        (
+            df_train,
+            df_valid,
+            feature_train_id,
+            feature_valid_id,
+        ) = self._split_train_valid(cohort_df, df)
+
+        return df_train, df_valid, feature_train_id, feature_valid_id
 
     @property
     def all_model_features(self):
@@ -93,8 +82,30 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
             engine,
             "features",
             "public",
-            "replace",
+            "append",
         )
+
+    def _split_train_valid(self, cohort_df, df):
+
+        cohort_train = cohort_df.loc[cohort_df["cohort_type"] == "training"]
+        cohort_valid = cohort_df.loc[cohort_df["cohort_type"] == "validation"]
+
+        df_train = df.loc[
+            df["location_id"].isin(list(cohort_train["locationId"]))
+        ]
+
+        df_valid = df.loc[
+            df["location_id"].isin(list(cohort_valid["locationId"]))
+        ]
+        train_ids, valid_ids = self._get_uniqueids(df_train, df_valid)
+        return df_train, df_valid, train_ids, valid_ids
+
+    def _get_uniqueids(self, df_train, df_valid):
+        train_ids = df_train[["location_id"]]
+
+        valid_ids = df_valid[["location_id"]]
+
+        return train_ids, valid_ids
 
 
 def get_feature_builder(algorithm: str) -> Type[BuildFeatureBase]:
