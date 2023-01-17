@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import datetime
 
@@ -9,11 +10,15 @@ from mlflows.cli.time_splitter import time_splitter_options
 from setup_environment import get_dbengine
 from src.cohort_builder import CohortBuilder
 from src.features.build_features import BuildFeaturesRandomForest
+from src.matrix_generator import MatrixGenerator
 from src.time_splitter import TimeSplitter
+from src.train_model import ModelTrainer
 
 from config.model_settings import (
     BuildFeaturesConfig,
     CohortBuilderConfig,
+    MatrixGeneratorConfig,
+    ModelTrainerConfig,
     TimeSplitterConfig,
 )
 
@@ -51,6 +56,25 @@ class BuildFeaturesFlow:
         return BuildFeaturesRandomForest.from_dataclass_config(
             self.config,
         )
+
+
+class MatrixGeneratorFlow:
+    def __init__(self):
+        self.config = MatrixGeneratorConfig()
+
+    def execute(self):
+        # Trigger the authentication flow.
+        return MatrixGenerator.from_dataclass_config(
+            self.config,
+        )
+
+
+class ModelTrainerFlow:
+    def __init__(self):
+        self.config = ModelTrainerConfig()
+
+    def execute(self):
+        return ModelTrainer.from_dataclass_config(self.config)
 
 
 @time_splitter_options()
@@ -101,8 +125,11 @@ def feature_builder(country, pollutant):
 
 
 @time_splitter_options()
+@click.argument("models_directory")
 @click.command("run-pipeline", help="Run all pipeline")
-def run_pipeline(country, source, pollutant, latest_date):
+def run_pipeline(country, source, pollutant, latest_date, models_directory):
+    start_datetime = datetime.now()
+    logging.info(f"Starting pipeline at {start_datetime}")
 
     experiment_id = mlflow.create_experiment(
         f"run_pipeline_{str(datetime.now())}", os.getenv("MLFLOW_S3_BUCKET")
@@ -120,8 +147,41 @@ def run_pipeline(country, source, pollutant, latest_date):
         cohort_builder.execute(
             train_validation_dict, engine, country, source, pollutant
         )
-        build_features = BuildFeaturesFlow().execute()
-        build_features.execute(engine, country, pollutant)
+        matrix_generator = MatrixGeneratorFlow().execute()
+
+        train_validation_set = matrix_generator.execute_train_valid_set()
+
+        # loop for time splits
+        model_output = []
+        for i in train_validation_set:
+            start_model_datetime = datetime.now()
+
+            (
+                validation_df,
+                full_features_df,
+                valid_labels,
+                train_labels,
+            ) = matrix_generator.execute(engine, i, start_datetime)
+            logging.info(
+                f"Starting pipeline for model {i} {start_model_datetime}"
+            )
+            print(validation_df, full_features_df, valid_labels, train_labels)
+            model_trainer = ModelTrainerFlow().execute()
+            model_output += model_trainer.train_all_models(
+                i,
+                full_features_df,
+                train_labels.drop(
+                    [
+                        "location_id",
+                        "cohort",
+                        "cohort_type",
+                        "train_validation_set",
+                    ],
+                    axis=1,
+                ),
+                models_directory,
+                start_datetime,
+            )
 
 
 @click.group("openaq-engine", help="Library to query openaq data")
