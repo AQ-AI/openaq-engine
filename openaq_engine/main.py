@@ -154,6 +154,7 @@ def run_pipeline(country, source, pollutant, latest_date, models_directory):
         # loop for time splits
         model_output = []
         for i in train_validation_set:
+
             start_model_datetime = datetime.now()
 
             (
@@ -165,22 +166,14 @@ def run_pipeline(country, source, pollutant, latest_date, models_directory):
             logging.info(
                 f"Starting pipeline for model {i} {start_model_datetime}"
             )
-            print(validation_df, full_features_df, valid_labels, train_labels)
             model_trainer = ModelTrainerFlow().execute()
             model_output += model_trainer.train_all_models(
                 i,
                 full_features_df,
-                train_labels.drop(
-                    [
-                        "location_id",
-                        "cohort",
-                        "cohort_type",
-                        "train_validation_set",
-                    ],
-                    axis=1,
-                ),
+                train_labels,
                 models_directory,
                 start_datetime,
+                engine,
             )
 
 

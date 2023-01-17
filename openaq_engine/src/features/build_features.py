@@ -46,9 +46,18 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
             df_valid,
             feature_train_id,
             feature_valid_id,
+            train_labels,
+            validation_labels,
         ) = self._split_train_valid(cohort_df, df)
 
-        return df_train, df_valid, feature_train_id, feature_valid_id
+        return (
+            df_train,
+            df_valid,
+            feature_train_id,
+            feature_valid_id,
+            train_labels,
+            validation_labels,
+        )
 
     @property
     def all_model_features(self):
@@ -86,26 +95,47 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
         )
 
     def _split_train_valid(self, cohort_df, df):
+        df = df.merge(
+            cohort_df[["locationId", "cohort_type", "value"]],
+            how="left",
+            left_on="location_id",
+            right_on="locationId",
+        )
 
-        cohort_train = cohort_df.loc[cohort_df["cohort_type"] == "training"]
-        cohort_valid = cohort_df.loc[cohort_df["cohort_type"] == "validation"]
-
-        df_train = df.loc[
-            df["location_id"].isin(list(cohort_train["locationId"]))
-        ]
-
-        df_valid = df.loc[
-            df["location_id"].isin(list(cohort_valid["locationId"]))
-        ]
+        df_train = df.loc[df["cohort_type"] == "training"]
+        df_valid = df.loc[df["cohort_type"] == "validation"]
         train_ids, valid_ids = self._get_uniqueids(df_train, df_valid)
-        return df_train, df_valid, train_ids, valid_ids
+        train_labels = df_train[["value"]]
+        validation_labels = df_valid[["value"]]
+        return (
+            df_train,
+            df_valid,
+            train_ids,
+            valid_ids,
+            train_labels,
+            validation_labels,
+        )
 
     def _get_uniqueids(self, df_train, df_valid):
-        train_ids = df_train[["location_id"]]
+        train_ids = df_train[["location_id"]].reset_index(drop=True)
 
-        valid_ids = df_valid[["location_id"]]
+        valid_ids = df_valid[["location_id"]].reset_index(drop=True)
 
         return train_ids, valid_ids
+
+    def _filter_labels(self, cohort_df, labels_df):
+        filtered_labels_df = labels_df.merge(
+            cohort_df[["locationId"]],
+            how="right",
+            on="locationId",
+        )
+        print(
+            "len(labels_df)",
+            len(labels_df),
+            "len(filtered_labels_df)",
+            len(filtered_labels_df),
+        )
+        return filtered_labels_df
 
 
 def get_feature_builder(algorithm: str) -> Type[BuildFeatureBase]:
