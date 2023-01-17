@@ -2,17 +2,18 @@ import itertools
 import logging
 import os
 import string
-from typing import List
+from typing import List, Optional
 
 import psutil
-import xgboost as xgb
 from joblib import Parallel, delayed, dump
-from setup_environment import db_dict, get_dbengine
+from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
 from sqlalchemy import text
 
@@ -31,18 +32,16 @@ class ModelTrainer:
         model_names_list: List,
         random_state: int,
         id_cols_to_remove: List,
-        best_model: str,
+        # best_model: str,
         # best_model_hyperparams: List,
-        # all_model_features: Optional[List[str]] = None,
+        all_model_features: Optional[List[str]] = None,
     ) -> None:
         self.model_names_list = model_names_list
         self.random_state = random_state
         self.id_cols_to_remove = id_cols_to_remove
-        self.best_model = best_model
+        # self.best_model = best_model
         # self.best_model_hyperparams = best_model_hyperparams
-        # self.all_model_features = all_model_features
-        engine = get_dbengine(**db_dict)
-        self.engine = engine
+        self.all_model_features = all_model_features
 
     @classmethod
     def from_dataclass_config(
@@ -52,32 +51,42 @@ class ModelTrainer:
             model_names_list=config.MODEL_NAMES_LIST,
             random_state=config.RANDOM_STATE,
             id_cols_to_remove=config.ID_COLS_TO_REMOVE,
-            all_model_features=list(EEConfig().ALL_SATELLITES[1]),
+            all_model_features=list(
+                itertools.chain(
+                    *[x[1] for x in list(EEConfig().ALL_SATELLITES)]
+                )
+            )
             # best_model=RetrainingConfig().BEST_MODEL,
             # best_model_hyperparams=RetrainingConfig().BEST_MODEL_HYPERPARAMS,
         )
 
-    def train_best_model(
-        self, cohort_id, X_train, Y_train, model_path, run_date, schema_type
-    ):
-        self.get_schema_name(schema_type)
-        return self.execute_one_model(
-            cohort_id,
-            self.best_model,
-            X_train,
-            Y_train,
-            model_path,
-            run_date,
-            self.best_model_hyperparams,
-            schema_type,
-        )
+    # def train_best_model(
+    #     self, cohort_id, X_train, Y_train, model_path, run_date, schema_type
+    # ):
+    #     self.get_schema_name(schema_type)
+    #     return self.execute_one_model(
+    #         cohort_id,
+    #         self.best_model,
+    #         X_train,
+    #         Y_train,
+    #         model_path,
+    #         run_date,
+    #         self.best_model_hyperparams,
+    #         engine,
+    #     )
 
     def train_all_models(
-        self, cohort_id, X_train, Y_train, model_path, run_date
+        self,
+        cohort_id,
+        X_train,
+        Y_train,
+        model_path,
+        run_date,
+        engine,
     ):
         """Loop through all models and save each trained model to server"""
         logging.info("Training all models")
-        logging.info(Y_train.head())
+        logging.info(Y_train)
         model_output = []
         for model in self.model_names_list:
 
@@ -105,6 +114,7 @@ class ModelTrainer:
                             model_path,
                             run_date,
                             hp,
+                            engine,
                         )
                     ]
 
@@ -119,7 +129,7 @@ class ModelTrainer:
         model_path,
         run_date,
         hp,
-        schema_type,
+        engine,
     ):
         """This is a docstring that describes the overall function:
         Arguments
@@ -142,18 +152,24 @@ class ModelTrainer:
                       A model_id that identifies the model based on the `cohort_id` and
                       `hyperparameters`"""
         logging.info(f"Training model {model_name} with hyperparameters {hp}")
+        X_train = X_train[self.all_model_features]
         # split by labels and features
         text_clf = self.get_train_pipeline(model_name, hp)
         logging.info("Fitting model")
         logging.info(f"Current memory usage: {psutil.virtual_memory()}")
         logging.info(f"Shape of X data: {X_train.shape}")
         logging.info(f"Shape of Y data: {Y_train.shape}")
+        X_train = self.get_impute_transformer().fit_transform(X_train)
+        X_train = self.get_scaler_transform().fit_transform(X_train)
         train_model = self.fit_model(text_clf, X_train, Y_train)
 
         hp_id = self._build_hyperparameters_id(model_name, hp)
         # get model_id
         model_id, model_set = self._generate_model_id(
-            train_model, model_name, cohort_id, hp_id, schema_type
+            train_model,
+            model_name,
+            cohort_id,
+            hp_id,
         )
 
         # write model to server
@@ -166,6 +182,7 @@ class ModelTrainer:
             run_date,
             list(Y_train.columns),
             hp_id,
+            engine,
         )
         return model_id, model_name, cohort_id
 
@@ -185,11 +202,24 @@ class ModelTrainer:
         text_clf = Pipeline(
             [
                 # ("vect", CountVectorizer()),
-                # ("tfidf", TfidfTransformer()),
                 (f"{model_name}", self._get_model(model_name, hp)),
             ]
         )
         return text_clf
+
+    def get_impute_transformer(self):
+        numeric_pipeline = Pipeline(
+            steps=[("impute", SimpleImputer(strategy="mean"))]
+        )
+        return ColumnTransformer(
+            transformers=[
+                ("numeric", numeric_pipeline, self.all_model_features)
+            ]
+        )
+
+    def get_scaler_transform(self):
+        scaler = StandardScaler()
+        return scaler
 
     def fit_model(self, text_clf, X_train, y_train):
         return text_clf.fit(X_train, y_train)
@@ -219,12 +249,13 @@ class ModelTrainer:
                 random_state=self.random_state,
             )
         elif model_name == "XGB":
-            return xgb.XGBClassifier(
-                n_jobs=-3,
-                n_estimators=hp[0],
-                max_depth=hp[1],
-                learning_rate=hp[2],
-            )
+            return
+            # return xgb.XGBClassifier(
+            #     n_jobs=-3,
+            #     n_estimators=hp[0],
+            #     max_depth=hp[1],
+            #     learning_rate=hp[2],
+            # )
         elif model_name == "MNB":
             model = MultinomialNB(alpha=hp[0])
             return MultiOutputClassifier(model)
@@ -236,9 +267,7 @@ class ModelTrainer:
         else:
             logging.info(f"Model name {model_name} not exist")
 
-    def _generate_model_id(
-        self, train_model, model_name, cohort_id, hp_id, schema_type
-    ):
+    def _generate_model_id(self, train_model, model_name, cohort_id, hp_id):
         """Generate model id based on model name, cohort ID"""
         model_name = train_model.named_steps[
             f"{model_name}"
@@ -248,7 +277,6 @@ class ModelTrainer:
                 map(
                     self._clean_for_model_id,
                     [model_name, hp_id, cohort_id],
-                    [None, None, schema_type],
                 )
             )
         )
@@ -257,19 +285,16 @@ class ModelTrainer:
                 map(
                     self._clean_for_model_id,
                     [model_name, hp_id],
-                    [None, None, schema_type],
                 )
             )
         )
+
         return model_id, model_set
 
-    def _clean_for_model_id(self, word, schema_type):
+    def _clean_for_model_id(self, word):
         """Clean word arguments for model id and concatenate together."""
         word = str(word).replace("-", "")
-        if schema_type == "dev":
-            return f"{word.lower()}_dev"
-        else:
-            return word.lower()
+        return word.lower()
 
     def _save_trained_model(self, train_model, model_path, model_id, run_date):
         filename = (
@@ -281,7 +306,7 @@ class ModelTrainer:
     def _build_hyperparameters_id(self, model_name, hp):
         if model_name == "DTC":
             return f"max_depth{hp[0]}"
-        elif model_name == "RFC":
+        elif model_name == "RFR":
             return f"n_estimators{hp[0]}_max_depth{hp[1]}"
         elif model_name == "MNB":
             return f"alpha{hp[0]}"
@@ -289,14 +314,9 @@ class ModelTrainer:
             return f"penalty{hp[0]}_C{hp[1]}"
 
     def _generate_model_metadata(
-        self,
-        model_id,
-        model_set,
-        run_date,
-        labels,
-        hp_id,
+        self, model_id, model_set, run_date, labels, hp_id, engine
     ):
-        with self.engine.connect() as conn:
+        with engine.connect() as conn:
             conn.execute(
                 """CREATE TABLE IF NOT EXISTS model_metadata
                             (model_id text,
@@ -307,7 +327,7 @@ class ModelTrainer:
                             run_date timestamp)"""
             )
 
-        with self.engine.connect() as conn:
+        with engine.connect() as conn:
             logging.info("Inserting model information to database")
             q = text(
                 """insert into model_metadata
@@ -318,7 +338,7 @@ class ModelTrainer:
                 q,
                 m1=model_id,
                 m2=model_set,
-                f=self.all_model_features + self.special_column_list,
+                f=self.all_model_features,
                 l=labels,
                 h=hp_id,
                 r=run_date,

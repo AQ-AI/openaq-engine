@@ -24,6 +24,21 @@ class ModelTrainerConfig:
         "cohort_type",
     ]
     RANDOM_STATE = 99
+    All_MODEL_FEATURES = [
+        "Optical_Depth_047",
+        "B4",
+        "B3",
+        "B2",
+        "avg_rad",
+        "temperature_2m_above_ground",
+        "relative_humidity_2m_above_ground",
+        "total_precipitation_surface",
+        "total_cloud_cover_entire_atmosphere",
+        "u_component_of_wind_10m_above_ground",
+        "v_component_of_wind_10m_above_ground",
+        "basic_demographic_characteristics",
+        "discrete_classification",
+    ]
 
 
 @dataclass

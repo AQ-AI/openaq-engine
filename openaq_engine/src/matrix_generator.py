@@ -1,9 +1,9 @@
+import csv
 import logging
 import os
 from typing import List
 
 import mlflow
-import pandas as pd
 import scipy.sparse as sp
 from joblib import dump, load
 from sklearn.ensemble import RandomForestRegressor
@@ -50,10 +50,7 @@ class MatrixGenerator:
         cohorts_df = get_data(cohorts_query)
 
         return self.execute_for_cohort(
-            engine,
-            train_valid_id,
-            cohorts_df,
-            run_date,
+            engine, train_valid_id, cohorts_df, run_date
         )
 
     def execute_for_cohort(
@@ -66,46 +63,46 @@ class MatrixGenerator:
         cohort_df = cohorts_df.loc[
             cohorts_df["train_validation_set"] == training_validation_id
         ]
-        print(cohort_df)
-
         # load labels
-        labels_df = self._load_all_labels(cohort_df)
+        # labels_df = self._load_all_labels(cohort_df)
 
         if cohort_df is not None:
             logging.info(
                 f"Generating features for Cohort {training_validation_id}"
             )
-            # get feature ids
             (
                 train_df,
                 validation_df,
                 feature_train_id,
                 feature_valid_id,
+                labels_train_df,
+                labels_valid_df,
             ) = self.matrix_generator(
                 engine,
                 cohort_df,
             )
+
+            print("matrix_generator", len(train_df), len(validation_df))
+
             logging.info(f"Rows in training features: {train_df.shape[0]}")
             logging.info(
                 f"Rows in validation features: {validation_df.shape[0]}"
             )
-
             # convert back to merge
-            labels_valid_df = pd.merge(
-                feature_valid_id,
-                labels_df,
-                left_on=["location_id"],
-                right_on=["locationId"],
-                how="left",
-            )
-            labels_train_df = pd.merge(
-                feature_train_id,
-                labels_df,
-                left_on=["location_id"],
-                right_on=["locationId"],
-                how="left",
-            )
-
+            # labels_valid_df = pd.merge(
+            #     feature_valid_id,
+            #     labels_df,
+            #     left_on=["location_id"],
+            #     right_on=["locationId"],
+            #     how="inner",
+            # )
+            # labels_train_df = pd.merge(
+            #     feature_train_id,
+            #     labels_df,
+            #     left_on=["location_id"],
+            #     right_on=["locationId"],
+            #     how="inner",
+            # )
             # write as pickle
             self._write_labels_as_csv(
                 labels_train_df,
@@ -130,31 +127,31 @@ class MatrixGenerator:
         else:
             logging.info("training or validation cohort must be assigned")
 
-    def matrix_generator(
-        self,
-        engine,
-        cohort_df,
-    ):
-        if self.algorithm == "RFC":
+    def matrix_generator(self, engine, cohort_df):
+        if self.algorithm == "RFR":
             config = BuildFeaturesConfig()
 
-            df_train, df_valid, feature_train_id, feature_valid_id = (
+            (
+                df_train,
+                df_valid,
+                feature_train_id,
+                feature_valid_id,
+                train_labels,
+                validation_labels,
+            ) = (
                 self._get_feature_generator()
                 .from_dataclass_config(config)
-                .execute(
-                    engine,
-                    cohort_df,
-                )
+                .execute(engine, cohort_df)
             )
 
-            # train_csr = self._add_csr(
-            #     df_train, train_validation_set, "training", run_date
-            # )
-            # valid_csr = self._add_csr(
-            #     df_valid, train_validation_set, "validation", run_date
-            # )
-
-            return df_train, df_valid, feature_train_id, feature_valid_id
+            return (
+                df_train,
+                df_valid,
+                feature_train_id,
+                feature_valid_id,
+                train_labels,
+                validation_labels,
+            )
 
     def _add_csr(self, df, train_validation_set, cohort_type, run_date):
         csr_list = self._get_csr(train_validation_set, cohort_type, run_date)
@@ -178,7 +175,7 @@ class MatrixGenerator:
         return csr
 
     def _get_feature_generator(self) -> RandomForestRegressor:
-        if self.algorithm == "RFC":
+        if self.algorithm == "RFR":
             return BuildFeaturesRandomForest
         else:
             raise ValueError(
@@ -209,7 +206,15 @@ class MatrixGenerator:
         return sp.hstack(csr_list)
 
     def _load_all_labels(self, cohort_df):
-        labels_df = cohort_df[["locationId", "value"]]
+        labels_df = cohort_df[
+            [
+                "locationId",
+                "value",
+                "cohort",
+                "cohort_type",
+                "train_validation_set",
+            ]
+        ]
         return labels_df
 
     def _write_labels_as_csv(
@@ -223,8 +228,13 @@ class MatrixGenerator:
                 cohort_type,
             ]
         )
+        f = open(f"{filename}.csv", "w")
 
-        with open(f"{filename}.csv", "w") as f:
-            f.write(f"{filename}.csv", y)
+        with f:
+
+            writer = csv.writer(f)
+
+            for row in y:
+                writer.writerow(row)
 
         mlflow.log_artifact(filename + ".csv")
