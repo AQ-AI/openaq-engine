@@ -8,6 +8,65 @@ from pydantic.dataclasses import dataclass
 
 
 @dataclass
+class MatrixGeneratorConfig:
+    ALGORITHM = "RFR"
+    ID_COLUMN_LIST: Sequence[str] = field(
+        default_factory=lambda: ["locationId", "cohort", "cohort_type"]
+    )
+
+
+@dataclass
+class ModelTrainerConfig:
+    MODEL_NAMES_LIST = ["RFR"]  # "DTC", "MNB", "RFC", "MLR"
+    ID_COLS_TO_REMOVE = [
+        "location_id",
+        "cohort",
+        "cohort_type",
+    ]
+    RANDOM_STATE = 99
+    All_MODEL_FEATURES = [
+        "Optical_Depth_047",
+        "B4",
+        "B3",
+        "B2",
+        "avg_rad",
+        "temperature_2m_above_ground",
+        "relative_humidity_2m_above_ground",
+        "total_precipitation_surface",
+        "total_cloud_cover_entire_atmosphere",
+        "u_component_of_wind_10m_above_ground",
+        "v_component_of_wind_10m_above_ground",
+        "basic_demographic_characteristics",
+        "discrete_classification",
+    ]
+
+
+@dataclass
+class HyperparamConfig:
+    MODEL_TYPES = ["DTC", "MNB", "RFR", "XGB"]
+    MODEL_HYPERPARAMS = {
+        "DTC": {
+            "max_depth": [5, 10, 20, 30, 40]
+        },  # 5, 50, 500, 10000 50, 100, 200, 300
+        "RFR": {
+            "n_estimators": [500, 800],  # 100, 500, 800, 1000
+            "max_depth": [10, 50, 70],  # 5, 50, 80, 500, 10000  100, 200, 300
+        },
+        "XGB": {
+            "max_depth": [5, 150, 200, 250, 300],
+            "learning_rate": [0.1, 0.5, 1],
+        },
+        "MNB": {"alpha": [0, 0.05]},  # 0.1, 0.5, 0.8, 1
+        "MLR": {
+            "penalty": ["l2"],
+            "C": [1, 0.1, 0.01],
+            "solver": ["saga"],
+            "max_iter": [2000],
+        },
+    }
+
+
+@dataclass
 class BuildFeaturesConfig:
     TARGET_COL: str = "value"
     TARGET_VARIABLE = "pm25"

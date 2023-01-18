@@ -54,15 +54,21 @@ class EEFeatures:
         # end_date, start_date = self._generate_timerange()
         satellite_df = pd.concat(
             Parallel(n_jobs=-1, backend="multiprocessing", verbose=5)(
-                delayed(self.execute_for_location)(lon, lat, day, save_images)
-                for lon, lat, day in zip(df.x, df.y, df.timestamp_utc)
+                delayed(self.execute_for_location)(
+                    location_id, lon, lat, day, save_images
+                )
+                for location_id, lon, lat, day in zip(
+                    df.locationId, df.x, df.y, df.timestamp_utc
+                )
             ),
         ).reset_index(drop=True)
         features_df = self.generate_features(satellite_df)
 
         return features_df
 
-    def execute_for_location(self, lon, lat, date_utc, save_images):
+    def execute_for_location(
+        self, location_id, lon, lat, date_utc, save_images
+    ):
         """
         Input
         ----
@@ -74,6 +80,8 @@ class EEFeatures:
         ----
         collection:
             A str of satellite to query
+        location_id:
+            location id of sensor
         lon:
             the longitude of a  sensor location
         lat:
@@ -99,6 +107,7 @@ class EEFeatures:
             ee_df = self.get_satellite_data(
                 image_collection,
                 image_bands,
+                location_id,
                 date_utc,
                 lon,
                 lat,
@@ -173,6 +182,7 @@ class EEFeatures:
             "sensor_datetime",
             "sensor_longitude",
             "sensor_latitude",
+            "location_id",
         ]
 
         weights = ["timestamp_diff", "distance"]
@@ -216,6 +226,7 @@ class EEFeatures:
         self,
         image_collection,
         image_bands,
+        location_id,
         day,
         lon,
         lat,
@@ -230,13 +241,13 @@ class EEFeatures:
             ee_df = self.get_most_recent_satellite_data(
                 image_collection,
                 image_bands,
+                location_id,
                 lon,
                 lat,
                 resolution,
                 day,
                 period,
             )
-
             return ee_df
         except (EEException, HttpError):
             logging.info(
@@ -248,6 +259,7 @@ class EEFeatures:
                 ee_df = self.get_satellite_data_within_lookback(
                     image_collection,
                     image_bands,
+                    location_id,
                     lon,
                     lat,
                     resolution,
@@ -260,11 +272,13 @@ class EEFeatures:
                     ee_df = self.get_any_recent_satellite_data(
                         image_collection,
                         image_bands,
+                        location_id,
                         lon,
                         lat,
                         resolution,
                         day,
                     )
+
                     return ee_df
                 except (EEException, HttpError):
                     logging.warn(f"No image available for {lon}, {lat}")
@@ -274,6 +288,7 @@ class EEFeatures:
         self,
         image_collection,
         image_bands,
+        location_id,
         lon,
         lat,
         resolution,
@@ -292,6 +307,8 @@ class EEFeatures:
             the string of an image collection
         image_bands: List[str]
             the list of image bands used (satellite model features)
+        location_id: str
+            the location_id of the sensor
         lon: float
             Longitude of sensor
         lat: float
@@ -314,13 +331,14 @@ class EEFeatures:
         ).getInfo()
 
         return self._create_satellite_dataframe(
-            info, image_bands, date_utc, lon, lat
+            info, image_bands, location_id, date_utc, lon, lat
         )
 
     def get_satellite_data_within_lookback(
         self,
         image_collection,
         image_bands,
+        location_id,
         lon,
         lat,
         resolution,
@@ -345,13 +363,14 @@ class EEFeatures:
             centroid_point, resolution
         ).getInfo()
         return self._create_satellite_dataframe(
-            info, image_bands, date_utc, lon, lat
+            info, image_bands, location_id, date_utc, lon, lat
         )
 
     def get_any_recent_satellite_data(
         self,
         image_collection,
         image_bands,
+        location_id,
         lon,
         lat,
         resolution,
@@ -374,17 +393,19 @@ class EEFeatures:
             centroid_point, resolution
         ).getInfo()
         return self._create_satellite_dataframe(
-            info, image_bands, date_utc, lon, lat
+            info, image_bands, location_id, date_utc, lon, lat
         )
 
     def _create_satellite_dataframe(
-        self, info, image_bands, date_utc, lon, lat
+        self, info, image_bands, location_id, date_utc, lon, lat
     ):
         """Creates a dataframe from returned satellite information and
         builds required fields for weighted average calculation"""
         ee_df = ee_array_to_df(info, image_bands)
         ee_df = self._calculate_temporal_weighted_average(date_utc, ee_df)
-        ee_df = self._calculate_spatial_weighted_average(ee_df, lon, lat)
+        ee_df = self._calculate_spatial_weighted_average(
+            ee_df, lon, lat, location_id
+        )
         return ee_df
 
     def _calculate_temporal_weighted_average(self, date_utc, ee_df):
@@ -401,10 +422,14 @@ class EEFeatures:
         )
         return ee_df
 
-    def _calculate_spatial_weighted_average(self, ee_df, lon, lat):
+    def _calculate_spatial_weighted_average(
+        self, ee_df, lon, lat, location_id
+    ):
         """Calculate the spatially-weighted distance"""
         ee_df["sensor_longitude"] = lon
         ee_df["sensor_latitude"] = lat
+        ee_df["location_id"] = location_id
+
         try:
             ee_df["distance"] = ee_df.apply(
                 lambda row: haversine(
