@@ -66,18 +66,15 @@ class ModelEvaluator(ModelEvaluatorBase):
         # iterate through all numeric constraints and metrics
         eval_list = []
         valid_pred = train_model.predict(validation_df)
-        validation_df = validation_df.assign(
-            actual=valid_labels, predicted=valid_pred
-        )
-        print(validation_df)
         metric_value = pd.DataFrame()
+        metric_value["actual"] = ",".join(str(x) for x in valid_labels)
+        metric_value["predicted"] = ",".join(str(x) for x in valid_pred)
 
         for metric in self.metrics:
             eval = self.evaluate_one_metric(
                 metric,
                 valid_labels,
                 valid_pred,
-                start_datetime,
                 metric_value,
                 model_id,
             )
@@ -97,7 +94,6 @@ class ModelEvaluator(ModelEvaluatorBase):
         metric,
         valid_labels,
         valid_pred,
-        start_datetime,
         metric_value,
         model_id,
     ):

@@ -46,5 +46,6 @@ class ModelEvaluatorBase(ABC):
             results,
             engine,
             table_name,
+            "public",
             "append",
         )
