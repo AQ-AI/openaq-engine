@@ -34,6 +34,8 @@ class TimeSplitterBase(ABC):
     def create_end_date_from_aws(
         self,
         params,
+        city: str,
+        sensor_type: str,
         country_info: List[str],
         pollutant: str,
         latest_date: str,
@@ -54,7 +56,22 @@ class TimeSplitterBase(ABC):
                 date_col=self.date_col,
                 target_variable=self.target_variable,
                 latest_date=latest_date,
-                sensor_type=self.sensor_type,
+                sensor_type=sensor_type,
+            )
+        elif city is not None:
+            country_info == "WO"
+            sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime
+            FROM {table} WHERE parameter='{target_variable}'
+            AND from_iso8601_timestamp({date_col}) <= {latest_date}
+            AND city='{city}'
+            AND sensorType='{sensor_type}'
+            ORDER BY {date_col} ASC limit 1;""".format(
+                table=self.table_name,
+                date_col=self.date_col,
+                target_variable=self.target_variable,
+                latest_date=latest_date,
+                city=city,
+                sensor_type=sensor_type,
             )
         else:
             sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime
@@ -68,7 +85,7 @@ class TimeSplitterBase(ABC):
                 target_variable=self.target_variable,
                 country=country_info,
                 latest_date=latest_date,
-                sensor_type=self.sensor_type,
+                sensor_type=sensor_type,
             )
         response_query_result = self.build_response_from_aws(params, sql_query)
 
@@ -79,6 +96,8 @@ class TimeSplitterBase(ABC):
     def create_start_date_from_aws(
         self,
         params: Dict[str, Any],
+        city: str,
+        sensor_type: str,
         country_info: List[str],
         pollutant: str,
         latest_date: str,
@@ -93,23 +112,42 @@ class TimeSplitterBase(ABC):
             sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime
             FROM {table} WHERE parameter='{target_variable}'
             AND from_iso8601_timestamp({date_col}) <= {latest_date}
+            AND sensorType='{sensor_type}'
             ORDER BY {date_col} ASC limit 1;""".format(
                 table=self.table_name,
                 date_col=self.date_col,
                 target_variable=self.target_variable,
                 latest_date=latest_date,
+                sensor_type=sensor_type,
+            )
+        elif city is not None:
+            country_info == "WO"
+            sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime
+            FROM {table} WHERE parameter='{target_variable}'
+            AND from_iso8601_timestamp({date_col}) <= {latest_date}
+            AND city='{city}'
+            AND sensorType='{sensor_type}'
+            ORDER BY {date_col} ASC limit 1;""".format(
+                table=self.table_name,
+                date_col=self.date_col,
+                target_variable=self.target_variable,
+                latest_date=latest_date,
+                city=city,
+                sensor_type=sensor_type,
             )
         else:
             sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime
             FROM {table} WHERE parameter='{target_variable}'
             AND from_iso8601_timestamp({date_col}) <= {latest_date}
             AND country='{country}'
+            AND sensorType='{sensor_type}'
             ORDER BY {date_col} ASC limit 1;""".format(
                 table=self.table_name,
                 date_col=self.date_col,
                 target_variable=self.target_variable,
                 country=country_info,
                 latest_date=latest_date,
+                sensor_type=sensor_type,
             )
         if self.source == "openaq-aws":
             response_query_result = self.build_response_from_aws(
@@ -133,14 +171,21 @@ class TimeSplitterBase(ABC):
             else:
                 pass
 
-    def create_end_date_from_openaq_api(self, country, pollutant, latest_date):
+    def create_end_date_from_openaq_api(
+        self, city, country, sensor_type, pollutant
+    ):
         if country == "WO":
-            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&order_by=lastUpdated&dumpRaw=false""".format(
-                pollutant=pollutant
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&order_by=lastUpdated&sensorType={sensor_type}&dumpRaw=false""".format(
+                pollutant=pollutant, sensor_type=sensor_type
+            )
+        elif city is not None:
+            country == "WO"
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&city={city}&order_by=firstUpdated&sensorType={sensor_type}&dumpRaw=false""".format(
+                city=city, pollutant=pollutant, sensor_type=sensor_type
             )
         else:
-            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&country_id={country}&order_by=lastUpdated&dumpRaw=false""".format(
-                country=country, pollutant=pollutant
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&country_id={country}&order_by=lastUpdated&sensorType={sensor_type}&dumpRaw=false""".format(
+                country=country, pollutant=pollutant, sensor_type=sensor_type
             )
 
         headers = {"accept": "application/json"}
@@ -152,16 +197,25 @@ class TimeSplitterBase(ABC):
 
     def create_start_date_from_openaq_api(
         self,
+        city,
         country,
+        sensor_type,
         pollutant,
     ):
         if country == "WO":
-            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=asc&parameter={pollutant}&radius=1000&order_by=firstUpdated&dumpRaw=false""".format(
-                pollutant=pollutant
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=asc&parameter={pollutant}&radius=1000&order_by=firstUpdated&sensorType={sensor_type}&dumpRaw=false""".format(
+                pollutant=pollutant, sensor_type=sensor_type
+            )
+        elif city is not None:
+            country == "WO"
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=asc&parameter={pollutant}&radius=1000&city={city}&order_by=firstUpdated&sensorType={sensor_type}&dumpRaw=false""".format(
+                city=city,
+                pollutant=pollutant,
+                sensor_type=sensor_type,
             )
         else:
-            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=asc&parameter={pollutant}&radius=1000&country_id={country}&order_by=firstUpdated&dumpRaw=false""".format(
-                country=country, pollutant=pollutant
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=asc&parameter={pollutant}&radius=1000&country_id={country}&order_by=firstUpdated&sensorType={sensor_type}&dumpRaw=false""".format(
+                country=country, pollutant=pollutant, sensor_type=sensor_type
             )
 
         headers = {"accept": "application/json"}
@@ -184,7 +238,6 @@ class TimeSplitter(TimeSplitterBase):
         target_variable: str,
         country: str,
         source: str,
-        sensor_type: str,
     ) -> None:
         self.time_window_length = time_window_length
         self.within_window_sampler = within_window_sampler
@@ -193,7 +246,6 @@ class TimeSplitter(TimeSplitterBase):
         self.target_variable = target_variable
         self.country = country
         self.source = source
-        self.sensor_type = sensor_type
         super().__init__(
             TimeSplitterConfig.DATE_COL,
             TimeSplitterConfig.TABLE_NAME,
@@ -215,10 +267,9 @@ class TimeSplitter(TimeSplitterBase):
             target_variable=config.TARGET_VARIABLE,
             country=config.COUNTRY,
             source=config.SOURCE,
-            sensor_type=config.SENSOR_TYPE,
         )
 
-    def execute(self, country, source, pollutant, date):
+    def execute(self, city, country, sensor_type, source, pollutant, date):
         """
         Input
         ----
@@ -244,11 +295,11 @@ class TimeSplitter(TimeSplitterBase):
         }
         if source == "openaq-aws":
             end_date, start_date = self.execute_for_openaq_aws(
-                params, country, pollutant, date
+                params, city, country, sensor_type, pollutant, date
             )
         if source == "openaq-api":
             end_date, start_date = self.execute_for_openaq_api(
-                country, pollutant, date
+                city, country, sensor_type, pollutant
             )
         while window_no < self.window_count:
             window_start_date, window_end_date = self.get_validation_window(
@@ -278,20 +329,29 @@ class TimeSplitter(TimeSplitterBase):
         mlflow.log_params(self.train_validation_dict)
         return self.train_validation_dict
 
-    def execute_for_openaq_aws(self, params, country, pollutant, latest_date):
+    def execute_for_openaq_aws(
+        self, params, city, country, sensor_type, pollutant, latest_date
+    ):
         end_date = self.create_end_date_from_aws(
-            params, country, pollutant, latest_date
+            params,
+            city,
+            country,
+            sensor_type,
+            pollutant,
+            latest_date,
         )
         start_date = self.create_start_date_from_aws(
-            params, country, pollutant, latest_date
+            params, city, country, sensor_type, pollutant, latest_date
         )
         return end_date, start_date
 
-    def execute_for_openaq_api(self, country, pollutant, latest_date):
+    def execute_for_openaq_api(self, city, country, sensor_type, pollutant):
         end_date = self.create_end_date_from_openaq_api(
-            country, pollutant, latest_date
+            city, country, sensor_type, pollutant
         )
-        start_date = self.create_start_date_from_openaq_api(country, pollutant)
+        start_date = self.create_start_date_from_openaq_api(
+            city, country, sensor_type, pollutant
+        )
         return end_date, start_date
 
         return

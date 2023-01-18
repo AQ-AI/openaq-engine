@@ -202,8 +202,8 @@ class CohortBuilderConfig:
 class TimeSplitterConfig:
     DATE_COL: str = "date.utc"
     TARGET_VARIABLE = "pm25"
-    COUNTRY = "IN"
-    CITIES = "Mumbai"  # "Chennai"
+    COUNTRY = "WO"
+    CITY = "Mumbai"  # "Chennai"
     SENSOR_TYPE = "reference grade"
     SOURCE = "openaq-api"
     TIME_WINDOW_LENGTH: int = 3

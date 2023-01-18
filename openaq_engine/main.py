@@ -79,14 +79,16 @@ class ModelTrainerFlow:
 
 @time_splitter_options()
 @click.command("time-splitter", help="Splits csvs for time splits")
-def time_splitter(country, source, pollutant, latest_date):
+def time_splitter(city, country, sensor_type, source, pollutant, latest_date):
     experiment_id = mlflow.create_experiment(
         f"time_splitter_{str(datetime.now())}", os.getenv("MLFLOW_S3_BUCKET")
     )
 
     with mlflow.start_run(experiment_id=experiment_id, nested=True):
         time_splitter = TimeSplitterFlow().execute()
-        time_splitter.execute(country, source, pollutant, latest_date)
+        time_splitter.execute(
+            city, country, sensor_type, source, pollutant, latest_date
+        )
 
 
 @cohort_builder_options()
@@ -127,7 +129,15 @@ def feature_builder(country, pollutant):
 @time_splitter_options()
 @click.argument("models_directory")
 @click.command("run-pipeline", help="Run all pipeline")
-def run_pipeline(country, source, pollutant, latest_date, models_directory):
+def run_pipeline(
+    city,
+    country,
+    sensor_type,
+    source,
+    pollutant,
+    latest_date,
+    models_directory,
+):
     start_datetime = datetime.now()
     logging.info(f"Starting pipeline at {start_datetime}")
 
@@ -140,7 +150,7 @@ def run_pipeline(country, source, pollutant, latest_date, models_directory):
         engine = get_dbengine()
         time_splitter = TimeSplitterFlow().execute()
         train_validation_dict = time_splitter.execute(
-            country, source, pollutant, latest_date
+            city, country, sensor_type, source, pollutant, latest_date
         )
 
         cohort_builder = CohortBuilderFlow().execute()
