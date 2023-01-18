@@ -83,6 +83,7 @@ class ModelTrainer:
         model_path,
         run_date,
         engine,
+        X_valid,
     ):
         """Loop through all models and save each trained model to server"""
         logging.info("Training all models")
@@ -115,6 +116,7 @@ class ModelTrainer:
                             run_date,
                             hp,
                             engine,
+                            X_valid,
                         )
                     ]
 
@@ -188,7 +190,7 @@ class ModelTrainer:
             hp_id,
             engine,
         )
-        return model_id, model_name, cohort_id, X_valid
+        return model_id, model_name, cohort_id, train_model, X_valid
 
     def get_train_pipeline(self, model_name, hp):
         """
