@@ -48,23 +48,27 @@ class TimeSplitterBase(ABC):
             sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime
             FROM {table} WHERE parameter='{target_variable}'
             AND from_iso8601_timestamp({date_col}) <= {latest_date}
+            AND sensorType='{sensor_type}'
             ORDER BY {date_col} DESC limit 1;""".format(
                 table=self.table_name,
                 date_col=self.date_col,
                 target_variable=self.target_variable,
                 latest_date=latest_date,
+                sensor_type=self.sensor_type,
             )
         else:
             sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime
             FROM {table} WHERE parameter='{target_variable}'
             AND from_iso8601_timestamp({date_col}) <= {latest_date}
             AND country='{country}'
+            AND sensorType='{sensor_type}'
             ORDER BY {date_col} DESC limit 1;""".format(
                 table=self.table_name,
                 date_col=self.date_col,
                 target_variable=self.target_variable,
                 country=country_info,
                 latest_date=latest_date,
+                sensor_type=self.sensor_type,
             )
         response_query_result = self.build_response_from_aws(params, sql_query)
 
@@ -180,6 +184,7 @@ class TimeSplitter(TimeSplitterBase):
         target_variable: str,
         country: str,
         source: str,
+        sensor_type: str,
     ) -> None:
         self.time_window_length = time_window_length
         self.within_window_sampler = within_window_sampler
@@ -188,7 +193,7 @@ class TimeSplitter(TimeSplitterBase):
         self.target_variable = target_variable
         self.country = country
         self.source = source
-
+        self.sensor_type = sensor_type
         super().__init__(
             TimeSplitterConfig.DATE_COL,
             TimeSplitterConfig.TABLE_NAME,
@@ -210,6 +215,7 @@ class TimeSplitter(TimeSplitterBase):
             target_variable=config.TARGET_VARIABLE,
             country=config.COUNTRY,
             source=config.SOURCE,
+            sensor_type=config.SENSOR_TYPE,
         )
 
     def execute(self, country, source, pollutant, date):
