@@ -120,7 +120,7 @@ class TimeSplitterBase(ABC):
                 latest_date=latest_date,
                 sensor_type=sensor_type,
             )
-        elif city is not None:
+        if city:
             country_info == "WO"
             sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime
             FROM {table} WHERE parameter='{target_variable}'

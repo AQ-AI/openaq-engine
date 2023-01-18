@@ -9,8 +9,10 @@ from mlflows.cli.features.build_features import feature_builder_options
 from mlflows.cli.time_splitter import time_splitter_options
 from setup_environment import get_dbengine
 from src.cohort_builder import CohortBuilder
+from src.evaluation.model_evaluator import ModelEvaluator
 from src.features.build_features import BuildFeaturesRandomForest
 from src.matrix_generator import MatrixGenerator
+from src.model_visualizer import ModelVisualizer
 from src.time_splitter import TimeSplitter
 from src.train_model import ModelTrainer
 
@@ -18,7 +20,9 @@ from config.model_settings import (
     BuildFeaturesConfig,
     CohortBuilderConfig,
     MatrixGeneratorConfig,
+    ModelEvaluatorConfig,
     ModelTrainerConfig,
+    ModelVisualizerConfig,
     TimeSplitterConfig,
 )
 
@@ -77,6 +81,28 @@ class ModelTrainerFlow:
         return ModelTrainer.from_dataclass_config(self.config)
 
 
+class ModelEvaluatorFlow:
+    def __init__(self):
+        self.config = ModelEvaluatorConfig()
+
+    def execute(self):
+        return ModelEvaluator.from_dataclass_config(self.config)
+
+
+class ModelVisualizerFlow:
+    def __init__(self, plots_directory):
+        self.config = ModelVisualizerConfig()
+        self.eval_config = ModelEvaluatorConfig()
+        self.plots_directory = plots_directory
+
+    def execute(self, run_date):
+        model_visualizer = ModelVisualizer.from_dataclass_config(
+            self.config, self.eval_config
+        )
+
+        model_visualizer.execute(path=self.plots_directory, run_date=run_date)
+
+
 @time_splitter_options()
 @click.command("time-splitter", help="Splits csvs for time splits")
 def time_splitter(city, country, sensor_type, source, pollutant, latest_date):
@@ -93,7 +119,7 @@ def time_splitter(city, country, sensor_type, source, pollutant, latest_date):
 
 @cohort_builder_options()
 @click.command("cohort-builder", help="Generate cohorts for time splits")
-def cohort_builder(country, source, pollutant, latest_date):
+def cohort_builder(city, country, source, sensor_type, pollutant, latest_date):
     experiment_id = mlflow.create_experiment(
         f"cohort_builder_{str(datetime.now())}", os.getenv("MLFLOW_S3_BUCKET")
     )
@@ -103,12 +129,18 @@ def cohort_builder(country, source, pollutant, latest_date):
         engine = get_dbengine()
         time_splitter = TimeSplitterFlow().execute()
         train_validation_dict = time_splitter.execute(
-            country, source, pollutant, latest_date
+            city, country, sensor_type, source, pollutant, latest_date
         )
 
         cohort_builder = CohortBuilderFlow().execute()
         cohort_builder.execute(
-            train_validation_dict, engine, country, source, pollutant
+            train_validation_dict,
+            engine,
+            city,
+            country,
+            source,
+            sensor_type,
+            pollutant,
         )
 
 
@@ -128,6 +160,7 @@ def feature_builder(country, pollutant):
 
 @time_splitter_options()
 @click.argument("models_directory")
+@click.argument("plots_directory")
 @click.command("run-pipeline", help="Run all pipeline")
 def run_pipeline(
     city,
@@ -137,6 +170,7 @@ def run_pipeline(
     pollutant,
     latest_date,
     models_directory,
+    plots_directory,
 ):
     start_datetime = datetime.now()
     logging.info(f"Starting pipeline at {start_datetime}")
@@ -155,11 +189,18 @@ def run_pipeline(
 
         cohort_builder = CohortBuilderFlow().execute()
         cohort_builder.execute(
-            train_validation_dict, engine, country, source, pollutant
+            train_validation_dict,
+            engine,
+            city,
+            country,
+            source,
+            sensor_type,
+            pollutant,
         )
+
         matrix_generator = MatrixGeneratorFlow().execute()
 
-        train_validation_set = matrix_generator.execute_train_valid_set()
+        train_validation_set = matrix_generator.execute_train_valid_set(city)
 
         # loop for time splits
         model_output = []
@@ -172,7 +213,7 @@ def run_pipeline(
                 full_features_df,
                 valid_labels,
                 train_labels,
-            ) = matrix_generator.execute(engine, i, start_datetime)
+            ) = matrix_generator.execute(engine, i, start_datetime, city)
             logging.info(
                 f"Starting pipeline for model {i} {start_model_datetime}"
             )
@@ -184,6 +225,37 @@ def run_pipeline(
                 models_directory,
                 start_datetime,
                 engine,
+                validation_df,
+            )
+            # logging.info("Getting model output")
+            for (
+                model_id,
+                model_name,
+                i,
+                train_model,
+                validation_df,
+            ) in model_output:
+                logging.info(
+                    f"Training and evaluating model {model_output[0]}"
+                )
+                model_evaluator = ModelEvaluatorFlow().execute()
+                model_evaluator.execute(
+                    train_model,
+                    model_name,
+                    model_id,
+                    validation_df,
+                    valid_labels,
+                    start_datetime,
+                    engine,
+                )
+            ModelVisualizerFlow(plots_directory).execute(
+                start_datetime,
+            )
+
+            end_datetime = datetime.now()
+            logging.info(f"Ending pipeline at {end_datetime}")
+            logging.info(
+                f"Total time ellapsed: {end_datetime - start_datetime}"
             )
 
 

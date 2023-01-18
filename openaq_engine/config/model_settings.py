@@ -8,11 +8,27 @@ from pydantic.dataclasses import dataclass
 
 
 @dataclass
+class ModelVisualizerConfig:
+    PLOT: bool = True
+    PLOT_METRICS: Sequence[str] = field(default_factory=lambda: ["mean"])
+
+    PLOTS_TABLE_NAME: str = "plots"
+    PLOTS_SCHEMA_NAME: str = "model_output"
+    RESULTS_TABLE_NAME: str = "results"
+
+
+@dataclass
 class MatrixGeneratorConfig:
     ALGORITHM = "RFR"
     ID_COLUMN_LIST: Sequence[str] = field(
         default_factory=lambda: ["locationId", "cohort", "cohort_type"]
     )
+
+
+@dataclass
+class FeatureImportanceConfig:
+    NUM_RECORDS: int = 5
+    TABLE_NAME: str = "feature_importance"
 
 
 @dataclass
@@ -24,6 +40,18 @@ class ModelTrainerConfig:
         "cohort_type",
     ]
     RANDOM_STATE = 99
+
+
+@dataclass
+class ModelEvaluatorConfig:
+    METRICS: Sequence[str] = field(
+        default_factory=lambda: ["R2", "MSE", "MAPE"]
+    )
+
+    SUMMARY_METHOD = "summary"
+    VALID_MODELS: Sequence[str] = field(
+        default_factory=lambda: ["DTC", "RFR", "XGB", "MNB", "MLR"]
+    )
 
 
 @dataclass
@@ -178,6 +206,8 @@ class CohortBuilderConfig:
         default_factory=lambda: ["unique_id"]
     )
     DATE_COL: str = "date.utc"
+    CITY = "Mumbai"  # "Chennai"
+    SENSOR_TYPE = "reference grade"
     REGION = "us-east-1"
     S3_BUCKET = os.getenv("S3_BUCKET_OPENAQ")
     S3_OUTPUT = os.getenv("S3_OUTPUT_OPENAQ")
@@ -208,7 +238,7 @@ class TimeSplitterConfig:
     SOURCE = "openaq-api"
     TIME_WINDOW_LENGTH: int = 3
     WITHIN_WINDOW_SAMPLER: int = 1
-    WINDOW_COUNT: int = 3  # this will increase for more than one split
+    WINDOW_COUNT: int = 2  # this will increase for more than one split
     TABLE_NAME: str = "openaq"
     REGION = "us-east-1"
     DATABASE = os.getenv("DB_NAME_OPENAQ")

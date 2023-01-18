@@ -38,15 +38,15 @@ class MatrixGenerator:
             algorithm=config.ALGORITHM, id_column_list=config.ID_COLUMN_LIST
         )
 
-    def execute_train_valid_set(self):
-        cohorts_query = """select distinct "locationId", "cohort", "cohort_type",
-        "train_validation_set" from "cohorts";"""
+    def execute_train_valid_set(self, city):
+        cohorts_query = f"""select distinct "locationId", "cohort", "cohort_type",
+        "train_validation_set" from "cohorts_{city}";"""
         cohorts_df = get_data(cohorts_query)
 
         return cohorts_df.train_validation_set.unique()
 
-    def execute(self, engine, train_valid_id, run_date):
-        cohorts_query = """select distinct * from "cohorts";"""
+    def execute(self, engine, train_valid_id, run_date, city):
+        cohorts_query = f"""select distinct * from "cohorts_{city}";"""
         cohorts_df = get_data(cohorts_query)
 
         return self.execute_for_cohort(
@@ -63,9 +63,6 @@ class MatrixGenerator:
         cohort_df = cohorts_df.loc[
             cohorts_df["train_validation_set"] == training_validation_id
         ]
-        # load labels
-        # labels_df = self._load_all_labels(cohort_df)
-
         if cohort_df is not None:
             logging.info(
                 f"Generating features for Cohort {training_validation_id}"
@@ -81,8 +78,6 @@ class MatrixGenerator:
                 engine,
                 cohort_df,
             )
-
-            print("matrix_generator", len(train_df), len(validation_df))
 
             logging.info(f"Rows in training features: {train_df.shape[0]}")
             logging.info(
