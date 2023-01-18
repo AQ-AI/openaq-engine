@@ -95,6 +95,7 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
         )
 
     def _split_train_valid(self, cohort_df, df):
+        print(df)
         df = df.merge(
             cohort_df[["locationId", "cohort_type", "value"]],
             how="left",
