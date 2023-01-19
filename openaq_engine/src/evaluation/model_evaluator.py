@@ -1,11 +1,7 @@
 import logging
 
 import pandas as pd
-from sklearn.metrics import (
-    mean_absolute_percentage_error,
-    mean_squared_error,
-    r2_score,
-)
+from sklearn.metrics import mean_absolute_percentage_error, mean_squared_error
 from src.evaluation.model_evaluator_base import ModelEvaluatorBase
 
 from config.model_settings import ModelEvaluatorConfig
@@ -35,6 +31,7 @@ class ModelEvaluator(ModelEvaluatorBase):
 
     def execute(
         self,
+        i,
         train_model,
         model_name,
         model_id,
@@ -66,12 +63,13 @@ class ModelEvaluator(ModelEvaluatorBase):
         # iterate through all numeric constraints and metrics
         eval_list = []
         valid_pred = train_model.predict(validation_df)
-        metric_value = pd.DataFrame()
-        metric_value["actual"] = ",".join(str(x) for x in valid_labels)
-        metric_value["predicted"] = ",".join(str(x) for x in valid_pred)
-
+        metric_value = pd.DataFrame(columns=["model_id"] + self.metrics)
+        # metric_value["actual"] = ",".join(str(x) for x in valid_labels)
+        # metric_value["predicted"] = ",".join(str(x) for x in valid_pred)
+        print(metric_value)
         for metric in self.metrics:
             eval = self.evaluate_one_metric(
+                i,
                 metric,
                 valid_labels,
                 valid_pred,
@@ -80,7 +78,6 @@ class ModelEvaluator(ModelEvaluatorBase):
             )
             eval_list += [eval]
         results_metrics_df = pd.concat(eval_list)
-
         # write the results to the db
         self._results_to_db(
             results_metrics_df,
@@ -88,9 +85,11 @@ class ModelEvaluator(ModelEvaluatorBase):
             start_datetime,
             engine,
         )
+        return valid_pred, results_metrics_df
 
     def evaluate_one_metric(
         self,
+        i,
         metric,
         valid_labels,
         valid_pred,
@@ -104,22 +103,28 @@ class ModelEvaluator(ModelEvaluatorBase):
         # for each row in the data
 
         metric_value["model_id"] = model_id
-        if metric == "R2":
-            logging.info(f"{metric}: {r2_score(valid_labels, valid_pred)}")
-            calc = r2_score(valid_labels, valid_pred)
+        # if metric == "R2":
+        #     logging.info(f"{metric}: {r2_score(valid_labels, valid_pred)}")
+        #     calc = r2_score(valid_labels, valid_pred)
+        #     metric_value[f"{metric}"] = calc
+
         if metric == "MSE":
             logging.info(
                 f"{metric}: {mean_squared_error(valid_labels, valid_pred)}"
             )
-            calc = mean_squared_error(valid_labels, valid_pred)
+
+            metric_value[f"{metric}"][i] = mean_squared_error(
+                valid_labels, valid_pred
+            )
 
         if metric == "MAPE":
             logging.info(
                 f"{metric}:"
                 f" {mean_absolute_percentage_error(valid_labels, valid_pred)}"
             )
-            calc = mean_absolute_percentage_error(valid_labels, valid_pred)
+            metric_value[f"{metric}"][i] = mean_absolute_percentage_error(
+                valid_labels, valid_pred
+            )
 
-        metric_value[f"{metric}"] = calc
-
+        print(metric_value)
         return metric_value
