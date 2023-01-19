@@ -235,8 +235,8 @@ class TimeSplitterConfig:
     SENSOR_TYPE = "reference grade"
     SOURCE = "openaq-api"
     TIME_WINDOW_LENGTH: int = 3
-    WITHIN_WINDOW_SAMPLER: int = 1
-    WINDOW_COUNT: int = 3  # this will increase for more than one split
+    WITHIN_WINDOW_SAMPLER: int = 3
+    WINDOW_COUNT: int = 2  # this will increase for more than one split
     TABLE_NAME: str = "openaq"
     REGION = "us-east-1"
     DATABASE = os.getenv("DB_NAME_OPENAQ")

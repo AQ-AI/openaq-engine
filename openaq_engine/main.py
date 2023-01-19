@@ -265,12 +265,6 @@ def run_pipeline(
                     start_datetime,
                     engine,
                 )
-                validation_features_df.to_csv(
-                    "results/validation_features_df.csv"
-                )
-                valid_pred.to_csv("results/valid_pred.csv")
-                valid_labels.to_csv("results/valid_labels.csv")
-                results_metrics_df.to_csv("results/results_metrics_df.csv")
                 ModelVisualizerFlow(plots_directory).execute(
                     validation_features_df,
                     valid_pred,
