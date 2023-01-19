@@ -87,7 +87,6 @@ class ModelTrainer:
     ):
         """Loop through all models and save each trained model to server"""
         logging.info("Training all models")
-        logging.info(Y_train)
         model_output = []
         for model in self.model_names_list:
 
