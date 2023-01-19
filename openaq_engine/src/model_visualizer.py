@@ -1,11 +1,17 @@
 import datetime as dt
+import itertools
 import logging
 import os
+from typing import List, Optional
 
 import matplotlib.pyplot as plt
 from src.utils.utils import get_data, write_to_db
 
-from config.model_settings import ModelEvaluatorConfig, ModelVisualizerConfig
+from config.model_settings import (
+    EEConfig,
+    ModelEvaluatorConfig,
+    ModelVisualizerConfig,
+)
 
 
 class ModelVisualizer:
@@ -15,11 +21,13 @@ class ModelVisualizer:
         plot_metrics,
         plots_table_name,
         results_table_name,
+        all_model_features: Optional[List[str]] = None,
     ) -> None:
         self.plot = plot
         self.plot_metrics = plot_metrics
         self.plots_table_name = plots_table_name
         self.results_table_name = results_table_name
+        self.all_model_features = all_model_features
 
     @classmethod
     def from_dataclass_config(
@@ -31,6 +39,11 @@ class ModelVisualizer:
             plot_metrics=config.PLOT_METRICS,
             plots_table_name=config.PLOTS_TABLE_NAME,
             results_table_name=config.RESULTS_TABLE_NAME,
+            all_model_features=list(
+                itertools.chain(
+                    *[x[1] for x in list(EEConfig().ALL_SATELLITES)]
+                )
+            ),
         )
 
     def execute(
@@ -67,25 +80,23 @@ class ModelVisualizer:
         """
         validation_df["predicted"] = valid_pred
         validation_df["actual"] = valid_labels
-        fig, ax = plt.subplots(1, 2, figsize=figsize)
-        ax.plot(
-            validation_df["basic_demographic_characteristics"].values,
-            validation_df["actual"],
-            color="red",
-        )
-        ax.plot(
-            validation_df["basic_demographic_characteristics"].values,
-            validation_df["predicted"],
-            color="green",
-        )
-        ax.set_title("Random Forest Regression")
-        ax.set_xlabel("basic_demographic_characteristics")
-        ax.set_ylabel("PM2.5")
-        fig.savefig(f"plots/{model_name}_regression_plot.png")
-        df = self.get_results(run_date=run_date, last_run_model=last_run_model)
+        for feature in self.all_model_features:
 
-        if all_models:
-            model_ids = df["model_id"].unique()
+            fig, ax = plt.subplots(1, 1, figsize=figsize)
+            ax.scatter(
+                validation_df[feature].values,
+                validation_df["actual"],
+                color="red",
+            )
+            ax.scatter(
+                validation_df[feature].values,
+                validation_df["predicted"],
+                color="green",
+            )
+            ax.set_title("Random Forest Regression")
+            ax.set_xlabel(feature)
+            ax.set_ylabel("PM2.5")
+            fig.savefig(f"plots/{model_name}_regression_plot_{feature}.png")
 
         for id in model_ids:
             fig, ax = plt.subplots(1, 1, figsize=figsize)
@@ -106,13 +117,7 @@ class ModelVisualizer:
             ax.set_title("Models and their metrics", fontsize=18)
             ax.set_ylim((0, 1))
             ax.legend(fontsize=16)
-
-            if path is not None:
-                plot_path = self._plot_path(path, id, metric, df)
-                fig.savefig(plot_path)
-
-                # write to db
-                self._generate_db_tbl(df, plot_path)
+            fig.savefig(f"plots/{model_name}_metric_plot.png")
 
     def get_results(self, run_date=None, last_run_model=None):
         """Query the results data from the database for a specific run date and time"""
