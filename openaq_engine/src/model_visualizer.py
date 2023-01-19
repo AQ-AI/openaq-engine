@@ -35,10 +35,15 @@ class ModelVisualizer:
 
     def execute(
         self,
+        validation_df,
+        valid_pred,
+        valid_labels,
+        run_date,
+        model_name,
+        results_metrics_df,
         path=None,
         all_models=True,
         last_run_model=None,
-        run_date=None,
         model_ids=[],
         figsize=(10, 8),
     ):
@@ -60,6 +65,23 @@ class ModelVisualizer:
             figsize : tuple
                 tuple for figure size of plot
         """
+        validation_df["predicted"] = valid_pred
+        validation_df["actual"] = valid_labels
+        fig, ax = plt.subplots(1, 2, figsize=figsize)
+        ax.plot(
+            validation_df["basic_demographic_characteristics"].values,
+            validation_df["actual"],
+            color="red",
+        )
+        ax.plot(
+            validation_df["basic_demographic_characteristics"].values,
+            validation_df["predicted"],
+            color="green",
+        )
+        ax.set_title("Random Forest Regression")
+        ax.set_xlabel("basic_demographic_characteristics")
+        ax.set_ylabel("PM2.5")
+        fig.savefig(f"plots/{model_name}_regression_plot.png")
         df = self.get_results(run_date=run_date, last_run_model=last_run_model)
 
         if all_models:
@@ -73,14 +95,12 @@ class ModelVisualizer:
             for metric in self.plot_metrics:
                 logging.info(f"Generating plot for {id} and {metric}")
 
-                if self.plot:
-                    df_filt = self._filter_df(df, metric, id)
-                    self._generate_plot(
-                        ax,
-                        plot_info,
-                        df_filt,
-                        metric,
-                    )
+                self._generate_plot(
+                    ax,
+                    plot_info,
+                    results_metrics_df,
+                    metric,
+                )
             ax.set_ylabel("Metric", fontsize=16)
             ax.set_xlabel("Model ID", fontsize=16)
             ax.set_title("Models and their metrics", fontsize=18)

@@ -95,12 +95,28 @@ class ModelVisualizerFlow:
         self.eval_config = ModelEvaluatorConfig()
         self.plots_directory = plots_directory
 
-    def execute(self, run_date):
+    def execute(
+        self,
+        validation_df,
+        valid_pred,
+        valid_labels,
+        start_datetime,
+        model_name,
+        results_metrics_df,
+    ):
         model_visualizer = ModelVisualizer.from_dataclass_config(
             self.config, self.eval_config
         )
 
-        model_visualizer.execute(path=self.plots_directory, run_date=run_date)
+        model_visualizer.execute(
+            validation_df,
+            valid_pred,
+            valid_labels,
+            start_datetime,
+            model_name,
+            results_metrics_df,
+            path=self.plots_directory,
+        )
 
 
 @time_splitter_options()
@@ -209,7 +225,7 @@ def run_pipeline(
             start_model_datetime = datetime.now()
 
             (
-                validation_df,
+                validation_features_df,
                 full_features_df,
                 valid_labels,
                 train_labels,
@@ -225,7 +241,7 @@ def run_pipeline(
                 models_directory,
                 start_datetime,
                 engine,
-                validation_df,
+                validation_features_df,
             )
             # logging.info("Getting model output")
             for (
@@ -239,7 +255,8 @@ def run_pipeline(
                     f"Training and evaluating model {model_output[0]}"
                 )
                 model_evaluator = ModelEvaluatorFlow().execute()
-                model_evaluator.execute(
+                valid_pred, results_metrics_df = model_evaluator.execute(
+                    i,
                     train_model,
                     model_name,
                     model_id,
@@ -248,9 +265,14 @@ def run_pipeline(
                     start_datetime,
                     engine,
                 )
-            ModelVisualizerFlow(plots_directory).execute(
-                start_datetime,
-            )
+                ModelVisualizerFlow(plots_directory).execute(
+                    validation_features_df,
+                    valid_pred,
+                    valid_labels,
+                    start_datetime,
+                    model_name,
+                    results_metrics_df,
+                )
 
             end_datetime = datetime.now()
             logging.info(f"Ending pipeline at {end_datetime}")
