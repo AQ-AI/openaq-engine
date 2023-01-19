@@ -129,3 +129,6 @@ openaq_engine/scripts/plume_labs.ipynb
 
 # python local version
 .python-version
+
+# mlrun
+mlruns/*
