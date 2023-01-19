@@ -254,7 +254,7 @@ class CohortBuilder(CohortBuilderBase):
         if pollutant:
             self.target_variable = pollutant
         if country == "WO":
-            url = """https://api.openaq.org/v2/measurements?date_from={date_from}&date_to={date_to}&limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&order_by=datetime&sensorType={sensor_type}""".format(
+            url = """https://api.openaq.org/v2/measurements?date_from={date_from}&date_to={date_to}&limit=100&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&order_by=datetime&sensorType={sensor_type}""".format(
                 date_from=date_tuple[0],
                 date_to=date_tuple[1],
                 pollutant=self.target_variable,
@@ -262,7 +262,7 @@ class CohortBuilder(CohortBuilderBase):
             )
         if city:
             country == "WO"
-            url = """https://api.openaq.org/v2/measurements?date_from={date_from}&date_to={date_to}&limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&city={city}&order_by=datetime&sensorType={sensor_type}""".format(
+            url = """https://api.openaq.org/v2/measurements?date_from={date_from}&date_to={date_to}&limit=100&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&city={city}&order_by=datetime&sensorType={sensor_type}""".format(
                 date_from=date_tuple[0],
                 date_to=date_tuple[1],
                 pollutant=self.target_variable,
@@ -270,7 +270,7 @@ class CohortBuilder(CohortBuilderBase):
                 sensor_type=sensor_type,
             )
         else:
-            url = """https://api.openaq.org/v2/measurements?date_from={date_from}&date_to={date_to}&limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&country_id={country}&order_by=datetime&sensorType={sensor_type}""".format(
+            url = """https://api.openaq.org/v2/measurements?date_from={date_from}&date_to={date_to}&limit=100&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&country_id={country}&order_by=datetime&sensorType={sensor_type}""".format(
                 date_from=date_tuple[0],
                 date_to=date_tuple[1],
                 pollutant=self.target_variable,
