@@ -44,7 +44,7 @@ class ModelTrainerConfig:
 
 @dataclass
 class ModelEvaluatorConfig:
-    METRICS: Sequence[str] = field(default_factory=lambda: ["MSE", "MAPE"])
+    METRICS: Sequence[str] = field(default_factory=lambda: ["mse", "mape"])
 
     SUMMARY_METHOD = "summary"
     VALID_MODELS: Sequence[str] = field(
