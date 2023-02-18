@@ -204,7 +204,7 @@ class CohortBuilderConfig:
         default_factory=lambda: ["unique_id"]
     )
     DATE_COL: str = "date.utc"
-    CITY = "Mumbai"  # "Chennai"
+    CITY = "Cairo"  # "Chennai"
     SENSOR_TYPE = "reference grade"
     REGION = "us-east-1"
     S3_BUCKET = os.getenv("S3_BUCKET_OPENAQ")
@@ -230,13 +230,13 @@ class CohortBuilderConfig:
 class TimeSplitterConfig:
     DATE_COL: str = "date.utc"
     TARGET_VARIABLE = "pm25"
-    COUNTRY = "WO"
-    CITY = "Mumbai"  # "Chennai"
+    COUNTRY = "EG"
+    CITY = "Cairo"  # "Chennai"
     SENSOR_TYPE = "reference grade"
     SOURCE = "openaq-api"
     TIME_WINDOW_LENGTH: int = 3
     WITHIN_WINDOW_SAMPLER: int = 3
-    WINDOW_COUNT: int = 2  # this will increase for more than one split
+    WINDOW_COUNT: int = 4  # this will increase for more than one split
     TABLE_NAME: str = "openaq"
     REGION = "us-east-1"
     DATABASE = os.getenv("DB_NAME_OPENAQ")
