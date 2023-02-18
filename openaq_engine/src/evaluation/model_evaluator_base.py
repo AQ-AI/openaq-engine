@@ -29,6 +29,7 @@ class ModelEvaluatorBase(ABC):
                 text(
                     """CREATE TABLE IF NOT EXISTS {table} (
                         model_id text,
+                        run_date timestamp,
                         cohort integer,
                         {extra_cols})
                     """.format(

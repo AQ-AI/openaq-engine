@@ -71,45 +71,70 @@ class Preprocess:
 
     def filter_data(self, df: pd.DataFrame):
         if self.filter_pollutant:
-            df = Filter.filter_pollutant(
-                df,
-                CohortBuilderConfig.TARGET_VARIABLE,
-            )
-            logging.info(
-                f"""Total number of pollutant values left after
-                filtering for specific pollutant:
-                {len(df)}"""
-            )
+            try:
+                df = Filter.filter_pollutant(
+                    df,
+                    CohortBuilderConfig.TARGET_VARIABLE,
+                )
+                logging.info(
+                    f"""Total number of pollutant values left after
+                    filtering for specific pollutant:
+                    {len(df)}"""
+                )
+            except AttributeError:
+                return pd.DataFrame()
         if self.filter_no_coordinates:
-            df = df.pipe(Filter.filter_no_coordinates)
-            logging.info(
-                f"""Total number of pollutant values left after
-                filtering no coordinates {len(df)}"""
-            )
+            try:
+
+                df = df.pipe(Filter.filter_no_coordinates)
+                logging.info(
+                    f"""Total number of pollutant values left after
+                    filtering no coordinates {len(df)}"""
+                )
+            except AttributeError:
+                return pd.DataFrame()
         if self.filter_extreme_values:
-            df = df.pipe(Filter.filter_extreme_values)
-            logging.info(
-                f"""Total number of pollutant values left after
-                filtering extreme values {len(df)}"""
-            )
+            try:
+
+                df = df.pipe(Filter.filter_extreme_values)
+                logging.info(
+                    f"""Total number of pollutant values left after
+                    filtering extreme values {len(df)}"""
+                )
+            except AttributeError:
+                return pd.DataFrame()
         if self.filter_non_null_values:
-            df = df.pipe(Filter.filter_non_null_values)
-            logging.info(
-                f"""Total number of pollutant values left after
-                filtering non-null values : {len(df)}"""
-            )
+            try:
+                df = df.pipe(Filter.filter_non_null_values)
+                logging.info(
+                    f"""Total number of pollutant values left after
+                    filtering non-null values : {len(df)}"""
+                )
+            except AttributeError:
+                logging.info(f"""No Valid pollutants from {len(df)} points""")
+                pass
         if self.filter_countries:
-            df = df.pipe(Filter.filter_countries)
-            logging.info(
-                f"""Total number of pollutant values left after
-                filtering countries: {len(df)}"""
-            )
+            try:
+
+                df = df.pipe(Filter.filter_countries)
+                logging.info(
+                    f"""Total number of pollutant values left after
+                    filtering countries: {len(df)}"""
+                )
+            except AttributeError:
+                logging.info(f"""No Valid countries from {len(df)} points""")
+                pass
         if self.filter_cities:
-            df = df.pipe(Filter.filter_cities)
-            logging.info(
-                f"""Total number of pollutant values left after
-                filtering cities: {len(df)}"""
-            )
+            try:
+
+                df = df.pipe(Filter.filter_cities)
+                logging.info(
+                    f"""Total number of pollutant values left after
+                    filtering cities: {len(df)}"""
+                )
+            except AttributeError:
+                logging.info(f"""No Valid cities from {len(df)} points""")
+                pass
         return df
 
     def get_timestamps(self, df: pd.DataFrame, source: str) -> pd.DataFrame:
@@ -187,17 +212,23 @@ class Preprocess:
 
     def validate_point(self, df: pd.DataFrame) -> pd.DataFrame:
         """filters invalid geometries"""
-        df["point_is_valid"] = df.pnt.apply(lambda x: x.wkt != "POINT EMPTY")
+        try:
 
-        if not all(df.point_is_valid):
-            num_invalid_pnts = len(df[~df.point_is_valid])
-            logging.info(
-                f"There were {num_invalid_pnts} rows with invalid points and"
-                " were filtered out"
+            df["point_is_valid"] = df.pnt.apply(
+                lambda x: x.wkt != "POINT EMPTY"
             )
 
-        df_valid = df[df.point_is_valid]
-        return df_valid.drop(["pnt", "point_is_valid"], axis=1)
+            if not all(df.point_is_valid):
+                num_invalid_pnts = len(df[~df.point_is_valid])
+                logging.info(
+                    f"There were {num_invalid_pnts} rows with invalid points"
+                    " and were filtered out"
+                )
+            df_valid = df[df.point_is_valid]
+            return df_valid.drop(["pnt", "point_is_valid"], axis=1)
+        except AttributeError:
+            logging.info(f"None of the {len(df)} rows had calid points")
+            pass
 
     def _extract_lat_lng_from_aws(self, row: pd.Series) -> pd.Series:
         """Regex extraction of latitude and longtitude from string"""
@@ -227,8 +258,11 @@ class Preprocess:
 
     def dict_cols_to_json(self, df: pd.DataFrame) -> pd.DataFrame:
         """Dumps cols containing dicts to json"""
-        for i in df.columns:
-            if isinstance(df[i][1], dict):
-                df[i] = list(map(lambda x: json.dumps(x), df[i]))
+        try:
+            for i in df.columns:
+                if isinstance(df[i][1], dict):
+                    df[i] = list(map(lambda x: json.dumps(x), df[i]))
 
-        return df
+            return df
+        except AttributeError:
+            return pd.DataFrame()

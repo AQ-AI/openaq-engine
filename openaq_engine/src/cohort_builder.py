@@ -167,8 +167,9 @@ class CohortBuilder(CohortBuilderBase):
                 )
             if source == "openaq-api":
                 df = self.execute_for_openaq_api(
-                    date_tuple, city, country, pollutant, sensor_type
+                    date_tuple, country, pollutant, sensor_type
                 )
+            print(df)
             df["train_validation_set"] = index
             df["cohort"] = f"{index}_{date_tuple[0]}_{date_tuple[1]}"
             df["cohort_type"] = f"{cohort_type}"
@@ -246,7 +247,7 @@ class CohortBuilder(CohortBuilderBase):
     def execute_for_openaq_api(
         self,
         date_tuple,
-        city,
+        # city,
         country,
         pollutant,
         sensor_type,
@@ -254,23 +255,23 @@ class CohortBuilder(CohortBuilderBase):
         if pollutant:
             self.target_variable = pollutant
         if country == "WO":
-            url = """https://api.openaq.org/v2/measurements?date_from={date_from}&date_to={date_to}&limit=100&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&order_by=datetime&sensorType={sensor_type}""".format(
+            url = """https://api.openaq.org/v2/measurements?date_from={date_from}&date_to={date_to}&limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&order_by=datetime&sensorType={sensor_type}""".format(
                 date_from=date_tuple[0],
                 date_to=date_tuple[1],
                 pollutant=self.target_variable,
                 sensor_type=sensor_type,
             )
-        if city:
-            country == "WO"
-            url = """https://api.openaq.org/v2/measurements?date_from={date_from}&date_to={date_to}&limit=100&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&city={city}&order_by=datetime&sensorType={sensor_type}""".format(
-                date_from=date_tuple[0],
-                date_to=date_tuple[1],
-                pollutant=self.target_variable,
-                city=city,
-                sensor_type=sensor_type,
-            )
+        # if city:
+        #     country == "WO"
+        #     url = """https://api.openaq.org/v2/measurements?date_from={date_from}&date_to={date_to}&limit=100&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&city={city}&order_by=datetime&sensorType={sensor_type}""".format(
+        #         date_from=date_tuple[0],
+        #         date_to=date_tuple[1],
+        #         pollutant=self.target_variable,
+        #         city=city,
+        #         sensor_type=sensor_type,
+        #     )
         else:
-            url = """https://api.openaq.org/v2/measurements?date_from={date_from}&date_to={date_to}&limit=100&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&country_id={country}&order_by=datetime&sensorType={sensor_type}""".format(
+            url = """https://api.openaq.org/v2/measurements?date_from={date_from}&date_to={date_to}&limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&country_id={country}&order_by=datetime&sensorType={sensor_type}""".format(
                 date_from=date_tuple[0],
                 date_to=date_tuple[1],
                 pollutant=self.target_variable,
@@ -281,10 +282,15 @@ class CohortBuilder(CohortBuilderBase):
 
     def _results_to_db(self, filtered_cohorts_df, engine, city):
         """Write model results to the database for all cohorts"""
+        if city:
+            location = city
+        else:
+            location = self.country
+        print(location)
         write_to_db(
             filtered_cohorts_df,
             engine,
-            f"cohorts_{city}",
+            f"cohorts_{location}",
             "public",
             "replace",
         )

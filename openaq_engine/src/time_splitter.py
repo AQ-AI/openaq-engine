@@ -178,18 +178,19 @@ class TimeSplitterBase(ABC):
             url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&order_by=lastUpdated&sensorType={sensor_type}&dumpRaw=false""".format(
                 pollutant=pollutant, sensor_type=sensor_type
             )
-        elif city is not None:
+        elif not city:
             country == "WO"
-            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&city={city}&order_by=firstUpdated&sensorType={sensor_type}&dumpRaw=false""".format(
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=100&city={city}&order_by=firstUpdated&sensorType={sensor_type}&dumpRaw=false""".format(
                 city=city, pollutant=pollutant, sensor_type=sensor_type
             )
         else:
-            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&country_id={country}&order_by=lastUpdated&sensorType={sensor_type}&dumpRaw=false""".format(
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=100&country_id={country}&order_by=lastUpdated&sensorType={sensor_type}&dumpRaw=false""".format(
                 country=country, pollutant=pollutant, sensor_type=sensor_type
             )
 
         headers = {"accept": "application/json"}
         response = query_results_from_api(headers, url)
+        print(response)
         return datetime.strptime(
             json.loads(response)["results"][0]["lastUpdated"],
             "%Y-%m-%dT%H:%M:%S+00:00",
@@ -203,10 +204,10 @@ class TimeSplitterBase(ABC):
         pollutant,
     ):
         if country == "WO":
-            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=asc&parameter={pollutant}&radius=1000&order_by=firstUpdated&sensorType={sensor_type}&dumpRaw=false""".format(
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=asc&parameter={pollutant}&radius=100&order_by=firstUpdated&sensorType={sensor_type}&dumpRaw=false""".format(
                 pollutant=pollutant, sensor_type=sensor_type
             )
-        elif city is not None:
+        elif not city:
             country == "WO"
             url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=asc&parameter={pollutant}&radius=1000&city={city}&order_by=firstUpdated&sensorType={sensor_type}&dumpRaw=false""".format(
                 city=city,
@@ -311,8 +312,8 @@ class TimeSplitter(TimeSplitterBase):
             )
             if window_start_date < start_date:
                 logging.warning(
-                    f"""Date: {window_start_date.date()} is earlier than
-                    the first date within data: {start_date.date()}"""
+                    f"""Date: {window_start_date} is earlier than
+                    the first date within data: {start_date}"""
                 )
                 window_no += 1
             else:
@@ -327,6 +328,7 @@ class TimeSplitter(TimeSplitterBase):
                 ]
                 window_no += 1
         mlflow.log_params(self.train_validation_dict)
+        print(self.train_validation_dict)
         return self.train_validation_dict
 
     def execute_for_openaq_aws(
