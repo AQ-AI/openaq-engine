@@ -30,7 +30,7 @@ Reporting Guidelines:
 - Contact information of the reporter
 - Name of all the people involved, if known
 - When and Where it happened
-- What happend
+- What happened
 - Additional Context
 - Is it ongoing?
 
