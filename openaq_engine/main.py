@@ -213,23 +213,37 @@ def run_pipeline(
             sensor_type,
             pollutant,
         )
-
         matrix_generator = MatrixGeneratorFlow().execute()
 
-        train_validation_set = matrix_generator.execute_train_valid_set(city)
+        if city:
+            train_validation_set = matrix_generator.execute_train_valid_set(
+                city
+            )
+        if country:
+            train_validation_set = matrix_generator.execute_train_valid_set(
+                country
+            )
 
         # loop for time splits
         model_output = []
         for i in train_validation_set:
-
             start_model_datetime = datetime.now()
-
-            (
-                validation_features_df,
-                full_features_df,
-                valid_labels,
-                train_labels,
-            ) = matrix_generator.execute(engine, i, start_datetime, city)
+            if city:
+                (
+                    validation_features_df,
+                    full_features_df,
+                    valid_labels,
+                    train_labels,
+                ) = matrix_generator.execute(engine, i, start_datetime, city)
+            if country:
+                (
+                    validation_features_df,
+                    full_features_df,
+                    valid_labels,
+                    train_labels,
+                ) = matrix_generator.execute(
+                    engine, i, start_datetime, country
+                )
             logging.info(
                 f"Starting pipeline for model {i} {start_model_datetime}"
             )

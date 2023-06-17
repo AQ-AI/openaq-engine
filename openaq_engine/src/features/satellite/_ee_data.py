@@ -28,7 +28,6 @@ class EEFeatures:
         service_account: str,
         lookback_n: int,
     ):
-
         self.date_col = date_col
         self.table_name = table_name
         self.all_satellites = all_satellites
@@ -50,6 +49,7 @@ class EEFeatures:
         )
 
     def execute(self, df, save_images):
+        ee.Initialize()
         ee.Authenticate()
         # end_date, start_date = self._generate_timerange()
         satellite_df = pd.concat(
@@ -58,7 +58,7 @@ class EEFeatures:
                     location_id, lon, lat, day, save_images
                 )
                 for location_id, lon, lat, day in zip(
-                    df.locationId, df.x, df.y, df.timestamp_utc
+                    df.location, df.x, df.y, df.timestamp_utc
                 )
             ),
         ).reset_index(drop=True)
