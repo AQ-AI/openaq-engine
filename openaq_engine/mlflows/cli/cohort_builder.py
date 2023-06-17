@@ -9,7 +9,6 @@ from config.model_settings import CohortBuilderConfig
 def cohort_builder_options(
     fn, countries_option: bool = True, cities_option: bool = True
 ):
-
     """
     countries_option: bool = True
         Whether to provide the option to specify countries or not
@@ -42,7 +41,12 @@ def cohort_builder_options(
         "-s",
         "--sensor-type",
         default=CohortBuilderConfig.SENSOR_TYPE,
-        type=click.Choice(["reference grade", "low-cost sensor"]),
+        type=click.Choice(
+            [
+                "reference grade",
+                "low-cost sensor",
+            ]
+        ),
         help="Load timesplits from data for the sensor type requested",
     )
     pollutant = cohort_builder_config.option(

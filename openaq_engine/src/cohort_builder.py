@@ -128,7 +128,6 @@ class CohortBuilder(CohortBuilderBase):
         mlflow.log_param("source", source)
 
         with tempfile.TemporaryDirectory("w+") as dir_name:
-
             filtered_cohorts_df_path = os.path.join(
                 dir_name, "filtered_cohorts_df.csv.gz"
             )
@@ -169,7 +168,6 @@ class CohortBuilder(CohortBuilderBase):
                 df = self.execute_for_openaq_api(
                     date_tuple, country, pollutant, sensor_type
                 )
-            print(df)
             df["train_validation_set"] = index
             df["cohort"] = f"{index}_{date_tuple[0]}_{date_tuple[1]}"
             df["cohort_type"] = f"{cohort_type}"
@@ -199,7 +197,6 @@ class CohortBuilder(CohortBuilderBase):
             query = """SELECT DISTINCT *
                 FROM {table}
                 WHERE parameter='{target_variable}'
-                AND sensorType='{sensor_type}'
                 AND {date_col}
                 BETWEEN '{start_date}'
                 AND '{end_date}';""".format(
@@ -208,15 +205,13 @@ class CohortBuilder(CohortBuilderBase):
                 date_col=self.date_col,
                 start_date=date_tuple[0],
                 end_date=date_tuple[1],
-                sensor_type=sensor_type,
             )
-        elif city is not None:
+        elif city:
             country == "WO"
             query = """SELECT DISTINCT *
                 FROM {table}
                 WHERE parameter='{target_variable}'
                 AND city='{city}'
-                AND sensorType='{sensor_type}'
                 AND {date_col}
                 BETWEEN '{start_date}'
                 AND '{end_date}';""".format(
@@ -226,21 +221,18 @@ class CohortBuilder(CohortBuilderBase):
                 start_date=date_tuple[0],
                 end_date=date_tuple[1],
                 city=city,
-                sensor_type=sensor_type,
             )
         else:
             query = """SELECT DISTINCT *
                 FROM {table}
                 WHERE parameter='{target_variable}' AND country='{country}'
-                AND sensorType='{sensor_type}'
-                AND {date_col} BETWEEN '{start_date}' AND '{end_date}';""".format(
+                AND {date_col} BETWEEN '{start_date}' AND '{end_date}' LIMIT 1000;""".format(
                 table=self.table_name,
                 target_variable=self.target_variable,
                 date_col=self.date_col,
                 start_date=date_tuple[0],
                 end_date=date_tuple[1],
                 country=country,
-                sensor_type=sensor_type,
             )
         return self.build_response_from_aws(params, query)
 
@@ -271,7 +263,7 @@ class CohortBuilder(CohortBuilderBase):
         #         sensor_type=sensor_type,
         #     )
         else:
-            url = """https://api.openaq.org/v2/measurements?date_from={date_from}&date_to={date_to}&limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&country_id={country}&order_by=datetime&sensorType={sensor_type}""".format(
+            url = """https://api.openaq.org/v2/measurements?date_from={date_from}&date_to={date_to}&limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&country={country}&order_by=datetime&sensorType={sensor_type}""".format(
                 date_from=date_tuple[0],
                 date_to=date_tuple[1],
                 pollutant=self.target_variable,

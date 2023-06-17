@@ -81,7 +81,7 @@ class HyperparamConfig:
 class BuildFeaturesConfig:
     TARGET_COL: str = "value"
     TARGET_VARIABLE = "pm25"
-    COUNTRY = "WO"
+    COUNTRY = "US"
 
     CATEGORICAL_FEATURES: List[StrictStr] = field(default_factory=lambda: [])
     CORE_FEATURES: List[StrictStr] = field(
@@ -204,7 +204,7 @@ class CohortBuilderConfig:
         default_factory=lambda: ["unique_id"]
     )
     DATE_COL: str = "date.utc"
-    CITY = "Cairo"  # "Chennai"
+    CITY = ""  # "Chennai"
     SENSOR_TYPE = "reference grade"
     REGION = "us-east-1"
     S3_BUCKET = os.getenv("S3_BUCKET_OPENAQ")
@@ -222,7 +222,7 @@ class CohortBuilderConfig:
         ),
     )
     TARGET_VARIABLE = "pm25"
-    COUNTRY = "WO"
+    COUNTRY = "US"
     SOURCE = "openaq-aws"
 
 
@@ -230,10 +230,10 @@ class CohortBuilderConfig:
 class TimeSplitterConfig:
     DATE_COL: str = "date.utc"
     TARGET_VARIABLE = "pm25"
-    COUNTRY = "EG"
-    CITY = "Cairo"  # "Chennai"
+    COUNTRY = "US"
+    CITY = ""  # "Chennai"
     SENSOR_TYPE = "reference grade"
-    SOURCE = "openaq-api"
+    SOURCE = "openaq-aws"
     TIME_WINDOW_LENGTH: int = 3
     WITHIN_WINDOW_SAMPLER: int = 3
     WINDOW_COUNT: int = 4  # this will increase for more than one split

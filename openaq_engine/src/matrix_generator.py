@@ -38,15 +38,15 @@ class MatrixGenerator:
             algorithm=config.ALGORITHM, id_column_list=config.ID_COLUMN_LIST
         )
 
-    def execute_train_valid_set(self, city):
-        cohorts_query = f"""select distinct "locationId", "cohort", "cohort_type",
-        "train_validation_set" from "cohorts_{city}";"""
+    def execute_train_valid_set(self, place):
+        cohorts_query = f"""select distinct "location", "cohort", "cohort_type",
+        "train_validation_set" from "cohorts_{place}";"""
         cohorts_df = get_data(cohorts_query)
 
         return cohorts_df.train_validation_set.unique()
 
-    def execute(self, engine, train_valid_id, run_date, city):
-        cohorts_query = f"""select distinct * from "cohorts_{city}";"""
+    def execute(self, engine, train_valid_id, run_date, place):
+        cohorts_query = f"""select distinct * from "cohorts_{place}";"""
         cohorts_df = get_data(cohorts_query)
 
         return self.execute_for_cohort(
@@ -226,7 +226,6 @@ class MatrixGenerator:
         f = open(f"{filename}.csv", "w")
 
         with f:
-
             writer = csv.writer(f)
 
             for row in y:
