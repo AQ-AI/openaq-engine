@@ -131,4 +131,7 @@ openaq_engine/scripts/plume_labs.ipynb
 .python-version
 
 # mlrun
-mlruns/*
+mlruns/*\
+
+# history
+.history/*
