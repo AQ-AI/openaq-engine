@@ -62,7 +62,7 @@ class CohortBuilder(CohortBuilderBase):
     ) -> None:
         self.date_col = date_col
         self.filter_dict = filter_dict
-        self.targete_variable = target_variable
+        self.target_variable = target_variable
         self.country = country
         self.source = source
         super().__init__(
