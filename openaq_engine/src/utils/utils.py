@@ -47,9 +47,7 @@ def write_csv(df: pd.DataFrame, path: str, **kwargs: Any) -> None:
 def query_results_from_api(params, query):
     url = query
     headers = params
-
     response = requests.get(url, headers=headers, timeout=None)
-
     return response.text
 
 
@@ -75,7 +73,6 @@ def query_results_from_aws(params, query, wait=True):
             "OutputLocation": f"s3://{params['bucket']}/{params['path']}/"
         },
     )
-
     if not wait:
         return response_query_execution_id["QueryExecutionId"]
     else:
@@ -110,6 +107,7 @@ def query_results_from_aws(params, query, wait=True):
                         "QueryExecutionId"
                     ]
                 )
+                print("response_query_result", response_query_result)
                 return response_query_result
 
         else:
