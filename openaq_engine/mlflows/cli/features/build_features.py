@@ -43,10 +43,16 @@ def feature_builder_options(fn, countries_option: bool = True):
                 "so2",
             ]
         ),
-        help="Load cohorts from data for the pollutant requested",
+        help="Load timesplits from data for the pollutant requested",
     )
-    wrapped_func = pollutant(fn)
+    latest_date = cohort_builder_config.option(
+        "-d",
+        "--latest-date",
+        hidden=True,
+        type=click.STRING,
+        help="Date to load data until in format YYYY-MM-DD",
+    )
+    wrapped_func = pollutant(latest_date(fn))
     if countries_option:
         wrapped_func = country_(wrapped_func)
-
     return wrapped_func
