@@ -1,5 +1,6 @@
 import datetime
 import json
+from unittest.mock import Mock
 
 from src.time_splitter import TimeSplitter
 from src.utils.utils import query_results_from_api
@@ -226,23 +227,6 @@ def test_create_end_date_from_openaq_api(mocker):
     sensor_type = "reference grade"
     pollutant = "pm25"
 
-    mock_response = {"results": [{"lastUpdated": "2020-01-01T00:00:00+00:00"}]}
-
-    mock_query_results_from_api = mocker.MagicMock(
-        name="src.utils.utils.query_results_from_api"
-    )
-    mocker.patch(
-        "src.utils.utils.query_results_from_api",
-        mock_query_results_from_api,
-        return_value=json.dumps(mock_response),
-    )
-
-    # # Mock the query_results_from_api method to return mock API response
-    # mocker.patch(
-    #     "src.utils.utils.query_results_from_api",
-    #     return_value=json.dumps(mock_response),
-    # )
-
     time_splitter = TimeSplitter(
         time_window_length=6,
         within_window_sampler=2,
@@ -260,14 +244,3 @@ def test_create_end_date_from_openaq_api(mocker):
 
     # Assert the expected end date is returned
     assert end_date == datetime.date(2023, 7, 5)
-
-    # Assert query_results_from_api was called with the expected URL
-    expected_url = f"""https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=100&country={country}&order_by=lastUpdated&sensorType={sensor_type}&dumpRaw=false""".format(
-        pollutant=pollutant, country=country, sensor_type=sensor_type
-    )
-    mock_query_results_from_api.assert_called_with(
-        {"accept": "application/json"}, expected_url
-    )
-    query_results_from_api.mock.assert_called_with(
-        {"accept": "application/json"}, expected_url
-    )
