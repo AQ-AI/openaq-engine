@@ -68,7 +68,6 @@ class TimeSplitterBase(ABC):
                 city=city,
             )
         else:
-            print(country_info)
             sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime
             FROM {table} WHERE parameter='{target_variable}'
             AND from_iso8601_timestamp({date_col}) <= {latest_date}
@@ -80,7 +79,6 @@ class TimeSplitterBase(ABC):
                 country=country_info,
                 latest_date=latest_date,
             )
-            print(sql_query)
         response_query_result = self.build_response_from_aws(params, sql_query)
 
         return datetime.strptime(
@@ -136,8 +134,6 @@ class TimeSplitterBase(ABC):
                 country=country_info,
                 latest_date=latest_date,
             )
-        print(sql_query)
-        print(self.source)
         response_query_result = self.build_response_from_aws(params, sql_query)
         return datetime.strptime(
             f"{response_query_result}", "%Y-%m-%d %H:%M:%S.000 UTC"
@@ -175,7 +171,6 @@ class TimeSplitterBase(ABC):
             )
         headers = {"accept": "application/json"}
         response = query_results_from_api(headers, url)
-        print(response)
         return datetime.strptime(
             json.loads(response)["results"][0]["lastUpdated"],
             "%Y-%m-%dT%H:%M:%S+00:00",
@@ -284,7 +279,6 @@ class TimeSplitter(TimeSplitterBase):
                 params, city, country, pollutant, date
             )
         if source == "openaq-api":
-            print("api")
             end_date, start_date = self.execute_for_openaq_api(
                 city, country, sensor_type, pollutant
             )
@@ -339,8 +333,6 @@ class TimeSplitter(TimeSplitterBase):
             city, country, sensor_type, pollutant
         )
         return end_date, start_date
-
-        return
 
     def get_validation_window(self, end_date, window_no):
         """Gets start and end date of each training window"""
