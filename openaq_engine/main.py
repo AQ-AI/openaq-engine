@@ -162,7 +162,9 @@ def cohort_builder(city, country, source, sensor_type, pollutant, latest_date):
 
 @feature_builder_options()
 @click.command("feature-builder", help="Generate features for cohorts")
-def feature_builder(country, pollutant):
+def feature_builder(
+    city, country, sensor_type, source, pollutant, latest_date
+):
     experiment_id = mlflow.create_experiment(
         f"feature_builder_{str(datetime.now())}", os.getenv("MLFLOW_S3_BUCKET")
     )
@@ -170,8 +172,23 @@ def feature_builder(country, pollutant):
     with mlflow.start_run(experiment_id=experiment_id, nested=True):
         engine = get_dbengine()
 
+        time_splitter = TimeSplitterFlow().execute()
+        train_validation_dict = time_splitter.execute(
+            city, country, sensor_type, source, pollutant, latest_date
+        )
+
+        cohort_builder = CohortBuilderFlow().execute()
+        cohort_builder.execute(
+            train_validation_dict,
+            engine,
+            city,
+            country,
+            source,
+            sensor_type,
+            pollutant,
+        )
         build_features = BuildFeaturesFlow().execute()
-        build_features.execute(engine, country, pollutant)
+        build_features.execute(engine, cohort_df)
 
 
 @time_splitter_options()
