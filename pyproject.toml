@@ -27,6 +27,7 @@ psutil = "^5.9.4"
 gcloud = "^0.18.3"
 numpy = "1.23.5"
 pytest-mock = "^3.11.1"
+pytest-cov = "^4.1.0"
 
 [tool.poetry.dev-dependencies]
 black = "^22.10.0"
