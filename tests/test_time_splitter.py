@@ -1,9 +1,7 @@
 import datetime
-import json
-from unittest.mock import Mock
+import pytz
 
 from src.time_splitter import TimeSplitter
-from src.utils.utils import query_results_from_api
 
 
 def test_get_end_time_windows():
@@ -243,4 +241,5 @@ def test_create_end_date_from_openaq_api(mocker):
     )
 
     # Assert the expected end date is returned
-    assert end_date == datetime.date(2023, 7, 5)
+    # assert end_date == datetime.date.today(pytz.utc)
+    assert end_date == datetime.datetime.now(pytz.utc).date()
