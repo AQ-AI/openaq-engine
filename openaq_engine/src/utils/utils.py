@@ -54,7 +54,6 @@ def query_results_from_api(params, query):
 def api_response_to_df(url):
     headers = {"accept": "application/json"}
     response = query_results_from_api(headers, url)
-
     try:
         return pd.DataFrame(json.loads(response)["results"])
     except KeyError:
@@ -186,8 +185,6 @@ def write_to_db(
     index=False,
     **kwargs,
 ):
-    #     with engine.begin() as connection:
-    #         connection.execute(text("""SET ROLE "pakistan-ihhn-role" """))
     df.to_sql(
         name=table_name,
         schema=schema_name,

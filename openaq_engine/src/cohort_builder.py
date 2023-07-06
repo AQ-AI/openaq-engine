@@ -278,7 +278,6 @@ class CohortBuilder(CohortBuilderBase):
             location = city
         else:
             location = self.country
-        print(location)
         write_to_db(
             filtered_cohorts_df,
             engine,
