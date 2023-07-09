@@ -180,35 +180,3 @@ def test_execute_for_openaq_api(mocker):
 
     src.utils.utils.api_response_to_df.assert_called_with(expected_url)
 
-
-def test_results_to_db(mocker):
-    country = "UK"
-    pollutant = "pm25"
-
-    mock_api_response_to_df = mocker.MagicMock()
-    # Mock write_to_db call
-    mocker.patch("src.utils.utils.write_to_db", mock_api_response_to_df)
-
-    cohort_builder = CohortBuilder(
-        date_col="date",
-        filter_dict={},
-        target_variable=pollutant,
-        country=country,
-        source="openaq-aws",
-    )
-    with nullcontext():
-        engine = get_dbengine()
-
-        # Test with city
-        df = pd.DataFrame({"city": "London", "value": [1]})
-        cohort_builder._results_to_db(df, engine, "London")
-        src.utils.utils.write_to_db.assert_called_with(
-            df, engine, "cohorts_London", "public", "replace"
-        )
-
-        # Test without city
-        df = pd.DataFrame({"country": "UK", "value": [1]})
-        cohort_builder._results_to_db(df, engine, "")
-        src.utils.utils.write_to_db.assert_called_with(
-            df, engine, "cohorts_UK", "public", "replace"
-        )

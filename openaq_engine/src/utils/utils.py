@@ -170,8 +170,8 @@ def get_data(query):
     data: DataFrame
        Dump of Query into a DataFrame
     """
-
     with connect_to_db() as conn:
+        print(conn)
         df = pd.read_sql_query(query, conn)
     return df
 

@@ -251,6 +251,14 @@ class TimeSplitterConfig:
             training=[],
         )
     )
+    STATE_CODES = ["TX"]
+    PLACE = "Texas"
+    STATE_BOUNDING_BOXES = {
+        "TX": (
+            "Texas",
+            (-106.64719063660635,25.840437651866516,-93.5175532104321,36.50050935248352),
+        ),
+    }
     COUNTRY_BOUNDING_BOXES = {
         "AF": (
             "Afghanistan",
