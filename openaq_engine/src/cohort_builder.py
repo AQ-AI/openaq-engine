@@ -62,7 +62,7 @@ class CohortBuilder(CohortBuilderBase):
     ) -> None:
         self.date_col = date_col
         self.filter_dict = filter_dict
-        self.targete_variable = target_variable
+        self.target_variable = target_variable
         self.country = country
         self.source = source
         super().__init__(
@@ -85,7 +85,14 @@ class CohortBuilder(CohortBuilderBase):
         )
 
     def execute(
-        self, train_validation_dict, engine, country, source, pollutant
+        self,
+        train_validation_dict,
+        engine,
+        city,
+        country,
+        source,
+        sensor_type,
+        pollutant,
     ):
         filter_cols = ", ".join(
             set(list(chain.from_iterable(self.filter_dict.values())))
@@ -97,8 +104,10 @@ class CohortBuilder(CohortBuilderBase):
                     cohort_type,
                     train_validation_dict,
                     filter_cols,
+                    city,
                     country,
                     source,
+                    sensor_type,
                     pollutant,
                 )
                 for cohort_type in train_validation_dict.keys()
@@ -119,7 +128,6 @@ class CohortBuilder(CohortBuilderBase):
         mlflow.log_param("source", source)
 
         with tempfile.TemporaryDirectory("w+") as dir_name:
-
             filtered_cohorts_df_path = os.path.join(
                 dir_name, "filtered_cohorts_df.csv.gz"
             )
@@ -127,15 +135,17 @@ class CohortBuilder(CohortBuilderBase):
             write_csv(filtered_cohorts_df, filtered_cohorts_df_path)
             mlflow.get_artifact_uri()
             mlflow.log_artifact(filtered_cohorts_df_path)
-        self._results_to_db(filtered_cohorts_df, engine)
+        self._results_to_db(filtered_cohorts_df, engine, city)
 
     def cohort_builder(
         self,
         cohort_type,
         train_validation_dict,
         filter_cols,
+        city,
         country,
         source,
+        sensor_type,
         pollutant,
     ) -> pd.DataFrame:
         """
@@ -152,11 +162,11 @@ class CohortBuilder(CohortBuilderBase):
         for index, date_tuple in enumerate(date_tup_list):
             if source == "openaq-aws":
                 df = self.execute_for_openaq_aws(
-                    date_tuple, country, pollutant
+                    date_tuple, city, country, pollutant, sensor_type
                 )
             if source == "openaq-api":
                 df = self.execute_for_openaq_api(
-                    date_tuple, country, pollutant
+                    date_tuple, country, pollutant, sensor_type
                 )
             df["train_validation_set"] = index
             df["cohort"] = f"{index}_{date_tuple[0]}_{date_tuple[1]}"
@@ -172,7 +182,9 @@ class CohortBuilder(CohortBuilderBase):
         cohort_df = pd.concat(df_list, axis=0).reset_index(drop=True)
         return cohort_df
 
-    def execute_for_openaq_aws(self, date_tuple, country, pollutant):
+    def execute_for_openaq_aws(
+        self, date_tuple, city, country, pollutant, sensor_type
+    ):
         params = {
             "region": str(self.region_name),
             "database": str(os.getenv("DB_NAME_OPENAQ")),
@@ -184,7 +196,8 @@ class CohortBuilder(CohortBuilderBase):
         if country == "WO":
             query = """SELECT DISTINCT *
                 FROM {table}
-                WHERE parameter='{target_variable}' AND {date_col}
+                WHERE parameter='{target_variable}'
+                AND {date_col}
                 BETWEEN '{start_date}'
                 AND '{end_date}';""".format(
                 table=self.table_name,
@@ -193,12 +206,27 @@ class CohortBuilder(CohortBuilderBase):
                 start_date=date_tuple[0],
                 end_date=date_tuple[1],
             )
-
+        elif city:
+            country == "WO"
+            query = """SELECT DISTINCT *
+                FROM {table}
+                WHERE parameter='{target_variable}'
+                AND city='{city}'
+                AND {date_col}
+                BETWEEN '{start_date}'
+                AND '{end_date}';""".format(
+                table=self.table_name,
+                target_variable=self.target_variable,
+                date_col=self.date_col,
+                start_date=date_tuple[0],
+                end_date=date_tuple[1],
+                city=city,
+            )
         else:
             query = """SELECT DISTINCT *
                 FROM {table}
                 WHERE parameter='{target_variable}' AND country='{country}'
-                AND {date_col} BETWEEN '{start_date}' AND '{end_date}';""".format(
+                AND {date_col} BETWEEN '{start_date}' AND '{end_date}' LIMIT 1000;""".format(
                 table=self.table_name,
                 target_variable=self.target_variable,
                 date_col=self.date_col,
@@ -211,32 +239,49 @@ class CohortBuilder(CohortBuilderBase):
     def execute_for_openaq_api(
         self,
         date_tuple,
+        # city,
         country,
         pollutant,
+        sensor_type,
     ):
         if pollutant:
             self.target_variable = pollutant
         if country == "WO":
-            url = """https://api.openaq.org/v2/measurements?date_from={date_from}&date_to={date_to}&limit=100&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&order_by=datetime""".format(
+            url = """https://api.openaq.org/v2/measurements?date_from={date_from}&date_to={date_to}&limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&order_by=datetime&sensorType={sensor_type}""".format(
                 date_from=date_tuple[0],
                 date_to=date_tuple[1],
                 pollutant=self.target_variable,
+                sensor_type=sensor_type,
             )
+        # if city:
+        #     country == "WO"
+        #     url = """https://api.openaq.org/v2/measurements?date_from={date_from}&date_to={date_to}&limit=100&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&city={city}&order_by=datetime&sensorType={sensor_type}""".format(
+        #         date_from=date_tuple[0],
+        #         date_to=date_tuple[1],
+        #         pollutant=self.target_variable,
+        #         city=city,
+        #         sensor_type=sensor_type,
+        #     )
         else:
-            url = """https://api.openaq.org/v2/measurements?date_from={date_from}&date_to={date_to}&limit=100&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&country_id={country}&order_by=datetime""".format(
+            url = """https://api.openaq.org/v2/measurements?date_from={date_from}&date_to={date_to}&limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&country={country}&order_by=datetime&sensorType={sensor_type}""".format(
                 date_from=date_tuple[0],
                 date_to=date_tuple[1],
                 pollutant=self.target_variable,
                 country=country,
+                sensor_type=sensor_type,
             )
         return api_response_to_df(url)
 
-    def _results_to_db(self, filtered_cohorts_df, engine):
+    def _results_to_db(self, filtered_cohorts_df, engine, city):
         """Write model results to the database for all cohorts"""
+        if city:
+            location = city
+        else:
+            location = self.country
         write_to_db(
             filtered_cohorts_df,
             engine,
-            "cohorts",
+            f"cohorts_{location}",
             "public",
             "replace",
         )

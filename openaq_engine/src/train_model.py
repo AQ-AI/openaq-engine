@@ -83,10 +83,10 @@ class ModelTrainer:
         model_path,
         run_date,
         engine,
+        X_valid,
     ):
         """Loop through all models and save each trained model to server"""
         logging.info("Training all models")
-        logging.info(Y_train)
         model_output = []
         for model in self.model_names_list:
 
@@ -115,6 +115,7 @@ class ModelTrainer:
                             run_date,
                             hp,
                             engine,
+                            X_valid,
                         )
                     ]
 
@@ -130,6 +131,7 @@ class ModelTrainer:
         run_date,
         hp,
         engine,
+        X_valid,
     ):
         """This is a docstring that describes the overall function:
         Arguments
@@ -153,6 +155,7 @@ class ModelTrainer:
                       `hyperparameters`"""
         logging.info(f"Training model {model_name} with hyperparameters {hp}")
         X_train = X_train[self.all_model_features]
+        X_valid = X_valid[self.all_model_features]
         # split by labels and features
         text_clf = self.get_train_pipeline(model_name, hp)
         logging.info("Fitting model")
@@ -161,6 +164,8 @@ class ModelTrainer:
         logging.info(f"Shape of Y data: {Y_train.shape}")
         X_train = self.get_impute_transformer().fit_transform(X_train)
         X_train = self.get_scaler_transform().fit_transform(X_train)
+        X_valid = self.get_impute_transformer().fit_transform(X_valid)
+        X_valid = self.get_scaler_transform().fit_transform(X_valid)
         train_model = self.fit_model(text_clf, X_train, Y_train)
 
         hp_id = self._build_hyperparameters_id(model_name, hp)
@@ -184,7 +189,7 @@ class ModelTrainer:
             hp_id,
             engine,
         )
-        return model_id, model_name, cohort_id
+        return model_id, model_name, cohort_id, train_model, X_valid
 
     def get_train_pipeline(self, model_name, hp):
         """

@@ -38,15 +38,15 @@ class MatrixGenerator:
             algorithm=config.ALGORITHM, id_column_list=config.ID_COLUMN_LIST
         )
 
-    def execute_train_valid_set(self):
-        cohorts_query = """select distinct "locationId", "cohort", "cohort_type",
-        "train_validation_set" from "cohorts";"""
+    def execute_train_valid_set(self, place):
+        cohorts_query = f"""select distinct "location", "cohort", "cohort_type",
+        "train_validation_set" from "cohorts_{place}";"""
         cohorts_df = get_data(cohorts_query)
 
         return cohorts_df.train_validation_set.unique()
 
-    def execute(self, engine, train_valid_id, run_date):
-        cohorts_query = """select distinct * from "cohorts";"""
+    def execute(self, engine, train_valid_id, run_date, place):
+        cohorts_query = f"""select distinct * from "cohorts_{place}";"""
         cohorts_df = get_data(cohorts_query)
 
         return self.execute_for_cohort(
@@ -63,13 +63,11 @@ class MatrixGenerator:
         cohort_df = cohorts_df.loc[
             cohorts_df["train_validation_set"] == training_validation_id
         ]
-        # load labels
-        # labels_df = self._load_all_labels(cohort_df)
-
         if cohort_df is not None:
             logging.info(
                 f"Generating features for Cohort {training_validation_id}"
             )
+            print()
             (
                 train_df,
                 validation_df,
@@ -81,8 +79,6 @@ class MatrixGenerator:
                 engine,
                 cohort_df,
             )
-
-            print("matrix_generator", len(train_df), len(validation_df))
 
             logging.info(f"Rows in training features: {train_df.shape[0]}")
             logging.info(
@@ -143,7 +139,6 @@ class MatrixGenerator:
                 .from_dataclass_config(config)
                 .execute(engine, cohort_df)
             )
-
             return (
                 df_train,
                 df_valid,
@@ -193,11 +188,9 @@ class MatrixGenerator:
         return [
             load(
                 os.path.join(
-                    self.text_features_path,
-                    x + "_" + filename + ".joblib",
+                    filename + ".joblib",
                 )
             )
-            for x in self.text_column_list
         ]
 
     def _concat_csr(self, X, csr_list):
@@ -220,6 +213,7 @@ class MatrixGenerator:
     def _write_labels_as_csv(
         self, y, run_date, training_validation_id, cohort_type
     ):
+        print(y, run_date, training_validation_id, cohort_type)
         filename = "_".join(
             [
                 "labels",
@@ -231,7 +225,6 @@ class MatrixGenerator:
         f = open(f"{filename}.csv", "w")
 
         with f:
-
             writer = csv.writer(f)
 
             for row in y:

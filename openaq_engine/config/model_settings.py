@@ -8,11 +8,27 @@ from pydantic.dataclasses import dataclass
 
 
 @dataclass
+class ModelVisualizerConfig:
+    PLOT: bool = True
+    PLOT_METRICS: Sequence[str] = field(default_factory=lambda: ["mean"])
+
+    PLOTS_TABLE_NAME: str = "plots"
+    PLOTS_SCHEMA_NAME: str = "model_output"
+    RESULTS_TABLE_NAME: str = "results"
+
+
+@dataclass
 class MatrixGeneratorConfig:
     ALGORITHM = "RFR"
     ID_COLUMN_LIST: Sequence[str] = field(
         default_factory=lambda: ["locationId", "cohort", "cohort_type"]
     )
+
+
+@dataclass
+class FeatureImportanceConfig:
+    NUM_RECORDS: int = 5
+    TABLE_NAME: str = "feature_importance"
 
 
 @dataclass
@@ -24,21 +40,16 @@ class ModelTrainerConfig:
         "cohort_type",
     ]
     RANDOM_STATE = 99
-    All_MODEL_FEATURES = [
-        "Optical_Depth_047",
-        "B4",
-        "B3",
-        "B2",
-        "avg_rad",
-        "temperature_2m_above_ground",
-        "relative_humidity_2m_above_ground",
-        "total_precipitation_surface",
-        "total_cloud_cover_entire_atmosphere",
-        "u_component_of_wind_10m_above_ground",
-        "v_component_of_wind_10m_above_ground",
-        "basic_demographic_characteristics",
-        "discrete_classification",
-    ]
+
+
+@dataclass
+class ModelEvaluatorConfig:
+    METRICS: Sequence[str] = field(default_factory=lambda: ["mse", "mape"])
+
+    SUMMARY_METHOD = "summary"
+    VALID_MODELS: Sequence[str] = field(
+        default_factory=lambda: ["DTC", "RFR", "XGB", "MNB", "MLR"]
+    )
 
 
 @dataclass
@@ -70,7 +81,7 @@ class HyperparamConfig:
 class BuildFeaturesConfig:
     TARGET_COL: str = "value"
     TARGET_VARIABLE = "pm25"
-    COUNTRY = "WO"
+    COUNTRY = "US"
 
     CATEGORICAL_FEATURES: List[StrictStr] = field(default_factory=lambda: [])
     CORE_FEATURES: List[StrictStr] = field(
@@ -193,6 +204,8 @@ class CohortBuilderConfig:
         default_factory=lambda: ["unique_id"]
     )
     DATE_COL: str = "date.utc"
+    CITY = ""  # "Chennai"
+    SENSOR_TYPE = "reference grade"
     REGION = "us-east-1"
     S3_BUCKET = os.getenv("S3_BUCKET_OPENAQ")
     S3_OUTPUT = os.getenv("S3_OUTPUT_OPENAQ")
@@ -209,7 +222,7 @@ class CohortBuilderConfig:
         ),
     )
     TARGET_VARIABLE = "pm25"
-    COUNTRY = "WO"
+    COUNTRY = "US"
     SOURCE = "openaq-aws"
 
 
@@ -217,11 +230,13 @@ class CohortBuilderConfig:
 class TimeSplitterConfig:
     DATE_COL: str = "date.utc"
     TARGET_VARIABLE = "pm25"
-    COUNTRY = "IN"
-    SOURCE = "openaq-api"
-    TIME_WINDOW_LENGTH: int = 12
+    COUNTRY = "US"
+    CITY = ""  # "Chennai"
+    SENSOR_TYPE = "reference grade"
+    SOURCE = "openaq-aws"
+    TIME_WINDOW_LENGTH: int = 3
     WITHIN_WINDOW_SAMPLER: int = 3
-    WINDOW_COUNT: int = 3  # this will increase for more than one split
+    WINDOW_COUNT: int = 4  # this will increase for more than one split
     TABLE_NAME: str = "openaq"
     REGION = "us-east-1"
     DATABASE = os.getenv("DB_NAME_OPENAQ")
@@ -236,6 +251,14 @@ class TimeSplitterConfig:
             training=[],
         )
     )
+    STATE_CODES = ["TX"]
+    PLACE = "Texas"
+    STATE_BOUNDING_BOXES = {
+        "TX": (
+            "Texas",
+            (-106.64719063660635,25.840437651866516,-93.5175532104321,36.50050935248352),
+        ),
+    }
     COUNTRY_BOUNDING_BOXES = {
         "AF": (
             "Afghanistan",
