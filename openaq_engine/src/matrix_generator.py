@@ -67,6 +67,7 @@ class MatrixGenerator:
             logging.info(
                 f"Generating features for Cohort {training_validation_id}"
             )
+            print()
             (
                 train_df,
                 validation_df,
@@ -138,7 +139,6 @@ class MatrixGenerator:
                 .from_dataclass_config(config)
                 .execute(engine, cohort_df)
             )
-
             return (
                 df_train,
                 df_valid,
@@ -188,11 +188,9 @@ class MatrixGenerator:
         return [
             load(
                 os.path.join(
-                    self.text_features_path,
-                    x + "_" + filename + ".joblib",
+                    filename + ".joblib",
                 )
             )
-            for x in self.text_column_list
         ]
 
     def _concat_csr(self, X, csr_list):
@@ -215,6 +213,7 @@ class MatrixGenerator:
     def _write_labels_as_csv(
         self, y, run_date, training_validation_id, cohort_type
     ):
+        print(y, run_date, training_validation_id, cohort_type)
         filename = "_".join(
             [
                 "labels",
