@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Type
 
 import pandas as pd
 from src.features.satellite._ee_data import EEFeatures
-from src.utils.utils import get_data
+from src.utils.utils import write_to_db
 
 from config.model_settings import BuildFeaturesConfig, EEConfig
 
@@ -36,16 +36,27 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
             all_model_features=config.ALL_MODEL_FEATURES,
         )
 
-    def execute(
-        self,
-        df: pd.DataFrame,
-    ) -> pd.DataFrame:
-        cohort_query = """select * from "cohorts";"""
-        df = get_data(cohort_query)
+    def execute(self, engine, cohort_df) -> pd.DataFrame:
+        df = self._add_ee_features(cohort_df)
+        df = self._change_to_categorical_type(df)
+        self._results_to_db(df, engine)
+
+        (
+            df_train,
+            df_valid,
+            feature_train_id,
+            feature_valid_id,
+            train_labels,
+            validation_labels,
+        ) = self._split_train_valid(cohort_df, df)
+
         return (
-            df.pipe(self._add_ee_variable_features)
-            .pipe(self._add_ee_static_features)
-            .pipe(self._change_to_categorical_type)[self.all_model_features]
+            df_train,
+            df_valid,
+            feature_train_id,
+            feature_valid_id,
+            train_labels,
+            validation_labels,
         )
 
     @property
@@ -58,13 +69,13 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
             raise ValueError("All the feature names should be strings!")
         self._all_model_features = features
 
-    def _add_ee_variable_features(self, df):
+    def _add_ee_features(self, df):
         return EEFeatures.from_dataclass_config(EEConfig()).execute(
             df, save_images=False
         )
 
     def _add_year(self, df: pd.DataFrame) -> pd.DataFrame:
-        return df.assign(year=lambda df: pd.to_datetime(df.listed_at).dt.year)
+        return df.assign(year=lambda df: pd.to_datetime(df.day).dt.year)
 
     def _change_to_categorical_type(self, df: pd.DataFrame) -> pd.DataFrame:
         for cat_col in self.categorical_features:
@@ -72,10 +83,66 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
 
         return df
 
+    def _results_to_db(self, features_df, engine):
+        """Write model results to the database for all cohorts"""
+
+        write_to_db(
+            features_df,
+            engine,
+            "features",
+            "public",
+            "append",
+        )
+
+    def _split_train_valid(self, cohort_df, df):
+        df = df.merge(
+            cohort_df[["locationId", "cohort_type", "value"]],
+            how="left",
+            left_on="location_id",
+            right_on="locationId",
+        )
+
+        df_train = df.loc[df["cohort_type"] == "training"]
+        df_valid = df.loc[df["cohort_type"] == "validation"]
+        train_ids, valid_ids = self._get_uniqueids(df_train, df_valid)
+        train_labels = df_train[["value"]]
+        validation_labels = df_valid[["value"]]
+        return (
+            df_train,
+            df_valid,
+            train_ids,
+            valid_ids,
+            train_labels,
+            validation_labels,
+        )
+
+    def _get_uniqueids(self, df_train, df_valid):
+        train_ids = df_train[["location_id"]].reset_index(drop=True)
+
+        valid_ids = df_valid[["location_id"]].reset_index(drop=True)
+
+        return train_ids, valid_ids
+
+    def _filter_labels(self, cohort_df, labels_df):
+        filtered_labels_df = labels_df.merge(
+            cohort_df[["locationId"]],
+            how="right",
+            on="locationId",
+        )
+        print(
+            "len(labels_df)",
+            len(labels_df),
+            "len(filtered_labels_df)",
+            len(filtered_labels_df),
+        )
+        return filtered_labels_df
+
 
 def get_feature_builder(algorithm: str) -> Type[BuildFeatureBase]:
     if algorithm == "RFC":
         return BuildFeaturesRandomForest
 
     else:
-        raise ValueError("The algorithm provided has no registered feature builder!")
+        raise ValueError(
+            "The algorithm provided has no registered feature builder!"
+        )

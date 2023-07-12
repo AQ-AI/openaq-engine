@@ -1,3 +1,4 @@
+import json
 import logging
 import re
 import warnings
@@ -43,7 +44,9 @@ class Preprocess:
             filter_default[filter_] = True
         return cls(**filter_default)
 
-    def execute(self, input_df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def execute(
+        self, input_df: pd.DataFrame, source: str, **kwargs
+    ) -> pd.DataFrame:
         """
         Preprocess raw input data by filtering for specific pollutants,
         cleaning columns and extracting location.
@@ -58,18 +61,19 @@ class Preprocess:
         pd.DataFrame
             Processed data after all processing steps have been applied sequentially
         """
+        input_df = self.get_timestamps(input_df, source)
+        input_df = self.extract_coordinates(input_df, source)
         return (
             input_df.pipe(self.filter_data)
-            .pipe(self.get_timestamps)
-            .pipe(self.extract_coordinates)
             .pipe(self.validate_point)
+            .pipe(self.dict_cols_to_json)
         )
 
     def filter_data(self, df: pd.DataFrame):
         if self.filter_pollutant:
             df = Filter.filter_pollutant(
                 df,
-                CohortBuilderConfig.POLLUTANT_TO_PREDICT,
+                CohortBuilderConfig.TARGET_VARIABLE,
             )
             logging.info(
                 f"""Total number of pollutant values left after
@@ -108,15 +112,24 @@ class Preprocess:
             )
         return df
 
-    def get_timestamps(self, df: pd.DataFrame) -> pd.DataFrame:
+    def get_timestamps(self, df: pd.DataFrame, source: str) -> pd.DataFrame:
         """
         Extract timezone into "utc" and "local" timezone columns.
         """
         logging.info("Extracting datetime")
-        df = df.apply(lambda row: self._extract_timestamp(row), axis=1)
+        if source == "openaq-aws":
+            df = df.apply(
+                lambda row: self._extract_timestamp_from_aws(row),
+                axis=1,
+            )
+        else:
+            df = df.apply(
+                lambda row: self._extract_timestamp_from_api(row),
+                axis=1,
+            )
         return df
 
-    def _extract_timestamp(self, row: pd.Series) -> pd.Series:
+    def _extract_timestamp_from_aws(self, row: pd.Series) -> pd.Series:
         """
         Extract timezone into "utc" and "local" timezone columns.
         """
@@ -136,14 +149,41 @@ class Preprocess:
         )
         return row
 
-    def extract_coordinates(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _extract_timestamp_from_api(self, row: pd.Series) -> pd.Series:
+        """
+        Extract timezone into "utc" and "local" timezone columns from dict.
+        """
+        row["timestamp_utc"] = (
+            datetime.fromisoformat(row["date"]["utc"])
+            .astimezone(timezone.utc)
+            .strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        )
+        row["timestamp_local"] = (
+            datetime.fromisoformat(row["date"]["local"])
+            .astimezone(timezone.utc)
+            .strftime("%Y-%m-%dT%H:%M:%S%z")
+        )
+        return row
+
+    def extract_coordinates(
+        self, df: pd.DataFrame, source: str
+    ) -> pd.DataFrame:
         """
         Extract coordinates into 'x' and 'y' columns from point objects in 'pnt'.
         Filters out rows with invalid point representations.
         """
         logging.info("Extracting coordinates")
         # Filter out any invalid points
-        return df.apply(lambda row: self._extract_lat_lng(row), axis=1)
+        if source == "openaq-aws":
+            df = df.apply(
+                lambda row: self._extract_lat_lng_from_aws(row), axis=1
+            )
+        else:
+            df = df.apply(
+                lambda row: self._extract_lat_lng_from_api(row), axis=1
+            )
+
+        return df
 
     def validate_point(self, df: pd.DataFrame) -> pd.DataFrame:
         """filters invalid geometries"""
@@ -159,7 +199,7 @@ class Preprocess:
         df_valid = df[df.point_is_valid]
         return df_valid.drop(["pnt", "point_is_valid"], axis=1)
 
-    def _extract_lat_lng(self, row: pd.Series) -> pd.Series:
+    def _extract_lat_lng_from_aws(self, row: pd.Series) -> pd.Series:
         """Regex extraction of latitude and longtitude from string"""
         row["y"] = float(
             re.search("(?<=latitude=)(.*)(?=,)", row["coordinates"]).group(0)
@@ -167,7 +207,28 @@ class Preprocess:
         row["x"] = float(
             re.search("(?<=longitude=)(.*)(?=})", row["coordinates"]).group(0)
         )
+
+        return self._check_valid_create_pnt(row)
+
+    def _extract_lat_lng_from_api(self, row: pd.Series) -> pd.Series:
+        """Extraction of latitude and longtitude from dict"""
+        row["y"] = float(row["coordinates"]["latitude"])
+        row["x"] = float(row["coordinates"]["longitude"])
+
+        return self._check_valid_create_pnt(row)
+
+    def _check_valid_create_pnt(self, row: pd.Series) -> pd.Series:
         with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
+            warnings.filterwarnings(
+                "ignore", category=ShapelyDeprecationWarning
+            )
             row["pnt"] = Point(row["x"], row["y"])
             return row
+
+    def dict_cols_to_json(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Dumps cols containing dicts to json"""
+        for i in df.columns:
+            if isinstance(df[i][1], dict):
+                df[i] = list(map(lambda x: json.dumps(x), df[i]))
+
+        return df
