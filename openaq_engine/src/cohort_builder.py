@@ -31,8 +31,22 @@ class CohortBuilderBase(ABC):
         self.region_name = region_name
         self.bucket = bucket
         self.s3_output = s3_output
+        """"
+        Initializes a CohortBuilderBase object with the specified parameters.
+
+        table_name: The name of the table.
+        region_name: The region name.
+        bucket: The name of the bucket.
+        s3_output: The S3 output location.
+        """
 
     def build_response_from_aws(self, params, sql_query):
+        """
+        Builds a response DataFrame from AWS query results.
+
+        params: A dictionary of parameters for the query.
+        sql_query: The SQL query to execute.
+        """
         response_query_result = query_results_from_aws(params, sql_query)
         header = [
             d["VarCharValue"]
@@ -45,6 +59,9 @@ class CohortBuilderBase(ABC):
         return pd.DataFrame(result)
 
     def _get_var_char_values(self, row):
+        """
+        row: A row of query result data.
+        """
         return [
             d["VarCharValue"] if "VarCharValue" in d else "{}"
             for d in row["Data"]
@@ -76,6 +93,11 @@ class CohortBuilder(CohortBuilderBase):
     def from_dataclass_config(
         cls, config: CohortBuilderConfig
     ) -> "CohortBuilder":
+        """
+        Creates a CohortBuilder object from a CohortBuilderConfig data class.
+
+        config: The configuration data class.
+        """
         return cls(
             date_col=config.DATE_COL,
             filter_dict=config.FILTER_DICT,
@@ -94,6 +116,17 @@ class CohortBuilder(CohortBuilderBase):
         sensor_type,
         pollutant,
     ):
+        """
+        Executes the cohort building process
+
+        train_validation_dict: A dictionary of train-validation splits.
+        engine: The database engine.
+        city: The name of the city.
+        country: The name of the country.
+        source: The data source.
+        sensor_type: The type of sensor.
+        pollutant: The pollutant variable.
+        """
         filter_cols = ", ".join(
             set(list(chain.from_iterable(self.filter_dict.values())))
         )
@@ -151,10 +184,17 @@ class CohortBuilder(CohortBuilderBase):
         """
         Retrieve data for cohorts pre-defined timesplits.
 
-        Returns
+        Arguments
         -------
-        pd.DataFrame
-            Cohort dataframe for openaq data
+        cohort_type: The type of cohort.
+        train_validation_dict: A dictionary of train-validation splits.
+        filter_cols: A comma-separated string of filter columns.
+        city: The name of the city.
+        country: The name of the country.
+        source: The data source.
+        sensor_type: The type of sensor.
+        pollutant: The pollutant variable.
+
         """
         date_tup_list = list(train_validation_dict[f"{cohort_type}"])
         df_list = []
@@ -185,6 +225,15 @@ class CohortBuilder(CohortBuilderBase):
     def execute_for_openaq_aws(
         self, date_tuple, city, country, pollutant, sensor_type
     ):
+        """
+        Executes a query for OpenAQ data from AWS
+
+        date_tuple: A tuple of start and end dates.
+        city: The name of the city.
+        country: The name of the country.
+        pollutant: The pollutant variable.
+        sensor_type: The type of sensor.
+        """
         params = {
             "region": str(self.region_name),
             "database": str(os.getenv("DB_NAME_OPENAQ")),
@@ -194,6 +243,7 @@ class CohortBuilder(CohortBuilderBase):
         if pollutant:
             self.target_variable = pollutant
         if country == "WO":
+            # select all results uin between cohort daterange
             query = """SELECT DISTINCT *
                 FROM {table}
                 WHERE parameter='{target_variable}'
@@ -207,7 +257,7 @@ class CohortBuilder(CohortBuilderBase):
                 end_date=date_tuple[1],
             )
         elif city:
-            country == "WO"
+            # use city-specificterm to filter air sensor locations
             query = """SELECT DISTINCT *
                 FROM {table}
                 WHERE parameter='{target_variable}'
@@ -223,6 +273,7 @@ class CohortBuilder(CohortBuilderBase):
                 city=city,
             )
         else:
+            # Use country option to filter the air pollution rates.
             query = """SELECT DISTINCT *
                 FROM {table}
                 WHERE parameter='{target_variable}' AND country='{country}'
@@ -244,6 +295,15 @@ class CohortBuilder(CohortBuilderBase):
         pollutant,
         sensor_type,
     ):
+        """
+        Executes a query for OpenAQ data from the API
+
+        date_tuple: A tuple of start and end dates.
+        country: The name of the country.
+        pollutant: The pollutant variable.
+        sensor_type: The type of sensor.
+
+        """
         if pollutant:
             self.target_variable = pollutant
         if country == "WO":
