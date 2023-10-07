@@ -85,7 +85,6 @@ class Preprocess:
                 return pd.DataFrame()
         if self.filter_no_coordinates:
             try:
-
                 df = df.pipe(Filter.filter_no_coordinates)
                 logging.info(
                     f"""Total number of pollutant values left after
@@ -95,7 +94,6 @@ class Preprocess:
                 return pd.DataFrame()
         if self.filter_extreme_values:
             try:
-
                 df = df.pipe(Filter.filter_extreme_values)
                 logging.info(
                     f"""Total number of pollutant values left after
@@ -115,7 +113,6 @@ class Preprocess:
                 pass
         if self.filter_countries:
             try:
-
                 df = df.pipe(Filter.filter_countries)
                 logging.info(
                     f"""Total number of pollutant values left after
@@ -126,7 +123,6 @@ class Preprocess:
                 pass
         if self.filter_cities:
             try:
-
                 df = df.pipe(Filter.filter_cities)
                 logging.info(
                     f"""Total number of pollutant values left after
@@ -213,7 +209,6 @@ class Preprocess:
     def validate_point(self, df: pd.DataFrame) -> pd.DataFrame:
         """filters invalid geometries"""
         try:
-
             df["point_is_valid"] = df.pnt.apply(
                 lambda x: x.wkt != "POINT EMPTY"
             )

@@ -156,8 +156,17 @@ class EEConfig:
     LAND_COVER_IMAGE_RES = 100
     LAND_COVER_PERIOD = 1500
     BUCKET_NAME = "earthengine-bucket"
-    PATH_TO_PRIVATE_KEY = "private_keys/unicef-367711-29676476912d.json"
-    SERVICE_ACCOUNT = "earth-engine@unicef-367711.iam.gserviceaccount.com"
+    PATH_TO_PRIVATE_KEY = (
+        "/home/ec2-user/elevated-watch-399519-d191df2b047f.json"
+    )
+    SERVICE_ACCOUNT = "ali.quidwai@aqai.xyz"
+
+    # service_account = "ali.quidwai@aqai.xyz"
+    # credentials = ee.ServiceAccountCredentials(
+    #     service_account,
+    #     '/home/ec2-user/elevated-watch-399519-d191df2b047f.json',
+    # )
+    # ee.Initialize(credentials)
 
     @property
     def ALL_SATELLITES(self) -> zip(List[str], List[str]):
@@ -168,7 +177,7 @@ class EEConfig:
                 self.LANDSAT_IMAGE_COLLECTION,
                 self.NIGHTTIME_LIGHT_IMAGE_COLLECTION,
                 self.METEROLOGICAL_IMAGE_COLLECTION,
-                self.POPULATION_IMAGE_COLLECTION,
+                # self.POPULATION_IMAGE_COLLECTION,
                 self.LAND_COVER_IMAGE_COLLECTION,
             ],
             [
@@ -176,7 +185,7 @@ class EEConfig:
                 self.LANDSAT_IMAGE_BAND,
                 self.NIGHTTIME_LIGHT_IMAGE_BAND,
                 self.METEROLOGICAL_IMAGE_BAND,
-                self.POPULATION_IMAGE_BAND,
+                # self.POPULATION_IMAGE_BAND,
                 self.LAND_COVER_IMAGE_BAND,
             ],
             [
@@ -184,7 +193,7 @@ class EEConfig:
                 self.LANDSAT_PERIOD,
                 self.NIGHTTIME_LIGHT_PERIOD,
                 self.METEROLOGICAL_IMAGE_PERIOD,
-                self.POPULATION_PERIOD,
+                # self.POPULATION_PERIOD,
                 self.LAND_COVER_PERIOD,
             ],
             [
@@ -192,7 +201,7 @@ class EEConfig:
                 self.LANDSAT_RES,
                 self.NIGHTTIME_LIGHT_RES,
                 self.METEROLOGICAL_IMAGE_RES,
-                self.POPULATION_IMAGE_RES,
+                # self.POPULATION_IMAGE_RES,
                 self.LAND_COVER_IMAGE_RES,
             ],
         )
@@ -234,8 +243,8 @@ class TimeSplitterConfig:
     CITY = ""  # "Chennai"
     SENSOR_TYPE = "reference grade"
     SOURCE = "openaq-aws"
-    TIME_WINDOW_LENGTH: int = 3
-    WITHIN_WINDOW_SAMPLER: int = 3
+    TIME_WINDOW_LENGTH: int = 12
+    WITHIN_WINDOW_SAMPLER: int = 12
     WINDOW_COUNT: int = 4  # this will increase for more than one split
     TABLE_NAME: str = "openaq"
     REGION = "us-east-1"
@@ -256,7 +265,12 @@ class TimeSplitterConfig:
     STATE_BOUNDING_BOXES = {
         "TX": (
             "Texas",
-            (-106.64719063660635,25.840437651866516,-93.5175532104321,36.50050935248352),
+            (
+                -106.64719063660635,
+                25.840437651866516,
+                -93.5175532104321,
+                36.50050935248352,
+            ),
         ),
     }
     COUNTRY_BOUNDING_BOXES = {

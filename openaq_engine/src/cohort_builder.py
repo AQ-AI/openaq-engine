@@ -153,12 +153,12 @@ class CohortBuilder(CohortBuilderBase):
             .from_options(list(self.filter_dict.keys()))
             .execute(cohorts_df, source)
         )
-        mlflow.log_param("length of original cohorts", len(cohorts_df))
-        mlflow.log_param("length of filtered cohort", len(filtered_cohorts_df))
-        mlflow.log_param("filters applied", list(self.filter_dict.keys()))
-        mlflow.log_param("target_variable", pollutant)
-        mlflow.log_param("country", country)
-        mlflow.log_param("source", source)
+        # mlflow.log_param("length of original cohorts", len(cohorts_df))
+        # mlflow.log_param("length of filtered cohort", len(filtered_cohorts_df))
+        # mlflow.log_param("filters applied", list(self.filter_dict.keys()))
+        # mlflow.log_param("target_variable", pollutant)
+        # mlflow.log_param("country", country)
+        # mlflow.log_param("source", source)
 
         with tempfile.TemporaryDirectory("w+") as dir_name:
             filtered_cohorts_df_path = os.path.join(
@@ -166,8 +166,8 @@ class CohortBuilder(CohortBuilderBase):
             )
 
             write_csv(filtered_cohorts_df, filtered_cohorts_df_path)
-            mlflow.get_artifact_uri()
-            mlflow.log_artifact(filtered_cohorts_df_path)
+            # mlflow.get_artifact_uri()
+            # mlflow.log_artifact(filtered_cohorts_df_path)
         self._results_to_db(filtered_cohorts_df, engine, city)
 
     def cohort_builder(
@@ -307,7 +307,7 @@ class CohortBuilder(CohortBuilderBase):
         if pollutant:
             self.target_variable = pollutant
         if country == "WO":
-            url = """https://api.openaq.org/v2/measurements?date_from={date_from}&date_to={date_to}&limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&order_by=datetime&sensorType={sensor_type}""".format(
+            url = """https://api.openaq.org/v2/measurements?date_from={date_from}&date_to={date_to}&limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&order_by=datetime&sensor_type={sensor_type}""".format(
                 date_from=date_tuple[0],
                 date_to=date_tuple[1],
                 pollutant=self.target_variable,
@@ -323,13 +323,16 @@ class CohortBuilder(CohortBuilderBase):
         #         sensor_type=sensor_type,
         #     )
         else:
-            url = """https://api.openaq.org/v2/measurements?date_from={date_from}&date_to={date_to}&limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&country={country}&order_by=datetime&sensorType={sensor_type}""".format(
-                date_from=date_tuple[0],
-                date_to=date_tuple[1],
-                pollutant=self.target_variable,
-                country=country,
-                sensor_type=sensor_type,
-            )
+            if pollutant == "pm25":
+                parameter_id = 2
+                url = """https://api.openaq.org/v2/measurements?date_from={date_from}&date_to={date_to}&parameter_id={parameter_id}&country={country}""".format(
+                    date_from=date_tuple[0],
+                    date_to=date_tuple[1],
+                    pollutant=self.target_variable,
+                    country=country,
+                    sensor_type=sensor_type,
+                    parameter_id=parameter_id,
+                )
         return api_response_to_df(url)
 
     def _results_to_db(self, filtered_cohorts_df, engine, city):

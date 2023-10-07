@@ -53,11 +53,13 @@ def query_results_from_api(params, query):
 
 def api_response_to_df(url):
     headers = {"accept": "application/json"}
+    print(url)
     response = query_results_from_api(headers, url)
     try:
         return pd.DataFrame(json.loads(response)["results"])
     except KeyError:
         print("df conversion not working")
+        pass
 
 
 def query_results_from_aws(params, query, wait=True):
