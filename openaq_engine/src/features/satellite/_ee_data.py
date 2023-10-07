@@ -49,9 +49,11 @@ class EEFeatures:
         )
 
     def execute(self, df, save_images):
-        ee.Initialize()
-        ee.Authenticate()
-        # end_date, start_date = self._generate_timerange()
+        credentials = ee.ServiceAccountCredentials(
+            self.service_account,
+            self.path_to_private_key,
+        )
+        ee.Initialize(credentials)
         satellite_df = pd.concat(
             Parallel(n_jobs=-1, backend="multiprocessing", verbose=5)(
                 delayed(self.execute_for_location)(
@@ -89,7 +91,7 @@ class EEFeatures:
         datetime:
             the date the sensor reading was taken
         """
-        ee.Initialize()
+        # ee.Initialize()
 
         df_list = []
 
@@ -144,7 +146,6 @@ class EEFeatures:
         save_images:
             a boolean flag whether to write satellite data to google storage
         """
-        ee.Initialize()
 
         # logging.info(
         #     "please sigup to Google Earth Engine here:"

@@ -4,6 +4,7 @@ from datetime import datetime
 
 import click
 import mlflow
+from mlflow.tracking import MlflowClient
 from mlflows.cli.cohort_builder import cohort_builder_options
 from mlflows.cli.features.build_features import feature_builder_options
 from mlflows.cli.time_splitter import time_splitter_options
@@ -29,6 +30,7 @@ from config.model_settings import (
 mlflow.set_tracking_uri(
     os.getenv("MLFLOW_TRACKING_URI"),
 )
+print(f"Tracking Server URI: '{mlflow.get_tracking_uri()}'")
 
 
 class TimeSplitterFlow:
@@ -188,7 +190,7 @@ def feature_builder(
             pollutant,
         )
         build_features = BuildFeaturesFlow().execute()
-        build_features.execute(engine, cohort_df)
+        build_features.execute(engine)
 
 
 @time_splitter_options()

@@ -169,7 +169,7 @@ def test_execute_for_openaq_api(mocker):
         date_tuple, country, pollutant, sensor_type
     )
     # Assert api_response_to_df was called with the expected URL
-    expected_url = """https://api.openaq.org/v2/measurements?date_from={start_date}&date_to={end_date}&limit=100&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&country={country}&sensorType={sensor_type}&order_by=datetime""".format(
+    expected_url = """https://api.openaq.org/v2/measurements?date_from={start_date}&date_to={end_date}&limit=100&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&country={country}&sensor_type={sensor_type}&order_by=datetime""".format(
         start_date=start_date.strftime("%Y-%m-%d"),
         end_date=end_date.strftime("%Y-%m-%d"),
         country=country,
@@ -179,4 +179,3 @@ def test_execute_for_openaq_api(mocker):
     src.utils.utils.api_response_to_df(expected_url)
 
     src.utils.utils.api_response_to_df.assert_called_with(expected_url)
-

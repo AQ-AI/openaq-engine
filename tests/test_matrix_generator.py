@@ -1,5 +1,6 @@
 import datetime
 import pandas as pd
+from inspect import isclass
 from setup_environment import get_dbengine
 from src.matrix_generator import MatrixGenerator
 from contextlib import nullcontext
@@ -62,7 +63,8 @@ def test_execute_for_cohort(mocker):
 def test_get_feature_generator():
     matrix_generator = MatrixGenerator(algorithm="RFR", id_column_list=[])
     feature_generator = matrix_generator._get_feature_generator()
-    assert isinstance(feature_generator, BuildFeaturesRandomForest)
+    assert isclass(feature_generator)
+    assert issubclass(feature_generator, BuildFeaturesRandomForest)
 
 
 def test_get_feature_generator_invalid():
@@ -78,8 +80,8 @@ def test_get_csr(mocker):
     ]
     # mocker.patch("os.path.join", side_effect=mock_paths)
     mock_data = {"mock": "data"}
-    # Mock numpy.load to return mock_data
-    mocker.patch("numpy.load", return_value=mock_data)
+    # Mock joblib.load to return mock_data
+    mocker.patch("joblib.load", return_value=mock_data)
     result = matrix_generator._get_csr(
         0, "training", datetime.date(2020, 1, 1)
     )

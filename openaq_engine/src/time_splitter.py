@@ -157,16 +157,16 @@ class TimeSplitterBase(ABC):
         self, city, country, sensor_type, pollutant
     ):
         if country == "WO":
-            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&order_by=lastUpdated&sensorType={sensor_type}&dumpRaw=false""".format(
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&order_by=lastUpdated&sensor_type={sensor_type}&dumpRaw=false""".format(
                 pollutant=pollutant, sensor_type=sensor_type
             )
         elif city:
             country == "WO"
-            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=100&city={city}&order_by=firstUpdated&sensorType={sensor_type}&dumpRaw=false""".format(
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=100&city={city}&order_by=firstUpdated&sensor_type={sensor_type}&dumpRaw=false""".format(
                 city=city, pollutant=pollutant, sensor_type=sensor_type
             )
         else:
-            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=100&country={country}&order_by=lastUpdated&sensorType={sensor_type}&dumpRaw=false""".format(
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=100&country={country}&order_by=lastUpdated&sensor_type={sensor_type}&dumpRaw=false""".format(
                 country=country, pollutant=pollutant, sensor_type=sensor_type
             )
         headers = {"accept": "application/json"}
@@ -184,18 +184,18 @@ class TimeSplitterBase(ABC):
         pollutant,
     ):
         if country == "WO":
-            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=asc&parameter={pollutant}&radius=100&order_by=firstUpdated&sensorType={sensor_type}&dumpRaw=false""".format(
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=asc&parameter={pollutant}&radius=100&order_by=firstUpdated&sensor_type={sensor_type}&dumpRaw=false""".format(
                 pollutant=pollutant, sensor_type=sensor_type
             )
         elif city:
             country == "WO"
-            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=asc&parameter={pollutant}&radius=1000&city={city}&order_by=firstUpdated&sensorType={sensor_type}&dumpRaw=false""".format(
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=asc&parameter={pollutant}&radius=1000&city={city}&order_by=firstUpdated&sensor_type={sensor_type}&dumpRaw=false""".format(
                 city=city,
                 pollutant=pollutant,
                 sensor_type=sensor_type,
             )
         else:
-            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=asc&parameter={pollutant}&radius=1000&country={country}&order_by=firstUpdated&sensorType={sensor_type}&dumpRaw=false""".format(
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=asc&parameter={pollutant}&radius=1000&country={country}&order_by=firstUpdated&sensor_type={sensor_type}&dumpRaw=false""".format(
                 country=country, pollutant=pollutant, sensor_type=sensor_type
             )
 
@@ -299,15 +299,19 @@ class TimeSplitter(TimeSplitterBase):
             else:
                 self.train_validation_dict["validation"] += [
                     (
-                        window_start_date,
-                        window_end_date,
+                        window_start_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                        window_end_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
                     )
                 ]
                 self.train_validation_dict["training"] += [
-                    (start_date, window_start_date)
+                    (
+                        start_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                        window_start_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    )
                 ]
                 window_no += 1
         mlflow.log_params(self.train_validation_dict)
+        print(self.train_validation_dict)
         return self.train_validation_dict
 
     def execute_for_openaq_aws(
