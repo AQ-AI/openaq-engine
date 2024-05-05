@@ -81,25 +81,37 @@ class HyperparamConfig:
 class BuildFeaturesConfig:
     TARGET_COL: str = "value"
     TARGET_VARIABLE = "pm25"
-    COUNTRY = "US"
-
+    COUNTRY = "MN"
+    CITY = ""  # "Chennai"
     CATEGORICAL_FEATURES: List[StrictStr] = field(default_factory=lambda: [])
-    CORE_FEATURES: List[StrictStr] = field(
+    CORE_FEATURES: List[StrictStr] = field(default_factory=lambda: [])
+    SATELLITE_FEATURES: List[StrictStr] = field(
         default_factory=lambda: [
-            "city",
-            "country",
-            "pca_lat",
-            "pca_lng",
-            "sourcetype",
-            "mobile",
+            "Optical_Depth_047",
+            "B4",
+            "B3",
+            "B2",
+            "avg_rad",
+            "temperature_2m_above_ground",
+            "relative_humidity_2m_above_ground",
+            "total_precipitation_surface",
+            "total_cloud_cover_entire_atmosphere",
+            "u_component_of_wind_10m_above_ground",
+            "v_component_of_wind_10m_above_ground",
+            "discrete_classification",
         ]
     )
-    SATELLITE_FEATURES = []
 
     @property
     def ALL_MODEL_FEATURES(self) -> List[str]:
         """Return all features to be fed into the model"""
-        return list(set(self.CORE_FEATURES + self.CATEGORICAL_FEATURES))
+        return list(
+            set(
+                self.CORE_FEATURES
+                + self.CATEGORICAL_FEATURES
+                + self.SATELLITE_FEATURES
+            )
+        )
 
 
 @dataclass
@@ -157,9 +169,10 @@ class EEConfig:
     LAND_COVER_PERIOD = 1500
     BUCKET_NAME = "earthengine-bucket"
     PATH_TO_PRIVATE_KEY = (
-        "/home/ec2-user/elevated-watch-399519-d191df2b047f.json"
+        "/home/ec2-user/openaq-engine/unicef-367711-a4ac0921e063.json"
     )
-    SERVICE_ACCOUNT = "ali.quidwai@aqai.xyz"
+    BUCKET_NAME = "earthengine-bucket"
+    SERVICE_ACCOUNT = "earth-engine@unicef-367711.iam.gserviceaccount.com"
 
     # service_account = "ali.quidwai@aqai.xyz"
     # credentials = ee.ServiceAccountCredentials(
@@ -231,7 +244,7 @@ class CohortBuilderConfig:
         ),
     )
     TARGET_VARIABLE = "pm25"
-    COUNTRY = "US"
+    COUNTRY = "MN"
     SOURCE = "openaq-aws"
 
 
@@ -239,7 +252,7 @@ class CohortBuilderConfig:
 class TimeSplitterConfig:
     DATE_COL: str = "date.utc"
     TARGET_VARIABLE = "pm25"
-    COUNTRY = "US"
+    COUNTRY = "MN"
     CITY = ""  # "Chennai"
     SENSOR_TYPE = "reference grade"
     SOURCE = "openaq-aws"
