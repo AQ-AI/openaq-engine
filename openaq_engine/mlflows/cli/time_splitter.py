@@ -7,11 +7,18 @@ from config.model_settings import TimeSplitterConfig
 
 @parametrized
 def time_splitter_options(
-    fn, countries_option: bool = True, cities_option: bool = True
+    fn,
+    countries_option: bool = True,
+    cities_option: bool = True,
+    local_data_option: bool = True,
 ):
     """
     countries_option: bool = True
         Whether to provide the option to specify countries or not
+    cities_option: bool = True
+        Whether to provide the option to specify cities or not
+    local_data_option: bool = True
+        Whether to provide the option to load local data or not
     """
     time_splitter_config = OptionGroup(
         "Options for defining time-splitter",
@@ -75,10 +82,18 @@ def time_splitter_options(
         type=click.Choice(["openaq-aws", "openaq-api"]),
         help="Source to load the openaq data from",
     )
+    local_data = time_splitter_config.option(
+        "-ld",
+        "--local-data",
+        type=click.STRING,
+        help="Name of local data table in database",
+    )
     wrapped_func = source(sensor_type(pollutant(latest_date(fn))))
     if countries_option:
         wrapped_func = country_(wrapped_func)
     if cities_option:
         wrapped_func = city(wrapped_func)
+    if local_data:
+        wrapped_func = local_data(wrapped_func)
 
     return wrapped_func
