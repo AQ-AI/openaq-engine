@@ -1,6 +1,7 @@
 import json
 import re
 
+import numpy as np
 import pandas as pd
 from setup_environment import get_dbengine
 from src.utils.utils import write_to_db
@@ -73,7 +74,7 @@ def convert_dates_json(date_str):
 
     try:
         data = json.loads(corrected_str)
-        return data
+        return json.dumps(data)
     except json.JSONDecodeError as e:
         print(f"Failed to decode: {corrected_str}")
         print(f"Error: {e}")
@@ -81,16 +82,37 @@ def convert_dates_json(date_str):
 
 
 def location_id_map(df):
+    # Predefined IDs for specific locations
+    location_to_id = {"Amgalan": 23, "US Diplomatic Post: Ulaanbaatar": 8160}
+
     # Step 1: Extract unique locations
     unique_locations = df["location"].unique()
 
-    # Step 2: Create a mapping from location names to IDs
-    location_to_id = {
-        location: idx for idx, location in enumerate(unique_locations)
-    }
+    # Step 2: Create a mapping from location names to IDs, skipping already defined locations
+    next_id = (
+        max(location_to_id.values(), default=0) + 1
+    )  # Start next ID after the highest predefined ID
+    for location in unique_locations:
+        if location not in location_to_id:
+            location_to_id[location] = next_id
+            next_id += 1
 
     # Step 3: Map the location names to IDs in the DataFrame
     df["locationId"] = df["location"].map(location_to_id)
+    return df
+
+
+def replace_units(df):
+    """
+    Replaces 'Âµg/mÂ³' with 'µg/m³' in the 'unit' column of the DataFrame.
+
+    Parameters:
+    df (pandas.DataFrame): The DataFrame containing the 'unit' column.
+
+    Returns:
+    pandas.DataFrame: The updated DataFrame with the replaced values.
+    """
+    df["unit"] = df["unit"].str.replace("Âµg/mÂ³", "µg/m³", regex=False)
     return df
 
 
@@ -110,18 +132,23 @@ if __name__ == "__main__":
         df_chunk["isMobile"] = (
             df_chunk["mobile"].map({"false": False, "true": True}).astype(bool)
         )
+        df_chunk = replace_units(df_chunk)
 
         # Convert location names to location IDs
         df_chunk = location_id_map(df_chunk)
+        df_chunk["city"] = df_chunk["city"]
+        df_chunk["location"] = df_chunk["location"]
 
         # Reorganize columns according to the new schema
         new_df = df_chunk.rename(
             columns={"value": "value", "sourcetype": "entity"}
         ).assign(
-            isAnalysis="reference grade"  # assuming all entries have the same analysis type
+            isAnalysis=np.nan,  # assigning NaN to the isAnalysis column
+            sensorType=np.nan,
         )[
             [
                 "locationId",
+                "location",
                 "city",
                 "parameter",
                 "value",
@@ -133,10 +160,11 @@ if __name__ == "__main__":
                 "isMobile",
                 "isAnalysis",
                 "entity",
+                "sensorType",
             ]
         ]
 
         # Write to database
         write_to_db(
-            new_df, get_dbengine(), "cohorts_test_MN", "public", "append"
+            new_df, get_dbengine(), "local_MN_data", "public", "append"
         )
