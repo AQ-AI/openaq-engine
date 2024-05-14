@@ -6,7 +6,11 @@ from typing import Any, Dict, List
 
 import mlflow
 from dateutil.relativedelta import relativedelta
-from src.utils.utils import query_results_from_api, query_results_from_aws
+from src.utils.utils import (
+    get_data,
+    query_results_from_api,
+    query_results_from_aws,
+)
 
 from config.model_settings import TimeSplitterConfig
 
@@ -37,6 +41,7 @@ class TimeSplitterBase(ABC):
         country_info: List[str],
         pollutant: str,
         latest_date: str,
+        local_data: str,
     ) -> datetime:
         """Build SQL query to query AWS Athena and retrieve
         end date of data given specific filters."""
@@ -81,9 +86,18 @@ class TimeSplitterBase(ABC):
             )
         response_query_result = self.build_response_from_aws(params, sql_query)
 
-        return datetime.strptime(
+        end_date = datetime.strptime(
             f"{response_query_result}", "%Y-%m-%d %H:%M:%S.000 UTC"
         ).date()
+
+        if not local_data.empty:
+            local_end_date = self.create_end_local_data(local_data)
+            if end_date < local_end_date:
+                return local_end_date
+            else:
+                return end_date
+        else:
+            return end_date
 
     def create_start_date_from_aws(
         self,
@@ -92,6 +106,7 @@ class TimeSplitterBase(ABC):
         country_info: List[str],
         pollutant: str,
         latest_date: str,
+        local_data: str,
     ) -> datetime:
         """Build SQL query to query AWS Athena and retrieve
         start date of data given specific filters."""
@@ -135,9 +150,18 @@ class TimeSplitterBase(ABC):
                 latest_date=latest_date,
             )
         response_query_result = self.build_response_from_aws(params, sql_query)
-        return datetime.strptime(
+        start_date = datetime.strptime(
             f"{response_query_result}", "%Y-%m-%d %H:%M:%S.000 UTC"
         ).date()
+
+        if not local_data.empty:
+            local_start_date = self.create_start_local_data(local_data)
+            if start_date < local_start_date:
+                return local_start_date
+            else:
+                return start_date
+        else:
+            return start_date
 
     def build_response_from_aws(self, params, sql_query):
         response_query_result = query_results_from_aws(params, sql_query)
@@ -154,7 +178,7 @@ class TimeSplitterBase(ABC):
                 pass
 
     def create_end_date_from_openaq_api(
-        self, city, country, sensor_type, pollutant
+        self, city, country, sensor_type, pollutant, local_data
     ):
         if country == "WO":
             url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&order_by=lastUpdated&sensor_type={sensor_type}&dumpRaw=false""".format(
@@ -171,10 +195,18 @@ class TimeSplitterBase(ABC):
             )
         headers = {"accept": "application/json"}
         response = query_results_from_api(headers, url)
-        return datetime.strptime(
-            json.loads(response)["results"][0]["lastUpdated"],
+        end_date = datetime.strptime(
+            json.loads(response.text)["results"][0]["lastUpdated"],
             "%Y-%m-%dT%H:%M:%S+00:00",
         ).date()
+        if not local_data.empty:
+            local_end_date = self.create_end_local_data(local_data)
+            if end_date < local_end_date:
+                return local_end_date
+            else:
+                return end_date
+        else:
+            return end_date
 
     def create_start_date_from_openaq_api(
         self,
@@ -182,6 +214,7 @@ class TimeSplitterBase(ABC):
         country,
         sensor_type,
         pollutant,
+        local_data,
     ):
         if country == "WO":
             url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=asc&parameter={pollutant}&radius=100&order_by=firstUpdated&sensor_type={sensor_type}&dumpRaw=false""".format(
@@ -198,15 +231,56 @@ class TimeSplitterBase(ABC):
             url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=asc&parameter={pollutant}&radius=1000&country={country}&order_by=firstUpdated&sensor_type={sensor_type}&dumpRaw=false""".format(
                 country=country, pollutant=pollutant, sensor_type=sensor_type
             )
-
         headers = {"accept": "application/json"}
-
         response = query_results_from_api(headers, url)
-
-        return datetime.strptime(
-            json.loads(response)["results"][0]["firstUpdated"],
+        start_date = datetime.strptime(
+            json.loads(response.text)["results"][0]["firstUpdated"],
             "%Y-%m-%dT%H:%M:%S+00:00",
         ).date()
+        if not local_data.empty:
+            local_start_date = self.create_start_local_data(local_data)
+            if start_date > local_start_date:
+                return local_start_date
+            else:
+                return start_date
+        else:
+            return start_date
+
+    def extract_utc_date(self, date_dict):
+        """
+        Extracts the UTC date from the date dictionary and converts it to a datetime.date object.
+
+        Parameters:
+        date_dict (dict): The dictionary containing date information with 'utc' and 'local' keys.
+
+        Returns:
+        datetime.date: The date part of the 'utc' datetime.
+        """
+        utc_datetime_str = json.loads(date_dict)["utc"]
+        utc_datetime = datetime.fromisoformat(
+            utc_datetime_str.replace("Z", "+00:00")
+        )
+        return utc_datetime.date()
+
+    def create_start_local_data(self, local_data):
+        # Apply the extract_utc_date function to the 'date' column
+        local_data["utc_date"] = local_data["date"].apply(
+            self.extract_utc_date
+        )
+
+        start_date = local_data["utc_date"].min()
+
+        return start_date
+
+    def create_end_local_data(self, local_data):
+        # Apply the extract_utc_date function to the 'date' column
+        local_data["utc_date"] = local_data["date"].apply(
+            self.extract_utc_date
+        )
+
+        end_date = local_data["utc_date"].max()
+
+        return end_date
 
 
 class TimeSplitter(TimeSplitterBase):
@@ -250,7 +324,9 @@ class TimeSplitter(TimeSplitterBase):
             source=config.SOURCE,
         )
 
-    def execute(self, city, country, sensor_type, source, pollutant, date):
+    def execute(
+        self, city, country, sensor_type, source, pollutant, date, local_data
+    ):
         """
         Input
         ----
@@ -264,8 +340,10 @@ class TimeSplitter(TimeSplitterBase):
         mlflow.log_param("within_window_sampler", self.within_window_sampler)
         mlflow.log_param("window_count", self.window_count)
         mlflow.log_param("target_variable", self.target_variable)
-        mlflow.log_param("country", self.country)
-        mlflow.log_param("source", self.source)
+        mlflow.log_param("country", country)
+        mlflow.log_param("source", source)
+        mlflow.log_param("pollutant", pollutant)
+        mlflow.log_param("local_data", local_data if local_data else "None")
 
         window_no = 0
         params = {
@@ -274,13 +352,15 @@ class TimeSplitter(TimeSplitterBase):
             "bucket": str(self.bucket),
             "path": f"{self.s3_output}",
         }
+        if local_data:
+            local_df = get_data(f"""SELECT * from "{local_data}";""")
         if source == "openaq-aws":
             end_date, start_date = self.execute_for_openaq_aws(
-                params, city, country, pollutant, date
+                params, city, country, pollutant, date, local_df
             )
         if source == "openaq-api":
             end_date, start_date = self.execute_for_openaq_api(
-                city, country, sensor_type, pollutant
+                city, country, sensor_type, pollutant, local_df
             )
         while window_no < self.window_count:
             window_start_date, window_end_date = self.get_validation_window(
@@ -310,12 +390,29 @@ class TimeSplitter(TimeSplitterBase):
                     )
                 ]
                 window_no += 1
-        mlflow.log_params(self.train_validation_dict)
-        print(self.train_validation_dict)
+
+        # Initialize the logging dictionary with the same keys as self.train_validation_dict
+        logging_dict = {"validation": [], "training": []}
+
+        # Append the converted date ranges to the validation and training lists in the logging dictionary
+        logging_dict["validation"] += [
+            (
+                self.format_to_date_only(window_start_date),
+                self.format_to_date_only(window_end_date),
+            )
+        ]
+
+        logging_dict["training"] += [
+            (
+                self.format_to_date_only(start_date),
+                self.format_to_date_only(window_start_date),
+            )
+        ]
+        mlflow.log_params(logging_dict)
         return self.train_validation_dict
 
     def execute_for_openaq_aws(
-        self, params, city, country, pollutant, latest_date
+        self, params, city, country, pollutant, latest_date, local_data
     ):
         end_date = self.create_end_date_from_aws(
             params,
@@ -323,18 +420,21 @@ class TimeSplitter(TimeSplitterBase):
             country,
             pollutant,
             latest_date,
+            local_data,
         )
         start_date = self.create_start_date_from_aws(
-            params, city, country, pollutant, latest_date
+            params, city, country, pollutant, latest_date, local_data
         )
         return end_date, start_date
 
-    def execute_for_openaq_api(self, city, country, sensor_type, pollutant):
+    def execute_for_openaq_api(
+        self, city, country, sensor_type, pollutant, local_data
+    ):
         end_date = self.create_end_date_from_openaq_api(
-            city, country, sensor_type, pollutant
+            city, country, sensor_type, pollutant, local_data
         )
         start_date = self.create_start_date_from_openaq_api(
-            city, country, sensor_type, pollutant
+            city, country, sensor_type, pollutant, local_data
         )
         return end_date, start_date
 
@@ -358,3 +458,7 @@ class TimeSplitter(TimeSplitterBase):
         return window_start_date + relativedelta(
             months=+self.within_window_sampler
         )
+
+    # Function to convert datetime object to a 'YYYY-MM-DD' string
+    def format_to_date_only(self, dt):
+        return dt.strftime("%Y-%m-%d")
