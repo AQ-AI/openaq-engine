@@ -246,6 +246,7 @@ class CohortBuilderConfig:
     TARGET_VARIABLE = "pm25"
     COUNTRY = "MN"
     SOURCE = "openaq-aws"
+    LOCAL_DATA = ""
 
 
 @dataclass
@@ -256,9 +257,11 @@ class TimeSplitterConfig:
     CITY = ""  # "Chennai"
     SENSOR_TYPE = "reference grade"
     SOURCE = "openaq-aws"
-    TIME_WINDOW_LENGTH: int = 12
-    WITHIN_WINDOW_SAMPLER: int = 12
-    WINDOW_COUNT: int = 4  # this will increase for more than one split
+    LOCAL_DATA = ""
+
+    TIME_WINDOW_LENGTH: int = 4
+    WITHIN_WINDOW_SAMPLER: int = 4
+    WINDOW_COUNT: int = 30  # this will increase for more than one split
     TABLE_NAME: str = "openaq"
     REGION = "us-east-1"
     DATABASE = os.getenv("DB_NAME_OPENAQ")
