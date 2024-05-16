@@ -1,5 +1,6 @@
 import json
 import time
+from datetime import datetime
 from typing import Any, List
 
 import boto3
@@ -48,18 +49,36 @@ def query_results_from_api(params, query):
     url = query
     headers = params
     response = requests.get(url, headers=headers, timeout=None)
-    return response.text
+    return response
 
 
 def api_response_to_df(url):
+    """
+    Fetch data from the provided URL and return a DataFrame and the full response.
+    Implements retry with exponential backoff on rate limiting.
+    """
     headers = {"accept": "application/json"}
-    print(url)
-    response = query_results_from_api(headers, url)
-    try:
-        return pd.DataFrame(json.loads(response)["results"])
-    except KeyError:
-        print("df conversion not working")
-        pass
+    max_retries = 5
+    retry_count = 0
+    base_wait_time = 10  # Base wait time in seconds
+
+    while retry_count < max_retries:
+        response = query_results_from_api(headers, url)
+
+        if response.status_code == 200:
+            return pd.DataFrame(json.loads(response.text)["results"])
+        elif response.status_code == 429:
+            wait_time = base_wait_time * (2**retry_count)
+            print(f"Rate limit exceeded. Retrying in {wait_time} seconds...")
+            time.sleep(wait_time)
+            retry_count += 1
+        else:
+            print(
+                f"API Error: {response.json().get('detail', 'No details provided.')}"
+            )
+            return pd.DataFrame()
+    print("Max retries exceeded. Unable to fetch data.")
+    return pd.DataFrame()
 
 
 def query_results_from_aws(params, query, wait=True):
@@ -176,6 +195,23 @@ def get_data(query):
         print(conn)
         df = pd.read_sql_query(query, conn)
     return df
+
+
+def extract_utc_date(date_dict):
+    """
+    Extracts the UTC date from the date dictionary and converts it to a datetime.date object.
+
+    Parameters:
+    date_dict (dict): The dictionary containing date information with 'utc' and 'local' keys.
+
+    Returns:
+    datetime.date: The date part of the 'utc' datetime.
+    """
+    utc_datetime_str = json.loads(date_dict)["utc"]
+    utc_datetime = datetime.fromisoformat(
+        utc_datetime_str.replace("Z", "+00:00")
+    )
+    return utc_datetime.date()
 
 
 def write_to_db(

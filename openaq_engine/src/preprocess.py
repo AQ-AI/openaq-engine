@@ -165,7 +165,7 @@ class Preprocess:
             datetime.fromisoformat(
                 re.search("(?<=local=)(.*)(?=})", row["date"]).group(0),
             )
-            .astimezone(timezone.utc)
+            .astimezone(timezone.local)
             .strftime("%Y-%m-%dT%H:%M:%S%z")
         )
         return row
@@ -174,16 +174,20 @@ class Preprocess:
         """
         Extract timezone into "utc" and "local" timezone columns from dict.
         """
+        date_info = row["date"]
+
+        # If date_info is a string, convert it to a dictionary
+        if isinstance(date_info, str):
+            date_info = json.loads(date_info)
+
         row["timestamp_utc"] = (
-            datetime.fromisoformat(row["date"]["utc"])
+            datetime.fromisoformat(date_info["utc"].replace("Z", "+00:00"))
             .astimezone(timezone.utc)
             .strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         )
-        row["timestamp_local"] = (
-            datetime.fromisoformat(row["date"]["local"])
-            .astimezone(timezone.utc)
-            .strftime("%Y-%m-%dT%H:%M:%S%z")
-        )
+        row["timestamp_local"] = datetime.fromisoformat(
+            date_info["local"]
+        ).strftime("%Y-%m-%dT%H:%M:%S%z")
         return row
 
     def extract_coordinates(
@@ -194,7 +198,6 @@ class Preprocess:
         Filters out rows with invalid point representations.
         """
         logging.info("Extracting coordinates")
-        # Filter out any invalid points
         if source == "openaq-aws":
             df = df.apply(
                 lambda row: self._extract_lat_lng_from_aws(row), axis=1
@@ -220,10 +223,11 @@ class Preprocess:
                     " and were filtered out"
                 )
             df_valid = df[df.point_is_valid]
+
             return df_valid.drop(["pnt", "point_is_valid"], axis=1)
-        except AttributeError:
-            logging.info(f"None of the {len(df)} rows had calid points")
-            pass
+        except (AttributeError, KeyError):
+            logging.info(f"None of the {len(df)} rows had valid points")
+            return pd.DataFrame()
 
     def _extract_lat_lng_from_aws(self, row: pd.Series) -> pd.Series:
         """Regex extraction of latitude and longtitude from string"""
@@ -238,8 +242,15 @@ class Preprocess:
 
     def _extract_lat_lng_from_api(self, row: pd.Series) -> pd.Series:
         """Extraction of latitude and longtitude from dict"""
-        row["y"] = float(row["coordinates"]["latitude"])
-        row["x"] = float(row["coordinates"]["longitude"])
+        # Filter out any invalid points
+        coordinates_info = row["coordinates"]
+
+        # If coordinates_info is a string, convert it to a dictionary
+        if isinstance(coordinates_info, str):
+            coordinates_info = json.loads(coordinates_info)
+
+        row["y"] = float(coordinates_info["latitude"])
+        row["x"] = float(coordinates_info["longitude"])
 
         return self._check_valid_create_pnt(row)
 
@@ -252,12 +263,11 @@ class Preprocess:
             return row
 
     def dict_cols_to_json(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Dumps cols containing dicts to json"""
-        try:
-            for i in df.columns:
-                if isinstance(df[i][1], dict):
-                    df[i] = list(map(lambda x: json.dumps(x), df[i]))
-
-            return df
-        except AttributeError:
-            return pd.DataFrame()
+        """Dumps columns containing dicts to JSON strings."""
+        for column in df.columns:
+            # Convert any dictionaries in the column to JSON strings
+            if df[column].apply(lambda x: isinstance(x, dict)).any():
+                df[column] = df[column].apply(
+                    lambda x: json.dumps(x) if isinstance(x, dict) else x
+                )
+        return df
