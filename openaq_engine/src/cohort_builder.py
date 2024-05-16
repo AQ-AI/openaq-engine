@@ -1,18 +1,20 @@
 import logging
 import os
-import tempfile
 from abc import ABC
+from datetime import datetime
 from itertools import chain
 from typing import Any, Dict, List
 
 import mlflow
 import pandas as pd
 from joblib import Parallel, delayed
+from setup_environment import get_dbengine
 from src.preprocess import Preprocess
 from src.utils.utils import (
     api_response_to_df,
+    extract_utc_date,
+    get_data,
     query_results_from_aws,
-    write_csv,
     write_to_db,
 )
 
@@ -21,32 +23,14 @@ from config.model_settings import CohortBuilderConfig
 
 class CohortBuilderBase(ABC):
     def __init__(
-        self,
-        table_name: str,
-        region_name: str,
-        bucket: str,
-        s3_output: str,
+        self, table_name: str, region_name: str, bucket: str, s3_output: str
     ):
         self.table_name = table_name
         self.region_name = region_name
         self.bucket = bucket
         self.s3_output = s3_output
-        """"
-        Initializes a CohortBuilderBase object with the specified parameters.
-
-        table_name: The name of the table.
-        region_name: The region name.
-        bucket: The name of the bucket.
-        s3_output: The S3 output location.
-        """
 
     def build_response_from_aws(self, params, sql_query):
-        """
-        Builds a response DataFrame from AWS query results.
-
-        params: A dictionary of parameters for the query.
-        sql_query: The SQL query to execute.
-        """
         response_query_result = query_results_from_aws(params, sql_query)
         header = [
             d["VarCharValue"]
@@ -59,9 +43,6 @@ class CohortBuilderBase(ABC):
         return pd.DataFrame(result)
 
     def _get_var_char_values(self, row):
-        """
-        row: A row of query result data.
-        """
         return [
             d["VarCharValue"] if "VarCharValue" in d else "{}"
             for d in row["Data"]
@@ -93,11 +74,6 @@ class CohortBuilder(CohortBuilderBase):
     def from_dataclass_config(
         cls, config: CohortBuilderConfig
     ) -> "CohortBuilder":
-        """
-        Creates a CohortBuilder object from a CohortBuilderConfig data class.
-
-        config: The configuration data class.
-        """
         return cls(
             date_col=config.DATE_COL,
             filter_dict=config.FILTER_DICT,
@@ -109,66 +85,36 @@ class CohortBuilder(CohortBuilderBase):
     def execute(
         self,
         train_validation_dict,
-        engine,
         city,
         country,
         source,
         sensor_type,
         pollutant,
+        local_data,
     ):
-        """
-        Executes the cohort building process
-
-        train_validation_dict: A dictionary of train-validation splits.
-        engine: The database engine.
-        city: The name of the city.
-        country: The name of the country.
-        source: The data source.
-        sensor_type: The type of sensor.
-        pollutant: The pollutant variable.
-        """
         filter_cols = ", ".join(
             set(list(chain.from_iterable(self.filter_dict.values())))
         )
 
-        cohorts_df = pd.concat(
-            Parallel(n_jobs=-1, backend="multiprocessing", verbose=5)(
-                delayed(self.cohort_builder)(
-                    cohort_type,
-                    train_validation_dict,
-                    filter_cols,
-                    city,
-                    country,
-                    source,
-                    sensor_type,
-                    pollutant,
-                )
-                for cohort_type in train_validation_dict.keys()
-            ),
-            axis=0,
-        ).reset_index(drop=True)
-
-        filtered_cohorts_df = (
-            Preprocess()
-            .from_options(list(self.filter_dict.keys()))
-            .execute(cohorts_df, source)
+        Parallel(n_jobs=-1, backend="multiprocessing", verbose=5)(
+            delayed(self.cohort_builder)(
+                cohort_type,
+                train_validation_dict,
+                filter_cols,
+                city,
+                country,
+                source,
+                sensor_type,
+                pollutant,
+                local_data,
+            )
+            for cohort_type in train_validation_dict.keys()
         )
-        mlflow.log_param("length of original cohorts", len(cohorts_df))
-        mlflow.log_param("length of filtered cohort", len(filtered_cohorts_df))
+
         mlflow.log_param("filters applied", list(self.filter_dict.keys()))
         mlflow.log_param("target_variable", pollutant)
         mlflow.log_param("country", country)
         mlflow.log_param("source", source)
-
-        with tempfile.TemporaryDirectory("w+") as dir_name:
-            filtered_cohorts_df_path = os.path.join(
-                dir_name, "filtered_cohorts_df.csv.gz"
-            )
-
-            write_csv(filtered_cohorts_df, filtered_cohorts_df_path)
-            mlflow.get_artifact_uri()
-            mlflow.log_artifact(filtered_cohorts_df_path)
-        self._results_to_db(filtered_cohorts_df, engine, city)
 
     def cohort_builder(
         self,
@@ -180,60 +126,49 @@ class CohortBuilder(CohortBuilderBase):
         source,
         sensor_type,
         pollutant,
+        local_data,
     ) -> pd.DataFrame:
-        """
-        Retrieve data for cohorts pre-defined timesplits.
-
-        Arguments
-        -------
-        cohort_type: The type of cohort.
-        train_validation_dict: A dictionary of train-validation splits.
-        filter_cols: A comma-separated string of filter columns.
-        city: The name of the city.
-        country: The name of the country.
-        source: The data source.
-        sensor_type: The type of sensor.
-        pollutant: The pollutant variable.
-
-        """
         date_tup_list = list(train_validation_dict[f"{cohort_type}"])
-        df_list = []
 
         for index, date_tuple in enumerate(date_tup_list):
             if source == "openaq-aws":
                 df = self.execute_for_openaq_aws(
-                    date_tuple, city, country, pollutant, sensor_type
+                    date_tuple,
+                    city,
+                    country,
+                    pollutant,
+                    sensor_type,
+                    local_data,
                 )
-            if source == "openaq-api":
+            elif source == "openaq-api":
                 df = self.execute_for_openaq_api(
-                    date_tuple, city, country, pollutant, sensor_type
+                    date_tuple,
+                    city,
+                    country,
+                    pollutant,
+                    sensor_type,
+                    local_data,
                 )
+            else:
+                continue
             df["train_validation_set"] = index
             df["cohort"] = f"{index}_{date_tuple[0]}_{date_tuple[1]}"
             df["cohort_type"] = f"{cohort_type}"
             if df.empty:
                 logging.info(
-                    f"""No openaq data found for
-                    {date_tuple[0]}_{date_tuple[1]}
-                    time window"""
+                    f"No openaq data found for {date_tuple[0]}_{date_tuple[1]} time window"
                 )
-
-            df_list.append(df)
-        cohort_df = pd.concat(df_list, axis=0).reset_index(drop=True)
-        return cohort_df
+            filtered_df = (
+                Preprocess()
+                .from_options(list(self.filter_dict.keys()))
+                .execute(df, source)
+            ).reset_index(drop=True)
+            engine = get_dbengine()
+            self._results_to_db(filtered_df, engine, city)
 
     def execute_for_openaq_aws(
-        self, date_tuple, city, country, pollutant, sensor_type
+        self, date_tuple, city, country, pollutant, sensor_type, local_data
     ):
-        """
-        Executes a query for OpenAQ data from AWS
-
-        date_tuple: A tuple of start and end dates.
-        city: The name of the city.
-        country: The name of the country.
-        pollutant: The pollutant variable.
-        sensor_type: The type of sensor.
-        """
         params = {
             "region": str(self.region_name),
             "database": str(os.getenv("DB_NAME_OPENAQ")),
@@ -243,7 +178,6 @@ class CohortBuilder(CohortBuilderBase):
         if pollutant:
             self.target_variable = pollutant
         if country == "WO":
-            # select all results uin between cohort daterange
             query = """SELECT DISTINCT *
                 FROM {table}
                 WHERE parameter='{target_variable}'
@@ -257,7 +191,6 @@ class CohortBuilder(CohortBuilderBase):
                 end_date=date_tuple[1],
             )
         elif city:
-            # use city-specificterm to filter air sensor locations
             query = """SELECT DISTINCT *
                 FROM {table}
                 WHERE parameter='{target_variable}'
@@ -273,7 +206,6 @@ class CohortBuilder(CohortBuilderBase):
                 city=city,
             )
         else:
-            # Use country option to filter the air pollution rates.
             query = """SELECT DISTINCT *
                 FROM {table}
                 WHERE parameter='{target_variable}' AND country='{country}'
@@ -285,25 +217,14 @@ class CohortBuilder(CohortBuilderBase):
                 end_date=date_tuple[1],
                 country=country,
             )
-        return self.build_response_from_aws(params, query)
+        df = self.build_response_from_aws(params, query)
+        if local_data:
+            df = self._get_local_data(date_tuple, local_data, df)
+        return df
 
     def execute_for_openaq_api(
-        self,
-        date_tuple,
-        city,
-        country,
-        pollutant,
-        sensor_type,
+        self, date_tuple, city, country, pollutant, sensor_type, local_data
     ):
-        """
-        Executes a query for OpenAQ data from the API
-
-        date_tuple: A tuple of start and end dates.
-        country: The name of the country.
-        pollutant: The pollutant variable.
-        sensor_type: The type of sensor.
-
-        """
         if pollutant:
             self.target_variable = pollutant
         if country == "WO":
@@ -313,8 +234,7 @@ class CohortBuilder(CohortBuilderBase):
                 pollutant=self.target_variable,
                 sensor_type=sensor_type,
             )
-        if city:
-            country == "WO"
+        elif city:
             url = """https://api.openaq.org/v2/measurements?date_from={date_from}&date_to={date_to}&limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&city={city}&order_by=datetime&sensorType={sensor_type}""".format(
                 date_from=date_tuple[0],
                 date_to=date_tuple[1],
@@ -331,10 +251,54 @@ class CohortBuilder(CohortBuilderBase):
                     country=country,
                     parameter_id=parameter_id,
                 )
-        return api_response_to_df(url)
+        df = api_response_to_df(url)
+        if local_data:
+            df = self._get_local_data(date_tuple, local_data, df)
+        return df
+
+    def _get_local_data(self, date_tuple, local_data, df):
+        local_df = get_data(f"""SELECT * FROM "{local_data}" """)
+        if not local_df.empty:
+            local_df = self.create_cohort_from_local_data(local_df, date_tuple)
+            df = pd.concat([df, local_df], axis=0).reset_index(drop=True)
+            return df
+        else:
+            logging.info(
+                f"No local data found for {date_tuple[0]}_{date_tuple[1]} time window"
+            )
+            return pd.DataFrame()
+
+    def create_cohort_from_local_data(self, local_data, date_tuple):
+        start_utc_datetime = datetime.fromisoformat(
+            date_tuple[0].replace("Z", "+00:00")
+        ).date()
+        end_utc_datetime = datetime.fromisoformat(
+            date_tuple[1].replace("Z", "+00:00")
+        ).date()
+        local_data["utc_date"] = local_data["date"].apply(extract_utc_date)
+        filtered_df = local_data[
+            (local_data["utc_date"] >= start_utc_datetime)
+            & (local_data["utc_date"] <= end_utc_datetime)
+        ]
+        return filtered_df[
+            [
+                "locationId",
+                "location",
+                "city",
+                "parameter",
+                "value",
+                "date",
+                "unit",
+                "coordinates",
+                "country",
+                "isMobile",
+                "isAnalysis",
+                "entity",
+                "sensorType",
+            ]
+        ]
 
     def _results_to_db(self, filtered_cohorts_df, engine, city):
-        """Write model results to the database for all cohorts"""
         if city:
             location = city
         else:
@@ -342,7 +306,7 @@ class CohortBuilder(CohortBuilderBase):
         write_to_db(
             filtered_cohorts_df,
             engine,
-            f"cohorts_test_{location}",
+            f"cohorts_local_{location}",
             "public",
             "append",
         )
