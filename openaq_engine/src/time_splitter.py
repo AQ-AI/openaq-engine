@@ -7,6 +7,7 @@ from typing import Any, Dict, List
 import mlflow
 from dateutil.relativedelta import relativedelta
 from src.utils.utils import (
+    extract_utc_date,
     get_data,
     query_results_from_api,
     query_results_from_aws,
@@ -246,27 +247,9 @@ class TimeSplitterBase(ABC):
         else:
             return start_date
 
-    def extract_utc_date(self, date_dict):
-        """
-        Extracts the UTC date from the date dictionary and converts it to a datetime.date object.
-
-        Parameters:
-        date_dict (dict): The dictionary containing date information with 'utc' and 'local' keys.
-
-        Returns:
-        datetime.date: The date part of the 'utc' datetime.
-        """
-        utc_datetime_str = json.loads(date_dict)["utc"]
-        utc_datetime = datetime.fromisoformat(
-            utc_datetime_str.replace("Z", "+00:00")
-        )
-        return utc_datetime.date()
-
     def create_start_local_data(self, local_data):
         # Apply the extract_utc_date function to the 'date' column
-        local_data["utc_date"] = local_data["date"].apply(
-            self.extract_utc_date
-        )
+        local_data["utc_date"] = local_data["date"].apply(extract_utc_date)
 
         start_date = local_data["utc_date"].min()
 
@@ -274,9 +257,7 @@ class TimeSplitterBase(ABC):
 
     def create_end_local_data(self, local_data):
         # Apply the extract_utc_date function to the 'date' column
-        local_data["utc_date"] = local_data["date"].apply(
-            self.extract_utc_date
-        )
+        local_data["utc_date"] = local_data["date"].apply(extract_utc_date)
 
         end_date = local_data["utc_date"].max()
 
