@@ -4,6 +4,7 @@ import json
 import ee
 import pandas as pd
 import requests
+from src.utils.utils import ee_array_to_df
 
 url = "https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&has_geo=true&radius=1000&order_by=lastUpdated&dumpRaw=false"
 
@@ -14,7 +15,7 @@ geojson_dict = {"type": "FeatureCollection", "features": []}
 service_account = "ali.quidwai@aqai.xyz"
 credentials = ee.ServiceAccountCredentials(
     service_account,
-    '/home/ec2-user/elevated-watch-399519-d191df2b047f.json',
+    "/home/ec2-user/elevated-watch-399519-d191df2b047f.json",
 )
 ee.Initialize(credentials)
 
@@ -54,9 +55,9 @@ for _, row in enumerate(json.loads(response.text)["results"]):
 
     day_of_interest = ee.Date(datetime.datetime.now())
 
-    image_collection = ee.ImageCollection(NIGHTTIME_LIGHT_IMAGE_COLLECTION).select(
-        NIGHTTIME_LIGHT_IMAGE_BAND
-    )
+    image_collection = ee.ImageCollection(
+        NIGHTTIME_LIGHT_IMAGE_COLLECTION
+    ).select(NIGHTTIME_LIGHT_IMAGE_BAND)
     print(image_collection)
 
     # filtered_image_collection = image_collection.filterDate(day_of_interest.advance(-POPULATION_PERIOD, "days"), day_of_interest)
