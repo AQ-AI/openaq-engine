@@ -39,7 +39,7 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
     def execute(self, engine, cohort_df) -> pd.DataFrame:
         df = self._add_ee_features(cohort_df)
         df = self._change_to_categorical_type(df)
-        self._results_to_db(df, engine)
+        # self._results_to_db(df, engine)
 
         (
             df_train,
@@ -83,7 +83,11 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
 
         return df
 
-    def _results_to_db(self, features_df, engine):
+    def _results_to_db(
+        self,
+        features_df,
+        engine,
+    ):
         """Write model results to the database for all cohorts"""
 
         write_to_db(
@@ -95,13 +99,22 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
         )
 
     def _split_train_valid(self, cohort_df, df):
+        print("cohort_df", cohort_df.columns, "df", df.columns)
         df = df.merge(
-            cohort_df[["locationId", "cohort_type", "value"]],
+            cohort_df[
+                [
+                    "locationId",
+                    "cohort",
+                    "timestamp_utc",
+                    "cohort_type",
+                    "value",
+                ]
+            ],
             how="left",
-            left_on="location_id",
-            right_on="locationId",
+            left_on=["location_id", "cohort", "timestamp_utc"],
+            right_on=["locationId", "cohort", "timestamp_utc"],
         )
-
+        print("post-merged df", df)
         df_train = df.loc[df["cohort_type"] == "training"]
         df_valid = df.loc[df["cohort_type"] == "validation"]
         train_ids, valid_ids = self._get_uniqueids(df_train, df_valid)
@@ -117,25 +130,25 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
         )
 
     def _get_uniqueids(self, df_train, df_valid):
-        train_ids = df_train[["location_id"]].reset_index(drop=True)
+        df_train["unique_id"] = (
+            df_train["location_id"].astype(str)
+            + "_"
+            + df_train["cohort"].astype(str)
+            + "_"
+            + df_train["timestamp_utc"].astype(str)
+        )
+        df_valid["unique_id"] = (
+            df_train["location_id"].astype(str)
+            + "_"
+            + df_train["cohort"].astype(str)
+            + "_"
+            + df_train["timestamp_utc"].astype(str)
+        )
 
-        valid_ids = df_valid[["location_id"]].reset_index(drop=True)
+        train_ids = df_train[["unique_id"]].reset_index(drop=True)
+        valid_ids = df_valid[["unique_id"]].reset_index(drop=True)
 
         return train_ids, valid_ids
-
-    def _filter_labels(self, cohort_df, labels_df):
-        filtered_labels_df = labels_df.merge(
-            cohort_df[["locationId"]],
-            how="right",
-            on="locationId",
-        )
-        print(
-            "len(labels_df)",
-            len(labels_df),
-            "len(filtered_labels_df)",
-            len(filtered_labels_df),
-        )
-        return filtered_labels_df
 
 
 def get_feature_builder(algorithm: str) -> Type[BuildFeatureBase]:
