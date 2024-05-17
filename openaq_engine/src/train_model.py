@@ -4,6 +4,7 @@ import os
 import string
 from typing import List, Optional
 
+import pandas as pd
 import psutil
 from joblib import Parallel, delayed, dump
 from sklearn.compose import ColumnTransformer
@@ -161,6 +162,10 @@ class ModelTrainer:
         logging.info("Fitting model")
         logging.info(f"Current memory usage: {psutil.virtual_memory()}")
         logging.info(f"Shape of X data: {X_train.shape}")
+        X_train[self.all_model_features] = X_train[
+            self.all_model_features
+        ].apply(pd.to_numeric, errors="coerce")
+
         logging.info(f"Shape of Y data: {Y_train.shape}")
         X_train = self.get_impute_transformer().fit_transform(X_train)
         X_train = self.get_scaler_transform().fit_transform(X_train)
@@ -219,7 +224,8 @@ class ModelTrainer:
         return ColumnTransformer(
             transformers=[
                 ("numeric", numeric_pipeline, self.all_model_features)
-            ]
+            ],
+            remainder="passthrough",  # Ensures that other columns not specified are not dropped
         )
 
     def get_scaler_transform(self):
