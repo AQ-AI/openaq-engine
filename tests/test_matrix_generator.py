@@ -1,13 +1,13 @@
 import datetime
-import pandas as pd
-from inspect import isclass
-from setup_environment import get_dbengine
-from src.matrix_generator import MatrixGenerator
 from contextlib import nullcontext
+from inspect import isclass
+from unittest.mock import mock_open, patch
+
+import pandas as pd
 import pytest
+from setup_environment import get_dbengine
 from src.features.build_features import BuildFeaturesRandomForest
-import os
-from joblib import load
+from src.matrix_generator import MatrixGenerator
 
 
 def test_execute_for_cohort(mocker):
@@ -75,22 +75,32 @@ def test_get_feature_generator_invalid():
 
 def test_get_csr(mocker):
     matrix_generator = MatrixGenerator(algorithm="RFR", id_column_list=[])
-    mock_paths = [
-        os.path.join("tests/data", "0_training_20200101_000000000000.joblib"),
-    ]
-    # mocker.patch("os.path.join", side_effect=mock_paths)
+
     mock_data = {"mock": "data"}
-    # Mock joblib.load to return mock_data
-    mocker.patch("joblib.load", return_value=mock_data)
-    result = matrix_generator._get_csr(
-        0, "training", datetime.date(2020, 1, 1)
-    )
-    assert result == load("0_training_20200101_000000000000.joblib")
 
-    assert [f"{result}.joblib"] == ["0_training_20200101_000000000000.joblib"]
+    # Mock open to handle file operations
+    with patch("builtins.open", mock_open(read_data="data")) as mock_file:
+        # Mock joblib.load to return mock_data
+        mocker.patch("joblib.load", return_value=mock_data)
+        result = matrix_generator._get_csr(
+            0, "training", datetime.date(2020, 1, 1)
+        )
+        assert result == mock_data
+        mock_file.assert_called_with(
+            "tests/data/0_training_20200101_000000000000.joblib", "rb"
+        )
 
 
-def test_get_csr_empty():
+def test_get_csr_empty(mocker):
     matrix_generator = MatrixGenerator(algorithm="RFR", id_column_list=[])
-    result = matrix_generator._get_csr(0, "invalid", datetime.date(2020, 1, 1))
-    assert result == []
+
+    mock_data = {"mock": "data"}
+
+    # Mock open to handle file operations
+    with patch("builtins.open", mock_open(read_data="data")):
+        # Mock joblib.load to return mock_data
+        mocker.patch("joblib.load", return_value=mock_data)
+        result = matrix_generator._get_csr(
+            0, "invalid", datetime.date(2020, 1, 1)
+        )
+        assert result == []
