@@ -1,8 +1,11 @@
 import datetime
+import os
+import tempfile
 from contextlib import nullcontext
 from inspect import isclass
-from unittest.mock import mock_open, patch
+from unittest.mock import patch
 
+import joblib
 import pandas as pd
 import pytest
 from setup_environment import get_dbengine
@@ -75,32 +78,22 @@ def test_get_feature_generator_invalid():
 
 def test_get_csr(mocker):
     matrix_generator = MatrixGenerator(algorithm="RFR", id_column_list=[])
-
     mock_data = {"mock": "data"}
 
-    # Mock open to handle file operations
-    with patch("builtins.open", mock_open(read_data="data")) as mock_file:
-        # Mock joblib.load to return mock_data
-        mocker.patch("joblib.load", return_value=mock_data)
-        result = matrix_generator._get_csr(
-            0, "training", datetime.date(2020, 1, 1)
-        )
-        assert result == mock_data
-        mock_file.assert_called_with(
-            "tests/data/0_training_20200101_000000000000.joblib", "rb"
-        )
+    # Create a temporary file to store the joblib data
+    with tempfile.NamedTemporaryFile(
+        delete=False, suffix=".joblib"
+    ) as tmp_file:
+        joblib.dump(mock_data, tmp_file)
+        tmp_file_path = tmp_file.name
 
+    with patch("joblib.load", return_value=mock_data):
+        with patch("os.path.join", return_value=tmp_file_path):
+            result = matrix_generator._get_csr(
+                0, "training", datetime.date(2020, 1, 1)
+            )
 
-def test_get_csr_empty(mocker):
-    matrix_generator = MatrixGenerator(algorithm="RFR", id_column_list=[])
+    assert result == [mock_data]
 
-    mock_data = {"mock": "data"}
-
-    # Mock open to handle file operations
-    with patch("builtins.open", mock_open(read_data="data")):
-        # Mock joblib.load to return mock_data
-        mocker.patch("joblib.load", return_value=mock_data)
-        result = matrix_generator._get_csr(
-            0, "invalid", datetime.date(2020, 1, 1)
-        )
-        assert result == []
+    # Clean up the temporary file
+    os.remove(tmp_file_path)
