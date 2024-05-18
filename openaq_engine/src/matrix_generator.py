@@ -12,15 +12,6 @@ from src.utils.utils import get_data
 
 from config.model_settings import BuildFeaturesConfig, MatrixGeneratorConfig
 
-# Matrix generator
-# Input: label, features, time_splits
-# Output: train_df = numpy array, valid_df = numpy arr
-
-# for each text column of interest
-# run feature generator
-# add resulting object to a list
-# matrix generator: merge everything in the list together to get train_df and valid_df
-
 logging.basicConfig(level=logging.INFO)
 
 
@@ -40,13 +31,13 @@ class MatrixGenerator:
 
     def execute_train_valid_set(self, place):
         cohorts_query = f"""select distinct "location", "cohort", "cohort_type",
-        "train_validation_set" from "cohorts_{place}";"""
+        "train_validation_set" from "cohorts_test_{place}";"""
         cohorts_df = get_data(cohorts_query)
-
+        print(cohorts_df.train_validation_set.unique())
         return cohorts_df.train_validation_set.unique()
 
     def execute(self, engine, train_valid_id, run_date, place):
-        cohorts_query = f"""select distinct * from "cohorts_{place}";"""
+        cohorts_query = f"""select distinct * from "cohorts_test_{place}";"""
         cohorts_df = get_data(cohorts_query)
 
         return self.execute_for_cohort(
@@ -67,7 +58,6 @@ class MatrixGenerator:
             logging.info(
                 f"Generating features for Cohort {training_validation_id}"
             )
-            print()
             (
                 train_df,
                 validation_df,
@@ -84,21 +74,6 @@ class MatrixGenerator:
             logging.info(
                 f"Rows in validation features: {validation_df.shape[0]}"
             )
-            # convert back to merge
-            # labels_valid_df = pd.merge(
-            #     feature_valid_id,
-            #     labels_df,
-            #     left_on=["location_id"],
-            #     right_on=["locationId"],
-            #     how="inner",
-            # )
-            # labels_train_df = pd.merge(
-            #     feature_train_id,
-            #     labels_df,
-            #     left_on=["location_id"],
-            #     right_on=["locationId"],
-            #     how="inner",
-            # )
             # write as pickle
             self._write_labels_as_csv(
                 labels_train_df,

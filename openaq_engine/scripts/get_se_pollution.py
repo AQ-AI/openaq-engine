@@ -207,7 +207,6 @@ def query_openaq_pollution(coordinates):
         measurement_df = query_sensor_measurements(
             sensor_coords_list[0], sensor_coords_list[1], start_date, end_date
         )
-        print(measurement_df)
         return locations_df, measurement_df
     except Exception:
         logging.exception("Error in fetching data")

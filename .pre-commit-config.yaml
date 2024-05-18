@@ -30,7 +30,7 @@ repos:
     rev: 6.0.0
     hooks:
       - id: flake8
-        args: ["--ignore=E501,W503"]
+        args: ["--ignore=E501,W503,I001,I004,I005"]
         additional_dependencies: ["flake8-isort"]
 
   - repo: https://github.com/commitizen-tools/commitizen

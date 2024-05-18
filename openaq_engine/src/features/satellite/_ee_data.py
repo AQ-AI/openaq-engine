@@ -180,7 +180,6 @@ class EEFeatures:
                 f"""Image collection {image_collection.getInfo()}
                 does not match any existing location."""
             )
-            pass
 
     def generate_features(self, satellite_df):
         groupby_cols = [

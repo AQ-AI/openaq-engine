@@ -20,6 +20,8 @@ from src.utils.utils import (
 
 from config.model_settings import CohortBuilderConfig
 
+logging.basicConfig(level=logging.INFO)
+
 
 class CohortBuilderBase(ABC):
     def __init__(
@@ -306,7 +308,7 @@ class CohortBuilder(CohortBuilderBase):
         write_to_db(
             filtered_cohorts_df,
             engine,
-            f"cohorts_local_{location}",
+            f"cohorts_{location}",
             "public",
             "append",
         )

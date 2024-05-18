@@ -39,7 +39,6 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
     def execute(self, engine, cohort_df) -> pd.DataFrame:
         df = self._add_ee_features(cohort_df)
         df = self._change_to_categorical_type(df)
-        # self._results_to_db(df, engine)
 
         (
             df_train,
@@ -65,7 +64,7 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
 
     @all_model_features.setter
     def all_model_features(self, features: List[str]):
-        if not all(type(feat) == str for feat in features):
+        if not all(isinstance(feat, str) for feat in features):
             raise ValueError("All the feature names should be strings!")
         self._all_model_features = features
 
@@ -99,7 +98,6 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
         )
 
     def _split_train_valid(self, cohort_df, df):
-        print("cohort_df", cohort_df.columns, "df", df.columns)
         df = df.merge(
             cohort_df[
                 [
@@ -114,7 +112,6 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
             left_on=["location_id", "cohort", "timestamp_utc"],
             right_on=["locationId", "cohort", "timestamp_utc"],
         )
-        print("post-merged df", df)
         df_train = df.loc[df["cohort_type"] == "training"]
         df_valid = df.loc[df["cohort_type"] == "validation"]
         train_ids, valid_ids = self._get_uniqueids(df_train, df_valid)
