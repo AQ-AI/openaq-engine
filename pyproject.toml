@@ -43,6 +43,9 @@ pytest-cov = "^5.0.0"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
+[tool.pytest.ini_options]
+python_paths = ["."]
+
 [tool.isort]
 line_length = 79
 known_first_party = ["openaq_engine", "config"]
