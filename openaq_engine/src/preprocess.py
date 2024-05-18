@@ -110,7 +110,6 @@ class Preprocess:
                 )
             except AttributeError:
                 logging.info(f"""No Valid pollutants from {len(df)} points""")
-                pass
         if self.filter_countries:
             try:
                 df = df.pipe(Filter.filter_countries)
@@ -120,7 +119,6 @@ class Preprocess:
                 )
             except AttributeError:
                 logging.info(f"""No Valid countries from {len(df)} points""")
-                pass
         if self.filter_cities:
             try:
                 df = df.pipe(Filter.filter_cities)
@@ -130,7 +128,6 @@ class Preprocess:
                 )
             except AttributeError:
                 logging.info(f"""No Valid cities from {len(df)} points""")
-                pass
         return df
 
     def get_timestamps(self, df: pd.DataFrame, source: str) -> pd.DataFrame:
@@ -156,18 +153,14 @@ class Preprocess:
         """
         row["timestamp_utc"] = (
             datetime.fromisoformat(
-                re.search("(?<=utc=)(.*)(?=,)", row["date"]).group(0)[:-1]
+                re.search("(?<=utc=)(.*)(?=,)", row["date"]).group(0)
             )
             .astimezone(timezone.utc)
             .strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         )
-        row["timestamp_local"] = (
-            datetime.fromisoformat(
-                re.search("(?<=local=)(.*)(?=})", row["date"]).group(0),
-            )
-            .astimezone(timezone.local)
-            .strftime("%Y-%m-%dT%H:%M:%S%z")
-        )
+        row["timestamp_local"] = datetime.fromisoformat(
+            re.search("(?<=local=)(.*)(?=})", row["date"]).group(0),
+        ).strftime("%Y-%m-%dT%H:%M:%S%z")
         return row
 
     def _extract_timestamp_from_api(self, row: pd.Series) -> pd.Series:

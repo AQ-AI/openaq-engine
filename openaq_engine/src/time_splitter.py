@@ -42,7 +42,7 @@ class TimeSplitterBase(ABC):
         country_info: List[str],
         pollutant: str,
         latest_date: str,
-        local_data: str,
+        local_df: str,
     ) -> datetime:
         """Build SQL query to query AWS Athena and retrieve
         end date of data given specific filters."""
@@ -91,8 +91,8 @@ class TimeSplitterBase(ABC):
             f"{response_query_result}", "%Y-%m-%d %H:%M:%S.000 UTC"
         ).date()
 
-        if not local_data.empty:
-            local_end_date = self.create_end_local_data(local_data)
+        if not local_df.empty:
+            local_end_date = self.create_end_local_data(local_df)
             if end_date < local_end_date:
                 return local_end_date
             else:
@@ -107,7 +107,7 @@ class TimeSplitterBase(ABC):
         country_info: List[str],
         pollutant: str,
         latest_date: str,
-        local_data: str,
+        local_df: str,
     ) -> datetime:
         """Build SQL query to query AWS Athena and retrieve
         start date of data given specific filters."""
@@ -155,8 +155,8 @@ class TimeSplitterBase(ABC):
             f"{response_query_result}", "%Y-%m-%d %H:%M:%S.000 UTC"
         ).date()
 
-        if not local_data.empty:
-            local_start_date = self.create_start_local_data(local_data)
+        if not local_df.empty:
+            local_start_date = self.create_start_local_data(local_df)
             if start_date < local_start_date:
                 return local_start_date
             else:
@@ -179,7 +179,7 @@ class TimeSplitterBase(ABC):
                 pass
 
     def create_end_date_from_openaq_api(
-        self, city, country, sensor_type, pollutant, local_data
+        self, city, country, sensor_type, pollutant, local_df
     ):
         if country == "WO":
             url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&order_by=lastUpdated&sensor_type={sensor_type}&dumpRaw=false""".format(
@@ -196,12 +196,17 @@ class TimeSplitterBase(ABC):
             )
         headers = {"accept": "application/json"}
         response = query_results_from_api(headers, url)
+        response_data = json.loads(response.text)
+        if "results" not in response_data or not response_data["results"]:
+            logging.error("No results found in the API response")
+            return None  # or some default value or raise an exception
+
         end_date = datetime.strptime(
-            json.loads(response.text)["results"][0]["lastUpdated"],
+            response_data["results"][0]["lastUpdated"],
             "%Y-%m-%dT%H:%M:%S+00:00",
         ).date()
-        if not local_data.empty:
-            local_end_date = self.create_end_local_data(local_data)
+        if not local_df.empty:
+            local_end_date = self.create_end_local_data(local_df)
             if end_date < local_end_date:
                 return local_end_date
             else:
@@ -215,7 +220,7 @@ class TimeSplitterBase(ABC):
         country,
         sensor_type,
         pollutant,
-        local_data,
+        local_df,
     ):
         if country == "WO":
             url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=asc&parameter={pollutant}&radius=100&order_by=firstUpdated&sensor_type={sensor_type}&dumpRaw=false""".format(
@@ -238,8 +243,8 @@ class TimeSplitterBase(ABC):
             json.loads(response.text)["results"][0]["firstUpdated"],
             "%Y-%m-%dT%H:%M:%S+00:00",
         ).date()
-        if not local_data.empty:
-            local_start_date = self.create_start_local_data(local_data)
+        if not local_df.empty:
+            local_start_date = self.create_start_local_data(local_df)
             if start_date > local_start_date:
                 return local_start_date
             else:
@@ -247,19 +252,19 @@ class TimeSplitterBase(ABC):
         else:
             return start_date
 
-    def create_start_local_data(self, local_data):
+    def create_start_local_data(self, local_df):
         # Apply the extract_utc_date function to the 'date' column
-        local_data["utc_date"] = local_data["date"].apply(extract_utc_date)
+        local_df["utc_date"] = local_df["date"].apply(extract_utc_date)
 
-        start_date = local_data["utc_date"].min()
+        start_date = local_df["utc_date"].min()
 
         return start_date
 
-    def create_end_local_data(self, local_data):
+    def create_end_local_data(self, local_df):
         # Apply the extract_utc_date function to the 'date' column
-        local_data["utc_date"] = local_data["date"].apply(extract_utc_date)
+        local_df["utc_date"] = local_df["date"].apply(extract_utc_date)
 
-        end_date = local_data["utc_date"].max()
+        end_date = local_df["utc_date"].max()
 
         return end_date
 
@@ -393,7 +398,7 @@ class TimeSplitter(TimeSplitterBase):
         return self.train_validation_dict
 
     def execute_for_openaq_aws(
-        self, params, city, country, pollutant, latest_date, local_data
+        self, params, city, country, pollutant, latest_date, local_df
     ):
         end_date = self.create_end_date_from_aws(
             params,
@@ -401,21 +406,21 @@ class TimeSplitter(TimeSplitterBase):
             country,
             pollutant,
             latest_date,
-            local_data,
+            local_df,
         )
         start_date = self.create_start_date_from_aws(
-            params, city, country, pollutant, latest_date, local_data
+            params, city, country, pollutant, latest_date, local_df
         )
         return end_date, start_date
 
     def execute_for_openaq_api(
-        self, city, country, sensor_type, pollutant, local_data
+        self, city, country, sensor_type, pollutant, local_df
     ):
         end_date = self.create_end_date_from_openaq_api(
-            city, country, sensor_type, pollutant, local_data
+            city, country, sensor_type, pollutant, local_df
         )
         start_date = self.create_start_date_from_openaq_api(
-            city, country, sensor_type, pollutant, local_data
+            city, country, sensor_type, pollutant, local_df
         )
         return end_date, start_date
 
