@@ -44,6 +44,8 @@ def test_cohort_builder(mocker):
     mocker.patch.object(
         CohortBuilder, "execute_for_openaq_api", return_value=df
     )
+    mocker.patch("src.cohort_builder.get_dbengine", return_value=None)
+    mocker.patch.object(CohortBuilder, "_results_to_db", return_value=None)
 
     cohort_builder = CohortBuilder(
         date_col="date",

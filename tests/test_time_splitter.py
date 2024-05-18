@@ -1,8 +1,8 @@
 import datetime
+import json
 from unittest import mock
 
 import pandas as pd
-import pytz
 from src.time_splitter import TimeSplitter
 
 
@@ -252,9 +252,18 @@ def test_create_end_date_from_openaq_api(mocker):
         source="openaq-api",
     )
 
+    # Mock the API response
+    mock_response = {"results": [{"lastUpdated": "2023-04-01T21:00:00+00:00"}]}
+    mocker.patch(
+        "src.utils.utils.query_results_from_api",
+        return_value=type(
+            "obj", (object,), {"text": json.dumps(mock_response)}
+        ),
+    )
+
     # Call the method and get the end date
     end_date = time_splitter.create_end_date_from_openaq_api(
         city, country, sensor_type, pollutant, pd.DataFrame()
     )
 
-    assert end_date == datetime.datetime.now(pytz.utc).date()
+    assert end_date == datetime.datetime.now().date()
