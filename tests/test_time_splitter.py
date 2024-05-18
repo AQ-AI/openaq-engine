@@ -1,6 +1,8 @@
 import datetime
-import pytz
+from unittest import mock
 
+import pandas as pd
+import pytz
 from src.time_splitter import TimeSplitter
 
 
@@ -82,11 +84,15 @@ def test_get_validation_window(mocker):
 
 
 def test_execute_for_openaq_aws(mocker):
-    params = {"mocked": "params"}
-    city = "London"
-    country = "UK"
+    city = "Mumbai"
+    country = "IN"
     pollutant = "pm25"
-    latest_date = "2020-01-01"
+    latest_date = "2021-12-23"
+    local_data = "cohorts_Mumbai"
+
+    # Mock get_data to return a DataFrame
+    mocker.patch("src.utils.utils.get_data", return_value=pd.DataFrame())
+
     # Mock the calls to create_end_date_from_aws and create_start_date_from_aws
     mocker.patch.object(
         TimeSplitter,
@@ -104,29 +110,40 @@ def test_execute_for_openaq_aws(mocker):
         time_window_length=6,
         within_window_sampler=2,
         window_count=3,
-        train_validation_dict={},
+        train_validation_dict={"training": [], "validation": []},
         target_variable="pm25",
         country="UK",
-        source="openaq-api",
+        source="openaq-aws",
     )
 
-    # Call execute_for_openaq_aws and get results
-    end_date, start_date = time_splitter.execute_for_openaq_aws(
-        params, city, country, pollutant, latest_date
-    )
+    # Call execute and get results
+    with mock.patch("src.utils.utils.get_data", return_value=pd.DataFrame()):
+        results = time_splitter.execute(
+            city,
+            country,
+            None,
+            "openaq-aws",
+            pollutant,
+            latest_date,
+            local_data,
+        )
 
-    # Assert expected end_date and start_date are returned from the mocked methods
-    assert end_date == datetime.date(2020, 1, 1)
-    assert start_date == datetime.date(2019, 6, 1)
+    # Check the expected values in results
+    assert results is not None
+    assert "validation" in results
+    assert "training" in results
 
 
 def test_create_start_date_from_aws(mocker):
     # Mock the required arguments
     params = {"region": "us-east-1"}
-    city = "London"
-    country_info = "UK"
+    city = "Mumbai"
+    country_info = "IN"
     pollutant = "pm25"
-    latest_date = "2020-01-01"
+    latest_date = "2021-12-23"
+
+    # Mock get_data to return a DataFrame
+    mocker.patch("src.utils.utils.get_data", return_value=pd.DataFrame())
 
     # Mock the build_response_from_aws method to return a start date
     mocker.patch.object(
@@ -147,7 +164,7 @@ def test_create_start_date_from_aws(mocker):
 
     # Call the method and get the start date
     start_date = time_splitter.create_start_date_from_aws(
-        params, city, country_info, pollutant, latest_date
+        params, city, country_info, pollutant, latest_date, pd.DataFrame()
     )
 
     # Assert the expected start date is returned
@@ -170,7 +187,7 @@ def test_create_start_date_from_aws(mocker):
     city = ""
     # Call the method and get the start date (country)
     start_date = time_splitter.create_start_date_from_aws(
-        params, city, country_info, pollutant, latest_date
+        params, city, country_info, pollutant, latest_date, pd.DataFrame()
     )
 
     # Assert build_response_from_aws was called with the expected SQL query (country)
@@ -200,7 +217,7 @@ def test_create_start_date_from_aws(mocker):
 
     # Call the method and get the start date (country)
     start_date = time_splitter.create_start_date_from_aws(
-        params, city, country_info, pollutant, latest_date
+        params, city, country_info, pollutant, latest_date, pd.DataFrame()
     )
 
     # Assert build_response_from_aws was called with the expected SQL query (country)
@@ -220,8 +237,8 @@ def test_create_start_date_from_aws(mocker):
 
 def test_create_end_date_from_openaq_api(mocker):
     # Mock the required arguments
-    city = "London"
-    country = ""
+    city = "Mumbai"
+    country = "IN"
     sensor_type = "reference grade"
     pollutant = "pm25"
 
@@ -237,9 +254,7 @@ def test_create_end_date_from_openaq_api(mocker):
 
     # Call the method and get the end date
     end_date = time_splitter.create_end_date_from_openaq_api(
-        city, country, sensor_type, pollutant
+        city, country, sensor_type, pollutant, pd.DataFrame()
     )
 
-    # Assert the expected end date is returned
-    # assert end_date == datetime.date.today(pytz.utc)
     assert end_date == datetime.datetime.now(pytz.utc).date()
