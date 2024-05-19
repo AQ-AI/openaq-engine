@@ -8,9 +8,10 @@ from unittest.mock import patch
 import joblib
 import pandas as pd
 import pytest
+
 from setup_environment import get_dbengine
-from src.features.build_features import BuildFeaturesRandomForest
-from src.matrix_generator import MatrixGenerator
+from openaq_engine.src.features.build_features import BuildFeaturesRandomForest
+from openaq_engine.src.matrix_generator import MatrixGenerator
 
 
 def test_execute_for_cohort(mocker):

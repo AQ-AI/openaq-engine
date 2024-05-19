@@ -3,7 +3,8 @@ import json
 from unittest import mock
 
 import pandas as pd
-from src.time_splitter import TimeSplitter
+
+from openaq_engine.src.time_splitter import TimeSplitter
 
 
 def test_get_end_time_windows():
