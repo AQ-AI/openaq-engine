@@ -9,9 +9,9 @@ import joblib
 import pandas as pd
 import pytest
 
-from setup_environment import get_dbengine
-from openaq_engine.src.features.build_features import BuildFeaturesRandomForest
+from openaq_engine.setup_environment import get_dbengine
 from openaq_engine.src.matrix_generator import MatrixGenerator
+from openaq_engine.src.features.build_features import BuildFeaturesRandomForest
 
 
 def test_execute_for_cohort(mocker):
