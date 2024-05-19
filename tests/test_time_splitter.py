@@ -238,8 +238,8 @@ def test_create_start_date_from_aws(mocker):
 
 def test_create_end_date_from_openaq_api(mocker):
     # Mock the required arguments
-    city = "Mumbai"
-    country = "IN"
+    city = "Baraboo"
+    country = "US"
     sensor_type = "reference grade"
     pollutant = "pm25"
 
