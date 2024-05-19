@@ -6,14 +6,15 @@ from typing import Any, Dict, List
 
 import mlflow
 from dateutil.relativedelta import relativedelta
-from src.utils.utils import (
+
+from openaq_engine.src.utils.utils import (
     extract_utc_date,
     get_data,
     query_results_from_api,
     query_results_from_aws,
 )
 
-from config.model_settings import TimeSplitterConfig
+from openaq_engine.config.model_settings import TimeSplitterConfig
 
 logging.basicConfig(level=logging.INFO)
 
@@ -198,7 +199,7 @@ class TimeSplitterBase(ABC):
         response = query_results_from_api(headers, url)
         response_data = json.loads(response.text)
         if "results" not in response_data or not response_data["results"]:
-            logging.error("No results found in the API response")
+            logging.error("API response: %s", url)
             return None  # or some default value or raise an exception
 
         end_date = datetime.strptime(
