@@ -6,7 +6,6 @@ from unittest.mock import patch, MagicMock
 import pandas as pd
 import pytz
 import pytest
-from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 
 from setup_environment import get_dbengine
@@ -32,22 +31,11 @@ def mock_env_vars():
 
 @pytest.fixture
 def mock_db_connection():
-    db_name = os.getenv("DB_NAME_OPENAQ")
-    db_host = os.getenv("DB_HOST")
-    db_port = os.getenv("DB_PORT")
-    db_user = os.getenv("DB_USER")
-    db_password = os.getenv("DB_PASSWORD")
-
-    db_url = (
-        f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
-    )
-    mock_engine = create_engine(db_url)
-
     with patch(
         "openaq_engine.setup_environment.connect_to_db",
-        return_value=mock_engine.connect(),
-    ):
-        yield
+        return_value=MagicMock(),
+    ) as mock_conn:
+        yield mock_conn
 
 
 def test_cohort_builder(mocker):
