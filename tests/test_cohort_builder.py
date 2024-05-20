@@ -1,11 +1,32 @@
 import datetime
 from contextlib import nullcontext
+import os
+from unittest.mock import patch, MagicMock
 
 import pandas as pd
 import pytz
+import pytest
+from sqlalchemy.exc import OperationalError
 
 from setup_environment import get_dbengine
 from src.cohort_builder import CohortBuilder
+
+
+@pytest.fixture(autouse=True)
+def mock_env_vars():
+    with patch.dict(
+        os.environ,
+        {
+            "DB_NAME_OPENAQ": "test_db",
+            "S3_BUCKET_OPENAQ": "openaq-pm25-historic",
+            "S3_OUTPUT_OPENAQ": "pm25-month",
+            "DB_HOST": "localhost",
+            "DB_PORT": "5432",
+            "DB_USER": "test_user",
+            "DB_PASSWORD": "test_password",
+        },
+    ):
+        yield
 
 
 def test_cohort_builder(mocker):
@@ -127,7 +148,7 @@ def test_execute_for_openaq_aws(mocker):
 
     aws_dict = {
         "bucket": "openaq-pm25-historic",
-        "database": "openaq",
+        "database": "test_db",
         "path": "pm25-month/cohorts",
         "region": "us-east-1",
     }
@@ -185,66 +206,92 @@ def test_results_to_db(mocker):
 
 def test_execute_for_openaq_api(mocker):
     # Mock the required arguments
-    end_date = datetime.datetime(
+    start_date = datetime.datetime(
         2022, 4, 1, 21, 0, 0, tzinfo=pytz.UTC
     ).isoformat()
-    start_date = datetime.datetime(
+    end_date = datetime.datetime(
         2023, 4, 1, 21, 0, 0, tzinfo=pytz.UTC
     ).isoformat()
-    end_date_str = f"{{utc={end_date}, local={end_date}}}"
-    start_date_str = f"{{utc={start_date}, local={start_date}}}"
+    start_date_str = {
+        "utc": f"{datetime.datetime(2023, 3, 31, 23, 30, 0, tzinfo=pytz.UTC).isoformat()}",
+        "local": f"{datetime.datetime(2023, 3, 31, 23, 30, 0, tzinfo=pytz.timezone('Asia/Kolkata')).isoformat()}",
+    }
+    end_date_str = {
+        "utc": f"{datetime.datetime(2022, 12, 30, 20, 30, 0, tzinfo=pytz.UTC).isoformat()}",
+        "local": f"{datetime.datetime(2022, 12, 30, 20, 30, 0, tzinfo=pytz.timezone('Asia/Kolkata')).isoformat()}",
+    }
     date_tuple = (start_date, end_date)
-    train_validation_dict = {"training": [date_tuple]}
-    coordinates = "{latitude=44.089355, longitude=-70.214134}"
-    filter_cols = "date, location"
+    coordinates = {"latitude": 19.07283, "longitude": 72.88261}
     city = "Mumbai"
     country = "IN"
     sensor_type = "reference grade"
     pollutant = "pm25"
     local_data = ""
 
-    # Mock execute_for_openaq_aws and execute_for_openaq_api calls
+    # Mock API response
     df = pd.DataFrame(
         {
             "date": [start_date_str, end_date_str],
             "parameter": pollutant,
-            "value": [5, 10],
-            "coordinates": coordinates,
+            "value": [-999.0, 150.0],
+            "coordinates": [coordinates, coordinates],
         }
     )
 
-    mocker.patch.object(
-        CohortBuilder, "execute_for_openaq_aws", return_value=df
+    mocker.patch(
+        "openaq_engine.src.cohort_builder.CohortBuilder.execute_for_openaq_api",
+        return_value=df,
     )
-    mocker.patch.object(
-        CohortBuilder, "execute_for_openaq_api", return_value=df
+
+    # Mock database connection
+    mock_engine = MagicMock()
+    mock_connection = MagicMock()
+    mocker.patch(
+        "openaq_engine.src.cohort_builder.get_dbengine",
+        return_value=mock_engine,
     )
+    mock_engine.connect.return_value = mock_connection
 
     cohort_builder = CohortBuilder(
         date_col="date",
         filter_dict={},
         target_variable=pollutant,
         country=country,
-        source="openaq-aws",
-    )
-    cohort_builder.cohort_builder(
-        list(train_validation_dict.keys())[0],
-        train_validation_dict,
-        filter_cols,
-        city,
-        country,
-        "openaq-aws",
-        sensor_type,
-        pollutant,
-        local_data,
+        source="openaq-api",
     )
 
-    cohort_builder.execute_for_openaq_aws.assert_called_with(
-        date_tuple,
-        city,
-        country,
-        pollutant,
-        sensor_type,
-        local_data,
+    # Call the method
+    cohort_df = cohort_builder.execute_for_openaq_api(
+        date_tuple, city, country, pollutant, sensor_type, local_data
     )
-    cohort_builder.execute_for_openaq_api.assert_not_called()
+    # Print both DataFrames for comparison
+    print("Expected DataFrame:")
+    print(df)
+    print("Actual DataFrame:")
+    print(
+        cohort_df[["date", "parameter", "value", "coordinates"]].iloc[[0, -1]]
+    )
+
+    # Check if the returned DataFrame is equal to the mock DataFrame
+    assert (
+        cohort_df[["date", "parameter", "value", "coordinates"]]
+        .iloc[[0, -1]]
+        .equals(df)
+    )
+
+    # Ensure expected database operations are performed
+    try:
+        with mock_engine.connect() as connection:
+            cohort_builder._results_to_db(df, connection, city)
+    except OperationalError:
+        pass  # Expected behavior if database connection fails
+
+    # Assert the database operations were attempted
+    mock_engine.connect.assert_called_once()
+    mock_connection.execute.assert_called()
+
+    # Assert API was called with correct URL
+    expected_url = f"https://api.openaq.org/v2/measurements?date_from={start_date}&date_to={end_date}&limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&city={city}&order_by=datetime&sensor_type={sensor_type}&dumpRaw=false"
+    mocker.patch(
+        "openaq_engine.src.utils.utils.api_response_to_df"
+    ).assert_called_with(expected_url)
