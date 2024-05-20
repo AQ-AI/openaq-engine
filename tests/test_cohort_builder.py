@@ -6,6 +6,7 @@ from unittest.mock import patch, MagicMock
 import pandas as pd
 import pytz
 import pytest
+from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 
 from setup_environment import get_dbengine
@@ -25,6 +26,26 @@ def mock_env_vars():
             "DB_USER": "test_user",
             "DB_PASSWORD": "test_password",
         },
+    ):
+        yield
+
+
+@pytest.fixture
+def mock_db_connection():
+    db_name = os.getenv("DB_NAME_OPENAQ")
+    db_host = os.getenv("DB_HOST")
+    db_port = os.getenv("DB_PORT")
+    db_user = os.getenv("DB_USER")
+    db_password = os.getenv("DB_PASSWORD")
+
+    db_url = (
+        f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+    )
+    mock_engine = create_engine(db_url)
+
+    with patch(
+        "openaq_engine.setup_environment.connect_to_db",
+        return_value=mock_engine.connect(),
     ):
         yield
 
@@ -204,8 +225,7 @@ def test_results_to_db(mocker):
             cohort_builder._results_to_db.assert_called_with(df, engine, "")
 
 
-def test_execute_for_openaq_api(mocker):
-    # Mock the required arguments
+def test_execute_for_openaq_api(mocker, mock_db_connection):
     start_date = datetime.datetime(
         2022, 4, 1, 21, 0, 0, tzinfo=pytz.UTC
     ).isoformat()
@@ -239,6 +259,12 @@ def test_execute_for_openaq_api(mocker):
     )
 
     mocker.patch(
+        "openaq_engine.src.utils.utils.api_response_to_df",
+        return_value=df,
+    )
+
+    # Mock the CohortBuilder.execute_for_openaq_api method to return the DataFrame
+    mocker.patch(
         "openaq_engine.src.cohort_builder.CohortBuilder.execute_for_openaq_api",
         return_value=df,
     )
@@ -247,7 +273,7 @@ def test_execute_for_openaq_api(mocker):
     mock_engine = MagicMock()
     mock_connection = MagicMock()
     mocker.patch(
-        "openaq_engine.src.cohort_builder.get_dbengine",
+        "openaq_engine.setup_environment.get_dbengine",
         return_value=mock_engine,
     )
     mock_engine.connect.return_value = mock_connection
@@ -264,20 +290,23 @@ def test_execute_for_openaq_api(mocker):
     cohort_df = cohort_builder.execute_for_openaq_api(
         date_tuple, city, country, pollutant, sensor_type, local_data
     )
-    # Print both DataFrames for comparison
-    print("Expected DataFrame:")
-    print(df)
-    print("Actual DataFrame:")
-    print(
-        cohort_df[["date", "parameter", "value", "coordinates"]].iloc[[0, -1]]
-    )
 
-    # Check if the returned DataFrame is equal to the mock DataFrame
-    assert (
+    cohort_df = (
         cohort_df[["date", "parameter", "value", "coordinates"]]
         .iloc[[0, -1]]
-        .equals(df)
+        .reset_index(drop=True)
     )
+    # Extract and print the local datetime values
+    print("\nLocal datetime values in expected DataFrame:")
+    for date_dict in df["date"]:
+        print(date_dict["local"])
+
+    print("\nLocal datetime values in actual DataFrame:")
+    for date_dict in cohort_df["date"]:
+        print(date_dict["local"])
+
+    # Check if the returned DataFrame is equal to the mock DataFrame
+    assert cohort_df.equals(df)
 
     # Ensure expected database operations are performed
     try:
@@ -288,7 +317,7 @@ def test_execute_for_openaq_api(mocker):
 
     # Assert the database operations were attempted
     mock_engine.connect.assert_called_once()
-    mock_connection.execute.assert_called()
+    mock_engine.connect.return_value.execute.assert_called()
 
     # Assert API was called with correct URL
     expected_url = f"https://api.openaq.org/v2/measurements?date_from={start_date}&date_to={end_date}&limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&city={city}&order_by=datetime&sensor_type={sensor_type}&dumpRaw=false"
