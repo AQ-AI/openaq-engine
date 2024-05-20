@@ -7,14 +7,14 @@ from typing import Any, Dict, List
 import mlflow
 from dateutil.relativedelta import relativedelta
 
-from openaq_engine.src.utils.utils import (
+from src.utils.utils import (
     extract_utc_date,
     get_data,
     query_results_from_api,
     query_results_from_aws,
 )
 
-from openaq_engine.config.model_settings import TimeSplitterConfig
+from config.model_settings import TimeSplitterConfig
 
 logging.basicConfig(level=logging.INFO)
 

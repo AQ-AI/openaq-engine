@@ -7,10 +7,10 @@ import mlflow
 import scipy.sparse as sp
 from joblib import dump, load
 from sklearn.ensemble import RandomForestRegressor
-from openaq_engine.src.features.build_features import BuildFeaturesRandomForest
-from openaq_engine.src.utils.utils import get_data
+from src.features.build_features import BuildFeaturesRandomForest
+from src.utils.utils import get_data
 
-from openaq_engine.config.model_settings import (
+from config.model_settings import (
     BuildFeaturesConfig,
     MatrixGeneratorConfig,
 )
