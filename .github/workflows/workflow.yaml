@@ -23,10 +23,9 @@ jobs:
         run: echo "PYTHONPATH=$PYTHONPATH:$(pwd)" >> $GITHUB_ENV
       - name: Install package in editable mode
         run: |
-          poetry shell
           cd openaq_engine
-          pip install -e .
-          openaq-engine --help
+          poetry run pip install -e .
+          poetry run openaq-engine --help
           cd ..
       - name: Analysing the code with black
         run: |
