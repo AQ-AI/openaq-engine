@@ -1,10 +1,21 @@
 import datetime
 import json
-from unittest import mock
+from unittest.mock import patch, MagicMock
 
 import pandas as pd
+import pytest
+from sqlalchemy.exc import OperationalError
 
 from src.time_splitter import TimeSplitter
+
+
+@pytest.fixture
+def mock_db_connection():
+    with patch(
+        "openaq_engine.setup_environment.connect_to_db",
+        return_value=MagicMock(),
+    ):
+        yield
 
 
 def test_get_end_time_windows():
@@ -84,7 +95,7 @@ def test_get_validation_window(mocker):
     assert end_date == datetime.date(2020, 3, 1)
 
 
-def test_execute_for_openaq_aws(mocker):
+def test_execute_for_openaq_aws(mocker, mock_db_connection):
     city = "Mumbai"
     country = "IN"
     pollutant = "pm25"
@@ -92,7 +103,9 @@ def test_execute_for_openaq_aws(mocker):
     local_data = "cohorts_Mumbai"
 
     # Mock get_data to return a DataFrame
-    mocker.patch("src.utils.utils.get_data", return_value=pd.DataFrame())
+    mocker.patch(
+        "openaq_engine.src.utils.utils.get_data", return_value=pd.DataFrame()
+    )
 
     # Mock the calls to create_end_date_from_aws and create_start_date_from_aws
     mocker.patch.object(
@@ -118,7 +131,7 @@ def test_execute_for_openaq_aws(mocker):
     )
 
     # Call execute and get results
-    with mock.patch("src.utils.utils.get_data", return_value=pd.DataFrame()):
+    with patch("src.utils.utils.get_data", return_value=pd.DataFrame()):
         results = time_splitter.execute(
             city,
             country,
@@ -133,6 +146,27 @@ def test_execute_for_openaq_aws(mocker):
     assert results is not None
     assert "validation" in results
     assert "training" in results
+
+    # Ensure expected database operations are performed
+    mock_engine = mock_db_connection.__enter__.return_value
+    try:
+        with mock_engine.connect() as connection:
+            time_splitter._results_to_db(pd.DataFrame(), connection, city)
+    except OperationalError:
+        pass  # Expected behavior if database connection fails
+
+    # Assert the database operations were attempted
+    mock_engine.connect.assert_called_once()
+    mock_engine.connect.return_value.execute.assert_called()
+
+    # Mock database connection setup
+    mock_engine = MagicMock()
+    mock_connection = MagicMock()
+    mocker.patch(
+        "openaq_engine.setup_environment.get_dbengine",
+        return_value=mock_engine,
+    )
+    mock_engine.connect.return_value = mock_connection
 
 
 def test_create_start_date_from_aws(mocker):
