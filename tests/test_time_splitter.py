@@ -1,13 +1,12 @@
 import datetime
 import json
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import mlflow
 import pandas as pd
 import pytest
-
-from src.time_splitter import TimeSplitter, TimeSplitterBase
 from sqlalchemy.engine import Engine
+from src.time_splitter import TimeSplitter, TimeSplitterBase
 
 
 @pytest.fixture

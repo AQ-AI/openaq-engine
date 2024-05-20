@@ -1,7 +1,5 @@
-import pytest
-
 import pandas as pd
-
+import pytest
 from src.preprocessing.filter import Filter
 
 
