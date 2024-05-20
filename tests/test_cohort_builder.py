@@ -4,8 +4,8 @@ from contextlib import nullcontext
 import pandas as pd
 import pytz
 
-from openaq_engine.setup_environment import get_dbengine
-from openaq_engine.src.cohort_builder import CohortBuilder
+from setup_environment import get_dbengine
+from src.cohort_builder import CohortBuilder
 
 
 def test_cohort_builder(mocker):
