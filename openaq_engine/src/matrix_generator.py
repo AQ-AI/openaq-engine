@@ -34,13 +34,13 @@ class MatrixGenerator:
 
     def execute_train_valid_set(self, place):
         cohorts_query = f"""select distinct "location", "cohort", "cohort_type",
-        "train_validation_set" from "cohorts_test_{place}";"""
+        "train_validation_set" from "cohorts_{place}";"""
         cohorts_df = get_data(cohorts_query)
         print(cohorts_df.train_validation_set.unique())
         return cohorts_df.train_validation_set.unique()
 
     def execute(self, engine, train_valid_id, run_date, place):
-        cohorts_query = f"""select distinct * from "cohorts_test_{place}";"""
+        cohorts_query = f"""select distinct * from "cohorts_{place}";"""
         cohorts_df = get_data(cohorts_query)
 
         return self.execute_for_cohort(
