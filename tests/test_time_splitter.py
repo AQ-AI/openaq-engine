@@ -1,10 +1,29 @@
 import datetime
 import json
+import os
 from unittest.mock import patch
 
 import pandas as pd
+import pytest
 
 from src.time_splitter import TimeSplitter
+
+
+@pytest.fixture(autouse=True)
+def mock_env_vars():
+    with patch.dict(
+        os.environ,
+        {
+            "DB_NAME_OPENAQ": "test_db",
+            "S3_BUCKET_OPENAQ": "openaq-pm25-historic",
+            "S3_OUTPUT_OPENAQ": "pm25-month",
+            "DB_HOST": "localhost",
+            "DB_PORT": "5432",
+            "DB_USER": "test_user",
+            "DB_PASSWORD": "test_password",
+        },
+    ):
+        yield
 
 
 def test_get_end_time_windows():
