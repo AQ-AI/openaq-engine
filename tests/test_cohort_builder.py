@@ -1,14 +1,13 @@
 import datetime
-from contextlib import nullcontext
 import os
-from unittest.mock import patch, MagicMock
+from contextlib import nullcontext
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
-import pytz
 import pytest
-from sqlalchemy.exc import OperationalError
-
+import pytz
 from setup_environment import get_dbengine
+from sqlalchemy.exc import OperationalError
 from src.cohort_builder import CohortBuilder
 
 
