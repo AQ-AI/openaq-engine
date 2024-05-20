@@ -9,7 +9,7 @@ import pandas as pd
 import requests
 from pydantic.json import pydantic_encoder
 
-from openaq_engine.setup_environment import connect_to_db
+from setup_environment import connect_to_db
 
 
 def read_csv(path: str, **kwargs: Any) -> pd.DataFrame:
