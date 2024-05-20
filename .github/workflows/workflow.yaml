@@ -1,4 +1,4 @@
-name: Workflows for github actions
+name: Workflows for GitHub Actions
 
 on: [push]
 
@@ -20,10 +20,9 @@ jobs:
           curl -sSL https://install.python-poetry.org | python3 -
           poetry install
       - name: Set PYTHONPATH
-        run: echo "PYTHONPATH=." >> $GITHUB_ENV
+        run: echo "PYTHONPATH=$PYTHONPATH:$(pwd)" >> $GITHUB_ENV
       - name: Install package in editable mode
         run: |
-          cd openaq_engine
           pip install -e .
       - name: Analysing the code with black
         run: |
