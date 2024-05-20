@@ -20,7 +20,7 @@ jobs:
           curl -sSL https://install.python-poetry.org | python3 -
           poetry install
       - name: Set PYTHONPATH
-        run: echo "PYTHONPATH=$PYTHONPATH:$(pwd)" >> $GITHUB_ENV
+          echo "PYTHONPATH=$PYTHONPATH:$(pwd)/openaq_engine:$(pwd)/openaq_engine/src" >> $GITHUB_ENV
       - name: Install package in editable mode
         run: |
           cd openaq_engine
