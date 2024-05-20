@@ -21,6 +21,10 @@ jobs:
           poetry install
       - name: Set PYTHONPATH
         run: echo "PYTHONPATH=." >> $GITHUB_ENV
+      - name: Install package in editable mode
+        run: |
+          cd openaq_engine
+          pip install -e .
       - name: Analysing the code with black
         run: |
           poetry run black $(git ls-files '*.py')
