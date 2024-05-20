@@ -1,7 +1,6 @@
 import datetime
 import json
-import os
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 import pandas as pd
 import pytest
@@ -9,21 +8,16 @@ import pytest
 from src.time_splitter import TimeSplitter
 
 
-@pytest.fixture(autouse=True)
-def mock_env_vars():
-    with patch.dict(
-        os.environ,
-        {
-            "DB_NAME_OPENAQ": "test_db",
-            "S3_BUCKET_OPENAQ": "openaq-pm25-historic",
-            "S3_OUTPUT_OPENAQ": "pm25-month",
-            "DB_HOST": "localhost",
-            "DB_PORT": "5432",
-            "DB_USER": "test_user",
-            "DB_PASSWORD": "test_password",
-        },
-    ):
-        yield
+@pytest.fixture
+def mock_db_connection():
+    mock_engine = MagicMock()
+    mock_connection = MagicMock()
+    mock_engine.connect.return_value = mock_connection
+    with patch("setup_environment.get_dbengine", return_value=mock_engine):
+        with patch(
+            "setup_environment.connect_to_db", return_value=mock_connection
+        ):
+            yield mock_connection
 
 
 def test_get_end_time_windows():
@@ -103,7 +97,7 @@ def test_get_validation_window(mocker):
     assert end_date == datetime.date(2020, 3, 1)
 
 
-def test_execute_for_openaq_aws(mocker):
+def test_execute_for_openaq_aws(mocker, mock_db_connection):
     city = "Mumbai"
     country = "IN"
     pollutant = "pm25"
@@ -139,7 +133,9 @@ def test_execute_for_openaq_aws(mocker):
     )
 
     # Call execute and get results
-    with patch("src.utils.utils.get_data", return_value=pd.DataFrame()):
+    with patch(
+        "openaq_engine.src.utils.utils.get_data", return_value=pd.DataFrame()
+    ):
         results = time_splitter.execute(
             city,
             country,
