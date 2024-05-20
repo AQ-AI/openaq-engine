@@ -120,15 +120,15 @@ class EEConfig:
     DATE_COL: str = "timestamp_utc"
     TABLE_NAME = "cohorts"
     # Satellite configurations
-    AOD_IMAGE_COLLECTION: str = "MODIS/006/MCD19A2_GRANULES"
+    AOD_IMAGE_COLLECTION: str = "MODIS/061/MCD19A2_GRANULES"
     AOD_IMAGE_BAND: Sequence[str] = field(
         default_factory=lambda: ["Optical_Depth_047"]
     )
     AOD_IMAGE_PERIOD = 2
     AOD_IMAGE_RES = 1000
-    LANDSAT_IMAGE_COLLECTION: str = "LANDSAT/LC08/C01/T1"
+    LANDSAT_IMAGE_COLLECTION: str = "LANDSAT/LC08/C02/T1_L2"
     LANDSAT_IMAGE_BAND: Sequence[str] = field(
-        default_factory=lambda: ["B4", "B3", "B2"]
+        default_factory=lambda: ["SR_B4", "SR_B3", "SR_B2"]
     )
     LANDSAT_PERIOD = 8
     LANDSAT_RES = 30
@@ -239,8 +239,8 @@ class CohortBuilderConfig:
             filter_non_null_values=["value"],
             filter_extreme_values=["value"],
             filter_no_coordinates=["coordinates"],
-            # filter_countries=["country"],
-            # filter_cities=["city"],
+            filter_countries=["country"],
+            filter_cities=["city"],
         ),
     )
     TARGET_VARIABLE = "pm25"
