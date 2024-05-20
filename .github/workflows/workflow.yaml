@@ -35,5 +35,13 @@ jobs:
         run: |
           poetry run flake8 $(git ls-files '*.py') --ignore=E501,W503
       - name: Testing
+        env:
+          DB_NAME_OPENAQ: test_db
+          S3_BUCKET_OPENAQ: openaq-pm25-historic
+          S3_OUTPUT_OPENAQ: pm25-month
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: test_user
+          DB_PASSWORD: test_password
         run: |
           poetry run pytest --cov --cov-fail-under=80
