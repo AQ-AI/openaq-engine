@@ -87,7 +87,6 @@ celerybeat-schedule
 
 # Environments
 .env.prod
-.env
 .venv
 env/
 venv/
@@ -121,6 +120,46 @@ venv.bak/
 
 # Data
 local_data/*
+
+## Notebooks
+openaq_engine/scripts/plume_labs.ipynb
+
+/home/ec2-user/openaq-engine/openssl-1.1.1k/
+
+# python local version
+.python-version
+
+# mlrun
+mlruns/*
+
+# history
+.history/*
+
+
+# mlflow
+3.82.115.10:5000/*
+
+openssl-1.1.1k/*
+
+## Notebooks
+openaq_engine/scripts/plume_labs.ipynb
+
+/home/ec2-user/openaq-engine/openssl-1.1.1k/
+
+# python local version
+.python-version
+
+# mlrun
+mlruns/*
+
+# history
+.history/*
+
+
+# mlflow
+3.82.115.10:5000/*
+
+openssl-1.1.1k/*
 
 .history/*
 
