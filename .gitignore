@@ -121,3 +121,7 @@ venv.bak/
 
 # Data
 local_data/*
+
+.history/*
+
+mlruns/*
