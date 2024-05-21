@@ -1,4 +1,4 @@
-name: Workflows for github actions
+name: Workflows for GitHub Actions
 
 on: [push]
 
@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.9", "3.10"]
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
@@ -19,6 +19,15 @@ jobs:
           python -m pip install --upgrade pip
           curl -sSL https://install.python-poetry.org | python3 -
           poetry install
+      - name: Set PYTHONPATH
+        run: |
+          echo "PYTHONPATH=$PYTHONPATH:$(pwd)/openaq_engine:$(pwd)/openaq_engine/src" >> $GITHUB_ENV
+      - name: Install package in editable mode
+        run: |
+          cd openaq_engine
+          poetry run pip install -e .
+          poetry run openaq-engine --help
+          cd ..
       - name: Analysing the code with black
         run: |
           poetry run black $(git ls-files '*.py')
@@ -26,5 +35,13 @@ jobs:
         run: |
           poetry run flake8 $(git ls-files '*.py') --ignore=E501,W503
       - name: Testing
+        env:
+          DB_NAME_OPENAQ: test_db
+          S3_BUCKET_OPENAQ: openaq-pm25-historic
+          S3_OUTPUT_OPENAQ: pm25-month
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: test_user
+          DB_PASSWORD: test_password
         run: |
           poetry run pytest --cov --cov-fail-under=80

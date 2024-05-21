@@ -1,11 +1,18 @@
+import json
 import logging
 from abc import ABC
 from datetime import datetime
 from typing import Any, Dict, List
 
-import pandas as pd
+import mlflow
 from dateutil.relativedelta import relativedelta
-from src.utils.utils import query_results
+
+from src.utils.utils import (
+    extract_utc_date,
+    get_data,
+    query_results_from_api,
+    query_results_from_aws,
+)
 
 from config.model_settings import TimeSplitterConfig
 
@@ -22,7 +29,6 @@ class TimeSplitterBase(ABC):
         bucket: str,
         s3_output: str,
     ):
-
         self.date_col = date_col
         self.table_name = table_name
         self.database = database
@@ -30,38 +36,137 @@ class TimeSplitterBase(ABC):
         self.bucket = bucket
         self.s3_output = s3_output
 
-    def create_end_date(self, params) -> pd.DataFrame:
-        sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime
-        FROM {table} WHERE parameter='{target_variable}'
-        AND from_iso8601_timestamp({date_col}) <= DATE(NOW())
-        ORDER BY {date_col} DESC limit 1;""".format(
-            table=self.table_name,
-            date_col=self.date_col,
-            target_variable=self.target_variable,
-        )
-        response_query_result = self._build_response_from_aws(params, sql_query)
+    def create_end_date_from_aws(
+        self,
+        params,
+        city: str,
+        country_info: List[str],
+        pollutant: str,
+        latest_date: str,
+        local_df: str,
+    ) -> datetime:
+        """Build SQL query to query AWS Athena and retrieve
+        end date of data given specific filters."""
+        if pollutant:
+            self.target_variable = pollutant
+        if not latest_date:
+            latest_date = "DATE(NOW())"
+        if country_info == "WO":
+            sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime
+            FROM {table} WHERE parameter='{target_variable}'
+            AND from_iso8601_timestamp({date_col}) <= {latest_date}
+            ORDER BY {date_col} DESC limit 1;""".format(
+                table=self.table_name,
+                date_col=self.date_col,
+                target_variable=self.target_variable,
+                latest_date=latest_date,
+            )
+        elif city:
+            country_info == "WO"
+            sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime
+            FROM {table} WHERE parameter='{target_variable}'
+            AND from_iso8601_timestamp({date_col}) <= {latest_date}
+            AND city='{city}'
+            ORDER BY {date_col} ASC limit 1;""".format(
+                table=self.table_name,
+                date_col=self.date_col,
+                target_variable=self.target_variable,
+                latest_date=latest_date,
+                city=city,
+            )
+        else:
+            sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime
+            FROM {table} WHERE parameter='{target_variable}'
+            AND from_iso8601_timestamp({date_col}) <= {latest_date}
+            AND country='{country}'
+            ORDER BY {date_col} DESC limit 1;""".format(
+                table=self.table_name,
+                date_col=self.date_col,
+                target_variable=self.target_variable,
+                country=country_info,
+                latest_date=latest_date,
+            )
+        response_query_result = self.build_response_from_aws(params, sql_query)
 
-        return datetime.strptime(
+        end_date = datetime.strptime(
             f"{response_query_result}", "%Y-%m-%d %H:%M:%S.000 UTC"
         ).date()
 
-    def create_start_date(self, params: Dict[str, Any]) -> datetime:
-        sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime
-        FROM {table} WHERE parameter='{target_variable}'
-        AND from_iso8601_timestamp({date_col}) <= DATE(NOW())
-        ORDER BY {date_col} ASC limit 1;""".format(
-            table=self.table_name,
-            date_col=self.date_col,
-            target_variable=self.target_variable,
-        )
+        if not local_df.empty:
+            local_end_date = self.create_end_local_data(local_df)
+            if end_date < local_end_date:
+                return local_end_date
+            else:
+                return end_date
+        else:
+            return end_date
 
-        response_query_result = self._build_response_from_aws(params, sql_query)
-        return datetime.strptime(
+    def create_start_date_from_aws(
+        self,
+        params: Dict[str, Any],
+        city: str,
+        country_info: List[str],
+        pollutant: str,
+        latest_date: str,
+        local_df: str,
+    ) -> datetime:
+        """Build SQL query to query AWS Athena and retrieve
+        start date of data given specific filters."""
+        if pollutant:
+            self.target_variable = pollutant
+        if not latest_date:
+            latest_date = "DATE(NOW())"
+        if country_info == "WO":
+            sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime
+            FROM {table} WHERE parameter='{target_variable}'
+            AND from_iso8601_timestamp({date_col}) <= {latest_date}
+            ORDER BY {date_col} ASC limit 1;""".format(
+                table=self.table_name,
+                date_col=self.date_col,
+                target_variable=self.target_variable,
+                latest_date=latest_date,
+            )
+        if city:
+            country_info == "WO"
+            sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime
+            FROM {table} WHERE parameter='{target_variable}'
+            AND from_iso8601_timestamp({date_col}) <= {latest_date}
+            AND city='{city}'
+            ORDER BY {date_col} ASC limit 1;""".format(
+                table=self.table_name,
+                date_col=self.date_col,
+                target_variable=self.target_variable,
+                latest_date=latest_date,
+                city=city,
+            )
+        else:
+            sql_query = """SELECT from_iso8601_timestamp({date_col}) AS datetime
+            FROM {table} WHERE parameter='{target_variable}'
+            AND from_iso8601_timestamp({date_col}) <= {latest_date}
+            AND country='{country}'
+            ORDER BY {date_col} ASC limit 1;""".format(
+                table=self.table_name,
+                date_col=self.date_col,
+                target_variable=self.target_variable,
+                country=country_info,
+                latest_date=latest_date,
+            )
+        response_query_result = self.build_response_from_aws(params, sql_query)
+        start_date = datetime.strptime(
             f"{response_query_result}", "%Y-%m-%d %H:%M:%S.000 UTC"
         ).date()
 
-    def _build_response_from_aws(self, params, sql_query):
-        response_query_result = query_results(params, sql_query)
+        if not local_df.empty:
+            local_start_date = self.create_start_local_data(local_df)
+            if start_date < local_start_date:
+                return local_start_date
+            else:
+                return start_date
+        else:
+            return start_date
+
+    def build_response_from_aws(self, params, sql_query):
+        response_query_result = query_results_from_aws(params, sql_query)
         response_query_result["ResultSet"]["Rows"][0]
         rows = response_query_result["ResultSet"]["Rows"][1:]
         for row in rows:
@@ -74,6 +179,96 @@ class TimeSplitterBase(ABC):
             else:
                 pass
 
+    def create_end_date_from_openaq_api(
+        self, city, country, sensor_type, pollutant, local_df
+    ):
+        if country == "WO":
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&order_by=lastUpdated&sensor_type={sensor_type}&dumpRaw=false""".format(
+                pollutant=pollutant, sensor_type=sensor_type
+            )
+        elif city:
+            country == "WO"
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=100&city={city}&order_by=firstUpdated&sensor_type={sensor_type}&dumpRaw=false""".format(
+                city=city, pollutant=pollutant, sensor_type=sensor_type
+            )
+        else:
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=100&country={country}&order_by=lastUpdated&sensor_type={sensor_type}&dumpRaw=false""".format(
+                country=country, pollutant=pollutant, sensor_type=sensor_type
+            )
+        headers = {"accept": "application/json"}
+        response = query_results_from_api(headers, url)
+        response_data = json.loads(response.text)
+        if "results" not in response_data or not response_data["results"]:
+            logging.error("API response: %s", url)
+            return None  # or some default value or raise an exception
+
+        end_date = datetime.strptime(
+            response_data["results"][0]["lastUpdated"],
+            "%Y-%m-%dT%H:%M:%S+00:00",
+        ).date()
+        if not local_df.empty:
+            local_end_date = self.create_end_local_data(local_df)
+            if end_date < local_end_date:
+                return local_end_date
+            else:
+                return end_date
+        else:
+            return end_date
+
+    def create_start_date_from_openaq_api(
+        self,
+        city,
+        country,
+        sensor_type,
+        pollutant,
+        local_df,
+    ):
+        if country == "WO":
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=asc&parameter={pollutant}&radius=100&order_by=firstUpdated&sensor_type={sensor_type}&dumpRaw=false""".format(
+                pollutant=pollutant, sensor_type=sensor_type
+            )
+        elif city:
+            country == "WO"
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=asc&parameter={pollutant}&radius=1000&city={city}&order_by=firstUpdated&sensor_type={sensor_type}&dumpRaw=false""".format(
+                city=city,
+                pollutant=pollutant,
+                sensor_type=sensor_type,
+            )
+        else:
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=asc&parameter={pollutant}&radius=1000&country={country}&order_by=firstUpdated&sensor_type={sensor_type}&dumpRaw=false""".format(
+                country=country, pollutant=pollutant, sensor_type=sensor_type
+            )
+        headers = {"accept": "application/json"}
+        response = query_results_from_api(headers, url)
+        start_date = datetime.strptime(
+            json.loads(response.text)["results"][0]["firstUpdated"],
+            "%Y-%m-%dT%H:%M:%S+00:00",
+        ).date()
+        if not local_df.empty:
+            local_start_date = self.create_start_local_data(local_df)
+            if start_date > local_start_date:
+                return local_start_date
+            else:
+                return start_date
+        else:
+            return start_date
+
+    def create_start_local_data(self, local_df):
+        # Apply the extract_utc_date function to the 'date' column
+        local_df["utc_date"] = local_df["date"].apply(extract_utc_date)
+
+        start_date = local_df["utc_date"].min()
+
+        return start_date
+
+    def create_end_local_data(self, local_df):
+        # Apply the extract_utc_date function to the 'date' column
+        local_df["utc_date"] = local_df["date"].apply(extract_utc_date)
+
+        end_date = local_df["utc_date"].max()
+
+        return end_date
+
 
 class TimeSplitter(TimeSplitterBase):
     def __init__(
@@ -83,12 +278,16 @@ class TimeSplitter(TimeSplitterBase):
         window_count: int,
         train_validation_dict: Dict[str, List[Any]],
         target_variable: str,
+        country: str,
+        source: str,
     ) -> None:
         self.time_window_length = time_window_length
         self.within_window_sampler = within_window_sampler
         self.window_count = window_count
         self.train_validation_dict = train_validation_dict
         self.target_variable = target_variable
+        self.country = country
+        self.source = source
         super().__init__(
             TimeSplitterConfig.DATE_COL,
             TimeSplitterConfig.TABLE_NAME,
@@ -99,17 +298,21 @@ class TimeSplitter(TimeSplitterBase):
         )
 
     @classmethod
-    def from_dataclass_config(cls, config: TimeSplitterConfig) -> "TimeSplitter":
+    def from_dataclass_config(
+        cls, config: TimeSplitterConfig
+    ) -> "TimeSplitter":
         return cls(
             time_window_length=config.TIME_WINDOW_LENGTH,
             within_window_sampler=config.WITHIN_WINDOW_SAMPLER,
             window_count=config.WINDOW_COUNT,
             train_validation_dict=config.TRAIN_VALIDATION_DICT,
             target_variable=config.TARGET_VARIABLE,
+            country=config.COUNTRY,
+            source=config.SOURCE,
         )
 
     def execute(
-        self,
+        self, city, country, sensor_type, source, pollutant, date, local_data
     ):
         """
         Input
@@ -120,16 +323,32 @@ class TimeSplitter(TimeSplitterBase):
         ----
         The start and end dates for each time window
         """
+        mlflow.log_param("time_window_length", self.time_window_length)
+        mlflow.log_param("within_window_sampler", self.within_window_sampler)
+        mlflow.log_param("window_count", self.window_count)
+        mlflow.log_param("target_variable", self.target_variable)
+        mlflow.log_param("country", country)
+        mlflow.log_param("source", source)
+        mlflow.log_param("pollutant", pollutant)
+        mlflow.log_param("local_data", local_data if local_data else "None")
+
         window_no = 0
         params = {
             "region": str(self.region_name),
             "database": str(self.database),
             "bucket": str(self.bucket),
-            "path": f"{self.s3_output}/max_date",
+            "path": f"{self.s3_output}",
         }
-        end_date = self.create_end_date(params)
-        start_date = self.create_start_date(params)
-
+        if local_data:
+            local_df = get_data(f"""SELECT * from "{local_data}";""")
+        if source == "openaq-aws":
+            end_date, start_date = self.execute_for_openaq_aws(
+                params, city, country, pollutant, date, local_df
+            )
+        if source == "openaq-api":
+            end_date, start_date = self.execute_for_openaq_api(
+                city, country, sensor_type, pollutant, local_df
+            )
         while window_no < self.window_count:
             window_start_date, window_end_date = self.get_validation_window(
                 end_date, window_no
@@ -140,22 +359,71 @@ class TimeSplitter(TimeSplitterBase):
             )
             if window_start_date < start_date:
                 logging.warning(
-                    f"""Date: {window_start_date.date()} is earlier than
-                    the first date within data: {start_date.date()}"""
+                    f"""Date: {window_start_date} is earlier than
+                    the first date within data: {start_date}"""
                 )
                 window_no += 1
             else:
                 self.train_validation_dict["validation"] += [
                     (
-                        window_start_date,
-                        window_end_date,
+                        window_start_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                        window_end_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
                     )
                 ]
                 self.train_validation_dict["training"] += [
-                    (start_date, window_start_date)
+                    (
+                        start_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                        window_start_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    )
                 ]
                 window_no += 1
+
+        # Initialize the logging dictionary with the same keys as self.train_validation_dict
+        logging_dict = {"validation": [], "training": []}
+
+        # Append the converted date ranges to the validation and training lists in the logging dictionary
+        logging_dict["validation"] += [
+            (
+                self.format_to_date_only(window_start_date),
+                self.format_to_date_only(window_end_date),
+            )
+        ]
+
+        logging_dict["training"] += [
+            (
+                self.format_to_date_only(start_date),
+                self.format_to_date_only(window_start_date),
+            )
+        ]
+        mlflow.log_params(logging_dict)
         return self.train_validation_dict
+
+    def execute_for_openaq_aws(
+        self, params, city, country, pollutant, latest_date, local_df
+    ):
+        end_date = self.create_end_date_from_aws(
+            params,
+            city,
+            country,
+            pollutant,
+            latest_date,
+            local_df,
+        )
+        start_date = self.create_start_date_from_aws(
+            params, city, country, pollutant, latest_date, local_df
+        )
+        return end_date, start_date
+
+    def execute_for_openaq_api(
+        self, city, country, sensor_type, pollutant, local_df
+    ):
+        end_date = self.create_end_date_from_openaq_api(
+            city, country, sensor_type, pollutant, local_df
+        )
+        start_date = self.create_start_date_from_openaq_api(
+            city, country, sensor_type, pollutant, local_df
+        )
+        return end_date, start_date
 
     def get_validation_window(self, end_date, window_no):
         """Gets start and end date of each training window"""
@@ -167,10 +435,17 @@ class TimeSplitter(TimeSplitterBase):
         """Gets start date of window based on the window length and
         the number of sample months used in the window"""
         return window_date - relativedelta(
-            months=+window_no * self.time_window_length + self.within_window_sampler
+            months=+window_no * self.time_window_length
+            + self.within_window_sampler
         )
 
     def _get_end_time_windows(self, window_start_date):
         """Gets end date of window based on the window length
         and the number of sample months used in the window"""
-        return window_start_date + relativedelta(months=+self.within_window_sampler)
+        return window_start_date + relativedelta(
+            months=+self.within_window_sampler
+        )
+
+    # Function to convert datetime object to a 'YYYY-MM-DD' string
+    def format_to_date_only(self, dt):
+        return dt.strftime("%Y-%m-%d")

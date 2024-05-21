@@ -1,13 +1,19 @@
+import datetime
 import logging
+from collections import Counter
 from typing import List, Tuple
 
 import ee
+import numpy as np
 import pandas as pd
 from ee.ee_exception import EEException
 from geetools import batch
 from googleapiclient.errors import HttpError
+from haversine import haversine
 from joblib import Parallel, delayed
-from src.utils.utils import ee_array_to_df, get_data
+from setup_environment import get_dbengine
+from sklearn.preprocessing import MinMaxScaler
+from src.utils.utils import ee_array_to_df, get_data, write_to_db
 
 from config.model_settings import EEConfig
 
@@ -17,46 +23,55 @@ class EEFeatures:
         self,
         date_col: int,
         table_name: int,
-        variable_satellites: zip(List[str]),
-        static_satellites: zip(List[str]),
+        all_satellites: zip(List[str]),
         bucket_name: str,
         path_to_private_key: str,
         service_account: str,
+        lookback_n: int,
     ):
-
         self.date_col = date_col
         self.table_name = table_name
-        self.variable_satellites = variable_satellites
-        self.static_satellites = static_satellites
+        self.all_satellites = all_satellites
         self.bucket_name = bucket_name
         self.path_to_private_key = path_to_private_key
         self.service_account = service_account
+        self.lookback_n = lookback_n
 
     @classmethod
     def from_dataclass_config(cls, config: EEConfig) -> "EEFeatures":
         return cls(
             date_col=config.DATE_COL,
             table_name=config.TABLE_NAME,
-            variable_satellites=config.VARIABLE_SATELLITES,
-            static_satellites=config.STATIC_SATELLITES,
+            all_satellites=config.ALL_SATELLITES,
             bucket_name=config.BUCKET_NAME,
             path_to_private_key=config.PATH_TO_PRIVATE_KEY,
             service_account=config.SERVICE_ACCOUNT,
+            lookback_n=config.LOOKBACK_N,
         )
 
 
     def execute(self, df, save_images):
-        ee.Authenticate()
-        # end_date, start_date = self._generate_timerange()
+        credentials = ee.ServiceAccountCredentials(
+            self.service_account,
+            self.path_to_private_key,
+        )
+        ee.Initialize(credentials)
         satellite_df = pd.concat(
             Parallel(n_jobs=-1, backend="multiprocessing", verbose=5)(
-                delayed(self.execute_for_location)(lon, lat, day, save_images)
-                for lon, lat, day in zip(df.x, df.y, df.day)
+                delayed(self.execute_for_location)(
+                    location_id, lon, lat, day, cohort, save_images
+                )
+                for location_id, lon, lat, day, cohort in zip(
+                    df.locationId, df.x, df.y, df.timestamp_utc, df.cohort
+                )
             ),
         ).reset_index(drop=True)
+        engine = get_dbengine()
+        write_to_db(satellite_df, engine, "satellite_MN", "public", "append")
+
         features_df = self.generate_features(satellite_df)
 
-        print(features_df)
+        return features_df
 
 
     def execute_for_location(
@@ -73,6 +88,8 @@ class EEFeatures:
         ----
         collection:
             A str of satellite to query
+        location_id:
+            location id of sensor
         lon:
             the longitude of a  sensor location
         lat:
@@ -80,25 +97,28 @@ class EEFeatures:
         datetime:
             the date the sensor reading was taken
         """
+
         df_list = []
 
-        day_of_interest = ee.Date(day)
-        centroid_point = ee.Geometry.Point(lon, lat)
         for (
             collection,
             image_bands,
             period,
             resolution,
-        ) in self.variable_satellites:
+        ) in self.all_satellites:
             image_collection = self.execute_for_collection(
                 collection,
                 image_bands,
                 save_images,
             )
-            satellite_value = self._get_value_from_variable_collection(
+            ee_df = self.get_satellite_data(
                 image_collection,
-                day_of_interest,
-                centroid_point,
+                image_bands,
+                location_id,
+                date_utc,
+                lon,
+                lat,
+                cohort,
                 period,
                 resolution,
             )
@@ -131,7 +151,6 @@ class EEFeatures:
         save_images:
             a boolean flag whether to write satellite data to google storage
         """
-        ee.Initialize()
 
         # logging.info(
         #     "please sigup to Google Earth Engine here:"
@@ -141,7 +160,9 @@ class EEFeatures:
         try:
             logging.info(f"Downloading: {collection}")
 
-            image_collection = ee.ImageCollection(collection).select(image_bands)
+            image_collection = ee.ImageCollection(collection).select(
+                image_bands
+            )
 
             if save_images is True:
                 down_args = {
@@ -160,25 +181,37 @@ class EEFeatures:
                 f"""Image collection {image_collection.getInfo()}
                 does not match any existing location."""
             )
-            pass
 
     def generate_features(self, satellite_df):
-        features_df = (
-            satellite_df.drop(
-                labels=["time", "datetime", "longitude", "latitude"], axis=1
-            )
-            .groupby(
-                [
-                    "x",
-                    "y",
-                ],
-                as_index=False,
-            )
-            .agg(["mean"])
-            .reset_index()
-        )
+        groupby_cols = [
+            "sensor_datetime",
+            "sensor_longitude",
+            "sensor_latitude",
+            "location_id",
+        ]
 
-        print(features_df)
+        weights = ["timestamp_diff", "distance"]
+        cols_to_remove = [
+            "longitude",
+            "latitude",
+            "cohort",
+            "time",
+            "datetime",
+            "sensor_timestamp",
+            "satellite_timestamp",
+        ]
+        satellite_df = satellite_df.drop(cols_to_remove, axis=1)
+        avg_cols = [
+            i
+            for i in list(satellite_df.columns)
+            if i
+            not in list((Counter(groupby_cols) + Counter(weights)).elements())
+        ]
+
+        features_df = self._weighted_mean_by_lambda(
+            satellite_df, avg_cols, weights, groupby_cols
+        )
+        return features_df
 
     def _generate_timerange(self) -> Tuple[str]:
         start_date_query = """SELECT {date_col} AS datetime
@@ -195,7 +228,7 @@ class EEFeatures:
         start_date = str(get_data(start_date_query)["datetime"][0])
         return end_date, start_date
 
-    def _get_value_from_variable_collection(
+    def get_satellite_data(
         self,
         image_collection,
         image_bands,
