@@ -120,17 +120,28 @@ class Preprocess:
         """
         Extract timezone into "utc" and "local" timezone columns.
         """
+        utc_time_str = re.search(r"(?<=utc=)(.*?)(?=,)", row["date"]).group(0)
+        local_time_str = re.search(r"(?<=local=)(.*?)(?=})", row["date"]).group(0)
+
+        utc_time = datetime.fromisoformat(utc_time_str).replace(tzinfo=timezone.utc)
+        local_time = datetime.fromisoformat(local_time_str)
+
+        row["timestamp_utc"] = utc_time.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        row["timestamp_local"] = local_time.strftime("%Y-%m-%dT%H:%M:%S%z")
+        return row
+
+    def _extract_timestamp_from_api(self, row: pd.Series) -> pd.Series:
+        """
+        Extract timezone into "utc" and "local" timezone columns from dict.
+        """
+        date_info = row["date"]
+
+        # If date_info is a string, convert it to a dictionary
+        if isinstance(date_info, str):
+            date_info = json.loads(date_info)
+
         row["timestamp_utc"] = (
-            datetime.fromisoformat(
-                re.search("(?<=utc=)(.*)(?=,)", row["date"]).group(0)[:-1]
-            )
-            .astimezone(timezone.utc)
-            .strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-        )
-        row["timestamp_local"] = (
-            datetime.fromisoformat(
-                re.search("(?<=local=)(.*)(?=})", row["date"]).group(0),
-            )
+            datetime.fromisoformat(date_info["utc"].replace("Z", "+00:00"))
             .astimezone(timezone.utc)
             .strftime("%Y-%m-%dT%H:%M:%S%z")
         )
