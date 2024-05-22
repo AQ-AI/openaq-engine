@@ -15,6 +15,7 @@ from src.matrix_generator import MatrixGenerator
 from src.model_visualizer import ModelVisualizer
 from src.time_splitter import TimeSplitter
 from src.train_model import ModelTrainer
+from src.utils.utils import get_data
 
 from config.model_settings import (
     BuildFeaturesConfig,
@@ -175,18 +176,11 @@ def cohort_builder(
         )
 
 
-@feature_builder_options()
+@click.command("feature-builder", help="Generate features for cohorts")
+@feature_builder_options
 @click.argument("models_directory")
 @click.argument("plots_directory")
-@click.command("feature-builder", help="Generate features for cohorts")
-def feature_builder(
-    country,
-    pollutant,
-    latest_date,
-    models_directory,
-    plots_directory,
-):
-
+def feature_builder(models_directory, plots_directory, cohort_table):
     start_datetime = datetime.now()
     logging.info(f"Starting pipeline at {start_datetime}")
 
@@ -199,84 +193,73 @@ def feature_builder(
 
         matrix_generator = MatrixGeneratorFlow().execute()
 
-        # if city:
-        #     train_validation_set = matrix_generator.execute_train_valid_set(
-        #         city
-        #     )
-        if country:
-            train_validation_set = matrix_generator.execute_train_valid_set(
-                country
-            )
+        cohorts_query = f"""SELECT DISTINCT "x", "y", date_trunc('hour', "timestamp_utc"::timestamp) AS "timestamp_hour" FROM "{cohort_table}";"""
+        cohorts_df = get_data(cohorts_query)
+        unique_combinations = cohorts_df.drop_duplicates(
+            subset=["x", "y", "timestamp_hour"]
+        )
 
-        # loop for time splits
-        model_output = []
-        for i in train_validation_set:
+        for _, row in unique_combinations.iterrows():
+            x = row["x"]
+            y = row["y"]
+            timestamp_hour = row["timestamp_hour"]
             start_model_datetime = datetime.now()
-            # if city:
-            #     (
-            #         validation_features_df,
-            #         full_features_df,
-            #         valid_labels,
-            #         train_labels,
-            #     ) = matrix_generator.execute(engine, i, start_datetime, city)
-            if country:
-                (
-                    validation_features_df,
-                    full_features_df,
-                    valid_labels,
-                    train_labels,
-                ) = matrix_generator.execute(
-                    engine, i, start_datetime, country
-                )
             logging.info(
-                f"Starting pipeline for model {i} {start_model_datetime}"
+                f"Starting pipeline for location ({x}, {y}) at {timestamp_hour} {start_model_datetime}"
             )
-            model_trainer = ModelTrainerFlow().execute()
-            model_output += model_trainer.train_all_models(
-                i,
-                full_features_df,
-                train_labels,
-                models_directory,
-                start_datetime,
-                engine,
-                validation_features_df,
-            )
-            # logging.info("Getting model output")
-            for (
-                model_id,
-                model_name,
-                i,
-                train_model,
-                validation_df,
-            ) in model_output:
-                logging.info(
-                    f"Training and evaluating model {model_output[i][0]}"
-                )
-                model_evaluator = ModelEvaluatorFlow().execute()
-                valid_pred, results_metrics_df = model_evaluator.execute(
-                    i,
-                    train_model,
-                    model_name,
-                    model_id,
-                    validation_df,
-                    valid_labels,
-                    start_datetime,
-                    engine,
-                )
-                ModelVisualizerFlow(plots_directory).execute(
-                    validation_features_df,
-                    valid_pred,
-                    valid_labels,
-                    start_datetime,
-                    model_name,
-                    results_metrics_df,
-                )
 
-            end_datetime = datetime.now()
-            logging.info(f"Ending pipeline at {end_datetime}")
-            logging.info(
-                f"Total time ellapsed: {end_datetime - start_datetime}"
-            )
+            result = matrix_generator.execute(engine, x, y, timestamp_hour)
+            print("result", result)
+
+        #     if result is not None:
+        #         # validation_features_df, full_features_df, valid_labels, train_labels = result
+
+        #         model_trainer = ModelTrainerFlow().execute()
+        #         model_output = model_trainer.train_all_models(
+        #             f"{x}_{y}_{timestamp_hour}",
+        #             full_features_df,
+        #             train_labels,
+        #             models_directory,
+        #             start_datetime,
+        #             engine,
+        #             validation_features_df,
+        #         )
+
+        #         for (
+        #             model_id,
+        #             model_name,
+        #             train_valid_id,
+        #             train_model,
+        #             validation_df,
+        #         ) in model_output:
+        #             logging.info(
+        #                 f"Training and evaluating model {model_output[train_valid_id][0]}"
+        #             )
+        #             model_evaluator = ModelEvaluatorFlow().execute()
+        #             valid_pred, results_metrics_df = model_evaluator.execute(
+        #                 train_valid_id,
+        #                 train_model,
+        #                 model_name,
+        #                 model_id,
+        #                 validation_df,
+        #                 valid_labels,
+        #                 start_datetime,
+        #                 engine,
+        #             )
+        #             ModelVisualizerFlow(plots_directory).execute(
+        #                 validation_df,
+        #                 valid_pred,
+        #                 valid_labels,
+        #                 start_datetime,
+        #                 model_name,
+        #                 results_metrics_df,
+        #             )
+
+        # end_datetime = datetime.now()
+        # logging.info(f"Ending pipeline at {end_datetime}")
+        # logging.info(
+        #     f"Total time elapsed: {end_datetime - start_datetime}"
+        # )
 
 
 @time_splitter_options()
