@@ -13,6 +13,7 @@ from haversine import haversine
 from joblib import Parallel, delayed
 from setup_environment import get_dbengine
 from sklearn.preprocessing import MinMaxScaler
+
 from src.utils.utils import ee_array_to_df, get_data, write_to_db
 
 from config.model_settings import EEConfig
@@ -49,33 +50,28 @@ class EEFeatures:
             lookback_n=config.LOOKBACK_N,
         )
 
-
-    def execute(self, df, save_images):
+    def execute(self, x, y, timestamp_utc, save_images):
         credentials = ee.ServiceAccountCredentials(
             self.service_account,
             self.path_to_private_key,
         )
         ee.Initialize(credentials)
+
         satellite_df = pd.concat(
             Parallel(n_jobs=-1, backend="multiprocessing", verbose=5)(
-                delayed(self.execute_for_location)(
-                    location_id, lon, lat, day, cohort, save_images
+                delayed(self.execute_for_satellite)(
+                    x, y, timestamp_utc, satellite, save_images
                 )
-                for location_id, lon, lat, day, cohort in zip(
-                    df.locationId, df.x, df.y, df.timestamp_utc, df.cohort
-                )
+                for satellite in self.all_satellites
             ),
         ).reset_index(drop=True)
-        engine = get_dbengine()
-        write_to_db(satellite_df, engine, "satellite_MN", "public", "append")
 
-        features_df = self.generate_features(satellite_df)
+        # features_df = self.generate_features(satellite_df)
 
-        return features_df
+        return satellite_df
 
-
-    def execute_for_location(
-        self, location_id, lon, lat, date_utc, cohort, save_images
+    def execute_for_satellite(
+        self, x, y, timestamp_utc, satellite, save_images
     ):
         """
         Input
@@ -86,56 +82,46 @@ class EEFeatures:
 
         Arguments:
         ----
-        collection:
-            A str of satellite to query
-        location_id:
-            location id of sensor
-        lon:
-            the longitude of a  sensor location
-        lat:
+        x:
+            the longitude of a sensor location
+        y:
             the latitude of a sensor location
-        datetime:
-            the date the sensor reading was taken
+        timestamp_utc:
+            the timestamp of the sensor reading
+        satellite:
+            A tuple containing satellite configuration
         """
+        collection, image_bands, period, resolution = satellite
 
-        df_list = []
-
-        for (
+        image_collection = self.execute_for_collection(
             collection,
             image_bands,
+            save_images,
+        )
+
+        ee_df = self.get_satellite_data(
+            image_collection,
+            image_bands,
+            x,
+            y,
+            timestamp_utc,
             period,
             resolution,
-        ) in self.all_satellites:
-            image_collection = self.execute_for_collection(
-                collection,
-                image_bands,
-                save_images,
-            )
-            ee_df = self.get_satellite_data(
-                image_collection,
-                image_bands,
-                location_id,
-                date_utc,
-                lon,
-                lat,
-                cohort,
-                period,
-                resolution,
-            )
-            if not ee_df.empty:
-                df_list.append(ee_df)
-        try:
-            return pd.concat(df_list).reset_index(drop=True)
-        except ValueError:
-            return pd.DataFrame()
+        )
 
+        engine = get_dbengine()
+        if not ee_df.empty:
+            write_to_db(
+                ee_df,
+                engine,
+                f"{collection.replace('/', '_')}_local_MN",
+                "public",
+                "append",
+            )
 
-    def execute_for_collection(
-        self,
-        collection,
-        image_bands,
-        save_images,
-    ):
+        return ee_df
+
+    def execute_for_collection(self, collection, image_bands, save_images):
         """
         Input
         ----
@@ -151,14 +137,18 @@ class EEFeatures:
         save_images:
             a boolean flag whether to write satellite data to google storage
         """
-
-        # logging.info(
-        #     "please sigup to Google Earth Engine here:"
-        #     " https://signup.earthengine.google.com/"
-        # )
-        # if bucket.blob(f"{collection}_{s_datetime}_{e_datetime}"):
         try:
             logging.info(f"Downloading: {collection}")
+
+            available_bands = (
+                ee.ImageCollection(collection).first().bandNames().getInfo()
+            )
+            logging.info(f"Available bands in {collection}: {available_bands}")
+
+            if not all(band in available_bands for band in image_bands):
+                raise ValueError(
+                    f"Bands {image_bands} are not available in the collection {collection}"
+                )
 
             image_collection = ee.ImageCollection(collection).select(
                 image_bands
@@ -178,9 +168,31 @@ class EEFeatures:
                 return image_collection
         except (EEException, HttpError):
             logging.warning(
-                f"""Image collection {image_collection.getInfo()}
+                f"""Image collection {collection.getInfo()}
                 does not match any existing location."""
             )
+
+    def bands_available(self, image_collection, image_bands):
+        """Check if the specified bands are available in the image collection."""
+        try:
+            first_image = image_collection.first().select(image_bands)
+            first_image.getInfo()
+            return True
+        except Exception as e:
+            logging.error(
+                f"Specified bands {image_bands} are not available: {e}"
+            )
+            return False
+
+    def _create_satellite_dataframe(
+        self, info, image_bands, timestamp_utc, lon, lat
+    ):
+        """Create a DataFrame from the satellite data."""
+        ee_df = ee_array_to_df(info, image_bands)
+        # ee_df = self._calculate_temporal_weighted_average(timestamp_utc, ee_df)
+        ee_df = self._calculate_spatial_weighted_average(ee_df, lon, lat)
+        ee_df["timestamp_utc"] = timestamp_utc
+        return ee_df
 
     def generate_features(self, satellite_df):
         groupby_cols = [
@@ -232,106 +244,59 @@ class EEFeatures:
         self,
         image_collection,
         image_bands,
-        location_id,
-        date_utc,
         lon,
         lat,
-        cohort,
+        date_utc,
         period,
         resolution,
     ):
-        """
-        This function builds an algorithm to compute
-        the representative satellite value for a sensor location,
-        considering only the exact location and time of flyover (within the hour).
-        """
+        """This function builds an algorithm to compute the representative satellite value for a sensor location."""
         try:
             ee_df = self.get_satellite_data_within_hour(
                 image_collection,
                 image_bands,
-                location_id,
+                date_utc,
                 lon,
                 lat,
-                cohort,
                 resolution,
-                date_utc,
+                period,
             )
             if not ee_df.empty:
-                logging.info("Getting satellite data within the hour of interest")
-                print("Hourly image: ", ee_df)
+                logging.info("Getting Most recent image info")
                 return ee_df
             else:
-                logging.warn(f"No matching satellite data within the hour for {lon}, {lat} at {date_utc}")
-                return pd.DataFrame()
-        except (EEException, HttpError) as e:
+                pass
+        except Exception as e:
             logging.error(f"Error retrieving satellite data: {e}")
-            return pd.DataFrame()
 
-    def get_satellite_data_within_hour(
-        self,
-        image_collection,
-        image_bands,
-        location_id,
-        lon,
-        lat,
-        cohort,
-        resolution,
-        date_utc,
-    ):
-        """
-        This function takes in an image collection and a set of spatial and temporal parameters
-        to calculate the satellite value for a sensor location within the hour of the sensor reading.
-        """
-        centroid_point = ee.Geometry.Point(lon, lat)
-        sensor_datetime = datetime.datetime.strptime(date_utc, "%Y-%m-%dT%H:%M:%S.%fZ")
-        start_of_hour = sensor_datetime.replace(minute=0, second=0, microsecond=0)
-        end_of_hour = start_of_hour + datetime.timedelta(hours=1)
+        # try:
+        #     ee_df = self.get_satellite_data_within_lookback(
+        #         image_collection, image_bands, location_id, lon, lat, cohort, resolution, date_utc, period)
+        #     if not ee_df.empty:
+        #         logging.info("Finding ee.ImageCollection between"
+        #                      f" {date_utc} and"
+        #                      f" {self.config.LOOKBACK_N * period} days")
+        #         print("Within lookback image: ", ee_df)
+        #         return ee_df
+        #     else:
+        #         pass
+        # except Exception as e:
+        #     logging.error(f"Error retrieving satellite data within lookback: {e}")
 
-        filtered_image_collection = image_collection.filterDate(
-            ee.Date(start_of_hour.isoformat()), ee.Date(end_of_hour.isoformat())
-        )
+        # try:
+        #     ee_df = self.get_any_recent_satellite_data(
+        #         image_collection, image_bands, location_id, lon, lat, cohort, resolution, date_utc)
+        #     if not ee_df.empty:
+        #         logging.info("Finding ee.ImageCollection after 2015")
+        #         print("any image: ", ee_df)
+        #         return ee_df
+        #     else:
+        #         pass
+        # except Exception as e:
+        #     logging.error(f"Error retrieving any recent satellite data: {e}")
 
-        info = filtered_image_collection.getRegion(
-            centroid_point, resolution
-        ).getInfo()
-
-        return self._create_satellite_dataframe(
-            info, image_bands, location_id, date_utc, lon, lat, cohort
-        )
-
-
-    def get_satellite_data_within_hour(
-        self,
-        image_collection,
-        image_bands,
-        location_id,
-        lon,
-        lat,
-        cohort,
-        resolution,
-        date_utc,
-    ):
-        """
-        This function takes in an image collection and a set of spatial and temporal parameters
-        to calculate the satellite value for a sensor location within the hour of the sensor reading.
-        """
-        centroid_point = ee.Geometry.Point(lon, lat)
-        sensor_datetime = datetime.datetime.strptime(date_utc, "%Y-%m-%dT%H:%M:%S.%fZ")
-        start_of_hour = sensor_datetime.replace(minute=0, second=0, microsecond=0)
-        end_of_hour = start_of_hour + datetime.timedelta(hours=1)
-
-        filtered_image_collection = image_collection.filterDate(
-            ee.Date(start_of_hour.isoformat()), ee.Date(end_of_hour.isoformat())
-        )
-
-        info = filtered_image_collection.getRegion(
-            centroid_point, resolution
-        ).getInfo()
-
-        return self._create_satellite_dataframe(
-            info, image_bands, location_id, date_utc, lon, lat, cohort
-        )
-
+        logging.warning(f"No image available for {lon}, {lat}, {date_utc}")
+        return pd.DataFrame()
 
     def get_most_recent_satellite_data(
         self,
@@ -345,136 +310,67 @@ class EEFeatures:
         date_utc,
         period,
     ):
-        """
-        This function takes in an image collection
-        and a set of spatial and temporal parameters
-        to calculate the weighted temporal average
-        value for each satellite query given a time period.
-
-        Arguments
-        -------
-        image_collection: str
-            the string of an image collection
-        image_bands: List[str]
-            the list of image bands used (satellite model features)
-        location_id: str
-            the location_id of the sensor
-        lon: float
-            Longitude of sensor
-        lat: float
-            Latitude of sensor
-        resolution: float
-            resolution of image and used as satellite search radius
-        date_utc: datetime
-            datetime in utc of sensor reading
-        period: int
-            the number of days between satellite passovers
-        """
+        """Fetch the most recent satellite data for the given parameters."""
         centroid_point = ee.Geometry.Point(lon, lat)
         day_of_interest = ee.Date(date_utc)
-
         filtered_image_collection = image_collection.filterDate(
             day_of_interest.advance(-period, "days"), day_of_interest
         )
 
+        # Check if the bands are available in the filtered collection
+        if not self.bands_available(filtered_image_collection, image_bands):
+            raise ValueError("No bands in collection")
+
         info = filtered_image_collection.getRegion(
             centroid_point, resolution
         ).getInfo()
 
         return self._create_satellite_dataframe(
-            info,
-            image_bands,
-            location_id,
-            date_utc,
-            lon,
-            lat,
-            cohort,
+            info, image_bands, location_id, date_utc, lon, lat
         )
 
-    def get_satellite_data_within_lookback(
+    def get_satellite_data_within_hour(
         self,
         image_collection,
         image_bands,
-        location_id,
+        date_utc,
         lon,
         lat,
-        cohort,
         resolution,
-        date_utc,
         period,
     ):
         """
-        This function takes in an image collection
-        and a set of spatial and temporal parameters
-        to calculate the weighted temporal average
-        value for each satellite within a lookback.
+        This function takes in an image collection and a set of spatial and temporal parameters
+        to calculate the satellite value for a sensor location within the hour of the sensor reading.
         """
-
         centroid_point = ee.Geometry.Point(lon, lat)
-        day_of_interest = ee.Date(date_utc)
+
+        if isinstance(date_utc, pd.Timestamp):
+            date_utc = date_utc.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
+        sensor_datetime = datetime.datetime.strptime(
+            date_utc, "%Y-%m-%dT%H:%M:%S.%fZ"
+        )
+        start_of_hour = sensor_datetime.replace(
+            minute=0, second=0, microsecond=0
+        )
+        end_of_hour = start_of_hour + datetime.timedelta(hours=1)
 
         filtered_image_collection = image_collection.filterDate(
-            day_of_interest.advance(-(self.lookback_n * period), "days"),
-            day_of_interest,
+            ee.Date(start_of_hour.isoformat()),
+            ee.Date(end_of_hour.isoformat()),
         )
+        # Check if the bands are available in the filtered collection
+        if not self.bands_available(filtered_image_collection, image_bands):
+            raise ValueError("No bands in collection")
+
         info = filtered_image_collection.getRegion(
             centroid_point, resolution
         ).getInfo()
-        return self._create_satellite_dataframe(
-            info, image_bands, location_id, date_utc, lon, lat, cohort
-        )
 
-    def get_any_recent_satellite_data(
-        self,
-        image_collection,
-        image_bands,
-        location_id,
-        lon,
-        lat,
-        cohort,
-        resolution,
-        date_utc,
-    ):
-        """This function collects all satellite imagery from
-        between the specified date and the first date for a specific
-        geolocation with no time windor specified"""
-        centroid_point = ee.Geometry.Point(lon, lat)
-        day_of_interest = ee.Date(date_utc)
-        start_date = ee.Date(
-            "2015-01-01",
-        )
-        filtered_image_collection = image_collection.filterDate(
-            start_date,
-            day_of_interest,
-        )
-        filtered_image_collection = image_collection.limit(10)
-        info = filtered_image_collection.getRegion(
-            centroid_point, resolution
-        ).getInfo()
         return self._create_satellite_dataframe(
-            info, image_bands, location_id, date_utc, lon, lat, cohort
+            info, image_bands, date_utc, lon, lat
         )
-
-    def _create_satellite_dataframe(
-        self,
-        info,
-        image_bands,
-        location_id,
-        date_utc,
-        lon,
-        lat,
-        cohort,
-    ):
-        """Creates a dataframe from returned satellite information and
-        builds required fields for weighted average calculation"""
-        ee_df = ee_array_to_df(info, image_bands)
-        ee_df = self._calculate_temporal_weighted_average(date_utc, ee_df)
-        ee_df = self._calculate_spatial_weighted_average(
-            ee_df, lon, lat, location_id
-        )
-        ee_df["cohort"] = cohort
-        ee_df["timestamp_utc"] = date_utc
-        return ee_df
 
     def _calculate_temporal_weighted_average(self, date_utc, ee_df):
         """Calculate the difference between the sensor timestamp and the
@@ -490,13 +386,10 @@ class EEFeatures:
         )
         return ee_df
 
-    def _calculate_spatial_weighted_average(
-        self, ee_df, lon, lat, location_id
-    ):
+    def _calculate_spatial_weighted_average(self, ee_df, lon, lat):
         """Calculate the spatially-weighted distance"""
         ee_df["sensor_longitude"] = lon
         ee_df["sensor_latitude"] = lat
-        ee_df["location_id"] = location_id
         ee_df["distance"] = ee_df.apply(self.calculate_distance, axis=1)
         return ee_df
 
@@ -559,4 +452,72 @@ class EEFeatures:
             df.groupby(groupby_cols)
             .apply(_weighted_means_by_column_ignoring_NaNs, avg_cols, "weight")
             .reset_index()
+        )
+
+    def get_satellite_data_within_lookback(
+        self,
+        image_collection,
+        image_bands,
+        location_id,
+        lon,
+        lat,
+        cohort,
+        resolution,
+        date_utc,
+        period,
+    ):
+        """
+        This function takes in an image collection
+        and a set of spatial and temporal parameters
+        to calculate the weighted temporal average
+        value for each satellite within a lookback.
+        """
+
+        centroid_point = ee.Geometry.Point(lon, lat)
+        day_of_interest = ee.Date(date_utc)
+
+        filtered_image_collection = image_collection.filterDate(
+            day_of_interest.advance(-(self.lookback_n * period), "days"),
+            day_of_interest,
+        )
+        info = filtered_image_collection.getRegion(
+            centroid_point, resolution
+        ).getInfo()
+        return self._create_satellite_dataframe(
+            info, image_bands, date_utc, lon, lat, cohort
+        )
+
+    def get_any_recent_satellite_data(
+        self,
+        image_collection,
+        image_bands,
+        location_id,
+        lon,
+        lat,
+        cohort,
+        resolution,
+        date_utc,
+    ):
+        """This function collects all satellite imagery from
+        between the specified date and the first date for a specific
+        geolocation with no time windor specified"""
+        centroid_point = ee.Geometry.Point(lon, lat)
+        day_of_interest = ee.Date(date_utc)
+        start_date = ee.Date(
+            "2015-01-01",
+        )
+        filtered_image_collection = image_collection.filterDate(
+            start_date,
+            day_of_interest,
+        )
+        filtered_image_collection = image_collection.limit(10)
+        info = filtered_image_collection.getRegion(
+            centroid_point, resolution
+        ).getInfo()
+        return self._create_satellite_dataframe(
+            info,
+            image_bands,
+            date_utc,
+            lon,
+            lat,
         )
