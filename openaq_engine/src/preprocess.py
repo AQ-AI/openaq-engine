@@ -176,14 +176,12 @@ class Preprocess:
             date_info = json.loads(date_info)
 
         row["timestamp_utc"] = (
-            datetime.fromisoformat(
-                re.search("(?<=utc=)(.*)(?=,)", row["date"]).group(0)
-            )
+            datetime.fromisoformat(date_info["utc"].replace("Z", "+00:00"))
             .astimezone(timezone.utc)
             .strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         )
         row["timestamp_local"] = datetime.fromisoformat(
-            re.search("(?<=local=)(.*)(?=})", row["date"]).group(0),
+            date_info["local"]
         ).strftime("%Y-%m-%dT%H:%M:%S%z")
         return row
 
