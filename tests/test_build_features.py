@@ -74,11 +74,18 @@ def test_add_ee_features(mocker, feature_df):
     mock_ee_instance.execute.return_value = feature_df
 
     builder = BuildFeaturesRandomForest(
-        categorical_features=["col1", "col2"],
-        all_model_features=["col1", "col2"],
+        categorical_features=["location_id", "cohort"],
+        all_model_features=["location_id", "cohort"],
     )
-    result = builder._add_ee_features(feature_df)
+    x, y, timestamp_hour = 1, 2, "2021-01-01T00:00:00Z"
+    result = builder._add_ee_features(x, y, timestamp_hour)
     assert result.equals(feature_df)
+
+    # Ensure the mocked EEFeatures was called correctly
+    mock_ee_features.assert_called_once()
+    mock_ee_instance.execute.assert_called_once_with(
+        x, y, timestamp_hour, save_images=False
+    )
 
 
 def test_split_train_valid(cohort_df, feature_df):
@@ -91,7 +98,11 @@ def test_split_train_valid(cohort_df, feature_df):
     assert len(result) == 6
 
 
-def test_execute(mocker, mock_engine, cohort_df, feature_df):
+def test_execute(mocker):
+    mock_engine = MagicMock()
+
+    feature_df = pd.DataFrame({"col1": [1], "col2": [2]})
+
     mocker.patch.object(
         BuildFeaturesRandomForest, "_add_ee_features", return_value=feature_df
     )
@@ -100,26 +111,20 @@ def test_execute(mocker, mock_engine, cohort_df, feature_df):
         "_change_to_categorical_type",
         return_value=feature_df,
     )
-    mocker.patch.object(
-        BuildFeaturesRandomForest,
-        "_split_train_valid",
-        return_value=(
-            feature_df,
-            feature_df,
-            pd.DataFrame(),
-            pd.DataFrame(),
-            pd.Series(),
-            pd.Series(),
-        ),
-    )
 
     builder = BuildFeaturesRandomForest(
         categorical_features=["col1", "col2"],
         all_model_features=["col1", "col2"],
     )
-    result = builder.execute(mock_engine, cohort_df)
-    assert isinstance(result, tuple)
-    assert len(result) == 6
+    result = builder.execute(mock_engine, 1, 2, "2020-01-01T00:00:00Z")
+    assert isinstance(result, pd.DataFrame)
+    assert not result.empty
+
+    # Ensure the mocked methods were called
+    builder._add_ee_features.assert_called_once_with(
+        1, 2, "2020-01-01T00:00:00Z"
+    )
+    builder._change_to_categorical_type.assert_called_once_with(feature_df)
 
 
 def test_results_to_db(mocker, mock_engine, feature_df):
