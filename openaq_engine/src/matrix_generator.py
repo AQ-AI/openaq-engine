@@ -8,7 +8,6 @@ import scipy.sparse as sp
 from joblib import dump, load
 from sklearn.ensemble import RandomForestRegressor
 from src.features.build_features import BuildFeaturesRandomForest
-from src.utils.utils import get_data
 
 from config.model_settings import (
     BuildFeaturesConfig,
@@ -32,99 +31,24 @@ class MatrixGenerator:
             algorithm=config.ALGORITHM, id_column_list=config.ID_COLUMN_LIST
         )
 
-    def execute_train_valid_set(self, place):
-        cohorts_query = f"""select distinct "location", "cohort", "cohort_type",
-        "train_validation_set" from "cohorts_local_{place}";"""
-        cohorts_df = get_data(cohorts_query)
-        print(cohorts_df.train_validation_set.unique())
-        return cohorts_df.train_validation_set.unique()
-
-    def execute(self, engine, train_valid_id, run_date, place):
-        cohorts_query = f"""select distinct * from "cohorts_{place}";"""
-        cohorts_df = get_data(cohorts_query)
-
-        return self.execute_for_cohort(
-            engine, train_valid_id, cohorts_df, run_date
+    def execute(self, engine, x, y, timestamp_hour):
+        logging.info(
+            f"Generating features for location ({x}, {y}) at {timestamp_hour}"
         )
+        df = self.matrix_generator(engine, x, y, timestamp_hour)
+        return df
 
-    def execute_for_cohort(
-        self,
-        engine,
-        training_validation_id,
-        cohorts_df,
-        run_date,
-    ):
-        cohort_df = cohorts_df.loc[
-            cohorts_df["train_validation_set"] == training_validation_id
-        ]
-        if cohort_df is not None:
-            logging.info(
-                f"Generating features for Cohort {training_validation_id}"
-            )
-            (
-                train_df,
-                validation_df,
-                feature_train_id,
-                feature_valid_id,
-                labels_train_df,
-                labels_valid_df,
-            ) = self.matrix_generator(
-                engine,
-                cohort_df,
-            )
-
-            logging.info(f"Rows in training features: {train_df.shape[0]}")
-            logging.info(
-                f"Rows in validation features: {validation_df.shape[0]}"
-            )
-            # write as pickle
-            self._write_labels_as_csv(
-                labels_train_df,
-                run_date,
-                training_validation_id,
-                "training",
-            )
-            self._write_labels_as_csv(
-                labels_valid_df,
-                run_date,
-                training_validation_id,
-                "validation",
-            )
-
-            logging.info(
-                f"Rows in training labels: {labels_train_df.shape[0]}"
-            )
-            logging.info(
-                f"Rows in validation labels: {labels_valid_df.shape[0]}"
-            )
-            return validation_df, train_df, labels_valid_df, labels_train_df
-        else:
-            logging.info("training or validation cohort must be assigned")
-
-    def matrix_generator(self, engine, cohort_df):
+    def matrix_generator(self, engine, x, y, timestamp_hour):
         if self.algorithm == "RFR":
             config = BuildFeaturesConfig()
 
-            (
-                df_train,
-                df_valid,
-                feature_train_id,
-                feature_valid_id,
-                train_labels,
-                validation_labels,
-            ) = (
+            df = (
                 self._get_feature_generator()
                 .from_dataclass_config(config)
-                .execute(engine, cohort_df)
+                .execute(engine, x, y, timestamp_hour)
             )
-            return (
-                df_train,
-                df_valid,
-                feature_train_id,
-                feature_valid_id,
-                train_labels,
-                validation_labels,
-            )
+
+            return df
 
     def _add_csr(self, df, train_validation_set, cohort_type, run_date):
         csr_list = self._get_csr(train_validation_set, cohort_type, run_date)
