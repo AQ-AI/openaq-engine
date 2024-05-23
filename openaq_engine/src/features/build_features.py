@@ -36,8 +36,8 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
             all_model_features=config.ALL_MODEL_FEATURES,
         )
 
-    def execute(self, engine, x, y, timestamp_hour) -> pd.DataFrame:
-        df = self._add_ee_features(x, y, timestamp_hour)
+    def execute(self, engine, x, y, table_name) -> pd.DataFrame:
+        df = self._add_ee_features(x, y, table_name)
         df = self._change_to_categorical_type(df)
         return df
 
@@ -51,9 +51,9 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
             raise ValueError("All the feature names should be strings!")
         self._all_model_features = features
 
-    def _add_ee_features(self, x, y, timestamp_hour):
+    def _add_ee_features(self, x, y, table_name):
         return EEFeatures.from_dataclass_config(EEConfig()).execute(
-            x, y, timestamp_hour, save_images=False
+            x, y, table_name, save_images=False
         )
 
     def _add_year(self, df: pd.DataFrame) -> pd.DataFrame:
