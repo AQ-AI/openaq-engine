@@ -31,24 +31,30 @@ class MatrixGenerator:
             algorithm=config.ALGORITHM, id_column_list=config.ID_COLUMN_LIST
         )
 
-    def execute(self, engine, x, y, timestamp_hour):
-        logging.info(
-            f"Generating features for location ({x}, {y}) at {timestamp_hour}"
-        )
-        df = self.matrix_generator(engine, x, y, timestamp_hour)
+    def execute(self, engine, x, y, table_name):
+        logging.info(f"Generating features for location ({x}, {y})")
+        df = self.matrix_generator(engine, x, y, table_name)
         return df
 
-    def matrix_generator(self, engine, x, y, timestamp_hour):
+    def matrix_generator(self, engine, x, y, table_name):
         if self.algorithm == "RFR":
             config = BuildFeaturesConfig()
 
             df = (
                 self._get_feature_generator()
                 .from_dataclass_config(config)
-                .execute(engine, x, y, timestamp_hour)
+                .execute(engine, x, y, table_name)
             )
 
             return df
+
+    def _get_feature_generator(self) -> RandomForestRegressor:
+        if self.algorithm == "RFR":
+            return BuildFeaturesRandomForest
+        else:
+            raise ValueError(
+                "The algorithm provided has no registered feature builder!"
+            )
 
     def _add_csr(self, df, train_validation_set, cohort_type, run_date):
         csr_list = self._get_csr(train_validation_set, cohort_type, run_date)
@@ -70,14 +76,6 @@ class MatrixGenerator:
         )
 
         return csr
-
-    def _get_feature_generator(self) -> RandomForestRegressor:
-        if self.algorithm == "RFR":
-            return BuildFeaturesRandomForest
-        else:
-            raise ValueError(
-                "The algorithm provided has no registered feature builder!"
-            )
 
     def _get_csr(self, train_validation_set, cohort_type, run_date):
         filename = "_".join(
@@ -115,7 +113,6 @@ class MatrixGenerator:
     def _write_labels_as_csv(
         self, y, run_date, training_validation_id, cohort_type
     ):
-        print(y, run_date, training_validation_id, cohort_type)
         filename = "_".join(
             [
                 "labels",
@@ -128,7 +125,6 @@ class MatrixGenerator:
 
         with f:
             writer = csv.writer(f)
-
             for row in y:
                 writer.writerow(row)
 
