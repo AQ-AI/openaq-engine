@@ -79,6 +79,7 @@ class HyperparamConfig:
 
 @dataclass
 class BuildFeaturesConfig:
+    TABLE_NAME = ""
     TARGET_COL: str = "value"
     TARGET_VARIABLE = "pm25"
     COUNTRY = "MN"
@@ -115,112 +116,6 @@ class BuildFeaturesConfig:
 
 
 @dataclass
-class EEConfig:
-    LOOKBACK_N = 1
-    DATE_COL: str = "timestamp_utc"
-    TABLE_NAME = "cohorts"
-    # Satellite configurations
-    AOD_IMAGE_COLLECTION: str = "MODIS/061/MCD19A2_GRANULES"
-    AOD_IMAGE_BAND: Sequence[str] = field(
-        default_factory=lambda: ["Optical_Depth_047"]
-    )
-    AOD_IMAGE_PERIOD = 2
-    AOD_IMAGE_RES = 1000
-    LANDSAT_IMAGE_COLLECTION: str = "LANDSAT/LC08/C02/T1_L2"
-    LANDSAT_IMAGE_BAND: Sequence[str] = field(
-        default_factory=lambda: ["SR_B4", "SR_B3", "SR_B2"]
-    )
-    LANDSAT_PERIOD = 8
-    LANDSAT_RES = 30
-    NIGHTTIME_LIGHT_IMAGE_COLLECTION: str = "NOAA/VIIRS/DNB/MONTHLY_V1/VCMCFG"
-    NIGHTTIME_LIGHT_IMAGE_BAND: Sequence[str] = field(
-        default_factory=lambda: ["avg_rad"]
-    )
-    NIGHTTIME_LIGHT_PERIOD = 30
-    NIGHTTIME_LIGHT_RES = 463.83
-    METEROLOGICAL_IMAGE_COLLECTION: str = "NOAA/GFS0P25"
-    METEROLOGICAL_IMAGE_BAND: Sequence[str] = field(
-        default_factory=lambda: [
-            "temperature_2m_above_ground",
-            "relative_humidity_2m_above_ground",
-            "precipitable_water_entire_atmosphere",
-            "total_cloud_cover_entire_atmosphere",
-            "u_component_of_wind_10m_above_ground",
-            "v_component_of_wind_10m_above_ground",
-        ]
-    )
-    METEROLOGICAL_IMAGE_PERIOD = 1
-    METEROLOGICAL_IMAGE_RES = 27830
-    POPULATION_IMAGE_COLLECTION: str = (
-        "CIESIN/GPWv411/GPW_Basic_Demographic_Characteristics"
-    )
-    POPULATION_IMAGE_BAND: Sequence[str] = field(
-        default_factory=lambda: ["basic_demographic_characteristics"]
-    )
-    POPULATION_PERIOD = 1100
-    POPULATION_IMAGE_RES = 1000
-    LAND_COVER_IMAGE_COLLECTION: str = (
-        "COPERNICUS/Landcover/100m/Proba-V-C3/Global"
-    )
-    LAND_COVER_IMAGE_BAND: Sequence[str] = field(
-        default_factory=lambda: ["discrete_classification"]
-    )
-    LAND_COVER_IMAGE_RES = 100
-    LAND_COVER_PERIOD = 1500
-    BUCKET_NAME = "earthengine-bucket"
-    PATH_TO_PRIVATE_KEY = (
-        "/home/ec2-user/openaq-engine/unicef-367711-a4ac0921e063.json"
-    )
-    BUCKET_NAME = "earthengine-bucket"
-    SERVICE_ACCOUNT = "earth-engine@unicef-367711.iam.gserviceaccount.com"
-
-    # service_account = "ali.quidwai@aqai.xyz"
-    # credentials = ee.ServiceAccountCredentials(
-    #     service_account,
-    #     '/home/ec2-user/elevated-watch-399519-d191df2b047f.json',
-    # )
-    # ee.Initialize(credentials)
-
-    @property
-    def ALL_SATELLITES(self) -> zip(List[str], List[str]):
-        """Return varying satellites to be fed into the model"""
-        return zip(
-            [
-                self.AOD_IMAGE_COLLECTION,
-                self.LANDSAT_IMAGE_COLLECTION,
-                self.NIGHTTIME_LIGHT_IMAGE_COLLECTION,
-                self.METEROLOGICAL_IMAGE_COLLECTION,
-                # self.POPULATION_IMAGE_COLLECTION,
-                self.LAND_COVER_IMAGE_COLLECTION,
-            ],
-            [
-                self.AOD_IMAGE_BAND,
-                self.LANDSAT_IMAGE_BAND,
-                self.NIGHTTIME_LIGHT_IMAGE_BAND,
-                self.METEROLOGICAL_IMAGE_BAND,
-                # self.POPULATION_IMAGE_BAND,
-                self.LAND_COVER_IMAGE_BAND,
-            ],
-            [
-                self.AOD_IMAGE_PERIOD,
-                self.LANDSAT_PERIOD,
-                self.NIGHTTIME_LIGHT_PERIOD,
-                self.METEROLOGICAL_IMAGE_PERIOD,
-                # self.POPULATION_PERIOD,
-                self.LAND_COVER_PERIOD,
-            ],
-            [
-                self.AOD_IMAGE_RES,
-                self.LANDSAT_RES,
-                self.NIGHTTIME_LIGHT_RES,
-                self.METEROLOGICAL_IMAGE_RES,
-                # self.POPULATION_IMAGE_RES,
-                self.LAND_COVER_IMAGE_RES,
-            ],
-        )
-
-
-@dataclass
 class CohortBuilderConfig:
     ENTITY_ID_COLS: Sequence[str] = field(
         default_factory=lambda: ["unique_id"]
@@ -247,6 +142,64 @@ class CohortBuilderConfig:
     COUNTRY = "MN"
     SOURCE = "openaq-aws"
     LOCAL_DATA = ""
+
+
+@dataclass
+class EEConfig:
+    LOOKBACK_N = 1
+    DATE_COL: str = "timestamp_utc"
+    TABLE_NAME = "cohorts"
+    BUCKET_NAME = "earthengine-bucket"
+    PATH_TO_PRIVATE_KEY = (
+        "/home/ec2-user/openaq-engine/unicef-367711-a4ac0921e063.json"
+    )
+    SERVICE_ACCOUNT = "earth-engine@unicef-367711.iam.gserviceaccount.com"
+
+    # Satellite configurations
+    SATELLITE_CONFIG = {
+        "MODIS/061/MCD19A2_GRANULES": {
+            "bands": ["Optical_Depth_047"],
+            "resolution": 1000,
+            "time_ranges": [("00:00:00", "08:00:00")],
+            "frequency": "daily",
+        },
+        "LANDSAT/LC08/C02/T1_L2": {
+            "bands": ["SR_B4", "SR_B3", "SR_B2"],
+            "resolution": 30,
+            "time_ranges": [("03:30:00", "04:00:00")],
+            "frequency": None,  # Unknown frequency
+        },
+        "NOAA/VIIRS/DNB/MONTHLY_V1/VCMCFG": {
+            "bands": ["avg_rad"],
+            "resolution": 463.83,
+            "time_ranges": [("00:00:00", "00:59:59")],
+            "frequency": "monthly",
+        },
+        "NOAA/GFS0P25": {
+            "bands": [
+                "temperature_2m_above_ground",
+                "relative_humidity_2m_above_ground",
+                "precipitable_water_entire_atmosphere",
+                "total_cloud_cover_entire_atmosphere",
+                "u_component_of_wind_10m_above_ground",
+                "v_component_of_wind_10m_above_ground",
+            ],
+            "resolution": 27830,
+            "time_ranges": [
+                ("00:00:00", "00:59:59"),
+                ("06:00:00", "06:59:59"),
+                ("12:00:00", "12:59:59"),
+                ("18:00:00", "18:59:59"),
+            ],
+            "frequency": "daily",
+        },
+        "COPERNICUS/Landcover/100m/Proba-V-C3/Global": {
+            "bands": ["discrete_classification"],
+            "resolution": 100,
+            "time_ranges": [("00:00:00", "23:59:59")],
+            "frequency": "annual",
+        },
+    }
 
 
 @dataclass
