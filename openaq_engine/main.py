@@ -177,7 +177,7 @@ def cohort_builder(
 
 
 @click.command("feature-builder", help="Generate features for cohorts")
-@feature_builder_options
+@feature_builder_options()
 @click.argument("models_directory")
 @click.argument("plots_directory")
 def feature_builder(models_directory, plots_directory, cohort_table):
@@ -193,30 +193,23 @@ def feature_builder(models_directory, plots_directory, cohort_table):
 
         matrix_generator = MatrixGeneratorFlow().execute()
 
-        cohorts_query = f"""SELECT DISTINCT "x", "y", date_trunc('hour', "timestamp_utc"::timestamp) AS "timestamp_hour" FROM "{cohort_table}";"""
-        cohorts_df = get_data(cohorts_query)
-        unique_combinations = cohorts_df.drop_duplicates(
-            subset=["x", "y", "timestamp_hour"]
+        locations_query = (
+            f"""SELECT DISTINCT "x", "y" FROM "{cohort_table}";"""
         )
+        locations_df = get_data(locations_query)
 
-        for _, row in unique_combinations.iterrows():
+        for _, row in locations_df[:100].iterrows():
             x = row["x"]
             y = row["y"]
-            timestamp_hour = row["timestamp_hour"]
-            start_model_datetime = datetime.now()
-            logging.info(
-                f"Starting pipeline for location ({x}, {y}) at {timestamp_hour} {start_model_datetime}"
-            )
 
-            result = matrix_generator.execute(engine, x, y, timestamp_hour)
-            print("result", result)
+            matrix_generator.execute(engine, x, y, cohort_table)
 
-        #     if result is not None:
-        #         # validation_features_df, full_features_df, valid_labels, train_labels = result
+        #     if not satellite_df.empty:
+        #         validation_features_df, full_features_df, valid_labels, train_labels = satellite_df
 
         #         model_trainer = ModelTrainerFlow().execute()
         #         model_output = model_trainer.train_all_models(
-        #             f"{x}_{y}_{timestamp_hour}",
+        #             x,
         #             full_features_df,
         #             train_labels,
         #             models_directory,
@@ -228,16 +221,16 @@ def feature_builder(models_directory, plots_directory, cohort_table):
         #         for (
         #             model_id,
         #             model_name,
-        #             train_valid_id,
+        #             x,
         #             train_model,
         #             validation_df,
         #         ) in model_output:
         #             logging.info(
-        #                 f"Training and evaluating model {model_output[train_valid_id][0]}"
+        #                 f"Training and evaluating model {model_output[x][0]}"
         #             )
         #             model_evaluator = ModelEvaluatorFlow().execute()
         #             valid_pred, results_metrics_df = model_evaluator.execute(
-        #                 train_valid_id,
+        #                 x,
         #                 train_model,
         #                 model_name,
         #                 model_id,
