@@ -23,6 +23,51 @@ class MatrixGeneratorConfig:
     ID_COLUMN_LIST: Sequence[str] = field(
         default_factory=lambda: ["locationId", "cohort", "cohort_type"]
     )
+    # Satellite configurations
+    SATELLITE_CONFIG = {
+        "MODIS/061/MCD19A2_GRANULES": {
+            "bands": ["Optical_Depth_047"],
+            "resolution": 1000,
+            "time_ranges": [("00:00:00", "08:00:00")],
+            "frequency": "daily",
+        },
+        "LANDSAT/LC08/C02/T1_L2": {
+            "bands": ["SR_B4", "SR_B3", "SR_B2"],
+            "resolution": 30,
+            "time_ranges": [("03:30:00", "04:00:00")],
+            "frequency": None,  # Unknown frequency
+        },
+        "NOAA/VIIRS/DNB/MONTHLY_V1/VCMCFG": {
+            "bands": ["avg_rad"],
+            "resolution": 463.83,
+            "time_ranges": [("00:00:00", "00:59:59")],
+            "frequency": "monthly",
+        },
+        "NOAA/GFS0P25": {
+            "bands": [
+                "temperature_2m_above_ground",
+                "relative_humidity_2m_above_ground",
+                "precipitable_water_entire_atmosphere",
+                "total_cloud_cover_entire_atmosphere",
+                "u_component_of_wind_10m_above_ground",
+                "v_component_of_wind_10m_above_ground",
+            ],
+            "resolution": 27830,
+            "time_ranges": [
+                ("00:00:00", "00:59:59"),
+                ("06:00:00", "06:59:59"),
+                ("12:00:00", "12:59:59"),
+                ("18:00:00", "18:59:59"),
+            ],
+            "frequency": "daily",
+        },
+        # "COPERNICUS/Landcover/100m/Proba-V-C3/Global": {
+        #     "bands": ["discrete_classification"],
+        #     "resolution": 100,
+        #     "time_ranges": [("00:00:00", "23:59:59")],
+        #     "frequency": "annual",
+        # },
+    }
 
 
 @dataclass
@@ -154,52 +199,6 @@ class EEConfig:
         "/home/ec2-user/openaq-engine/unicef-367711-a4ac0921e063.json"
     )
     SERVICE_ACCOUNT = "earth-engine@unicef-367711.iam.gserviceaccount.com"
-
-    # Satellite configurations
-    SATELLITE_CONFIG = {
-        "MODIS/061/MCD19A2_GRANULES": {
-            "bands": ["Optical_Depth_047"],
-            "resolution": 1000,
-            "time_ranges": [("00:00:00", "08:00:00")],
-            "frequency": "daily",
-        },
-        "LANDSAT/LC08/C02/T1_L2": {
-            "bands": ["SR_B4", "SR_B3", "SR_B2"],
-            "resolution": 30,
-            "time_ranges": [("03:30:00", "04:00:00")],
-            "frequency": None,  # Unknown frequency
-        },
-        "NOAA/VIIRS/DNB/MONTHLY_V1/VCMCFG": {
-            "bands": ["avg_rad"],
-            "resolution": 463.83,
-            "time_ranges": [("00:00:00", "00:59:59")],
-            "frequency": "monthly",
-        },
-        "NOAA/GFS0P25": {
-            "bands": [
-                "temperature_2m_above_ground",
-                "relative_humidity_2m_above_ground",
-                "precipitable_water_entire_atmosphere",
-                "total_cloud_cover_entire_atmosphere",
-                "u_component_of_wind_10m_above_ground",
-                "v_component_of_wind_10m_above_ground",
-            ],
-            "resolution": 27830,
-            "time_ranges": [
-                ("00:00:00", "00:59:59"),
-                ("06:00:00", "06:59:59"),
-                ("12:00:00", "12:59:59"),
-                ("18:00:00", "18:59:59"),
-            ],
-            "frequency": "daily",
-        },
-        "COPERNICUS/Landcover/100m/Proba-V-C3/Global": {
-            "bands": ["discrete_classification"],
-            "resolution": 100,
-            "time_ranges": [("00:00:00", "23:59:59")],
-            "frequency": "annual",
-        },
-    }
 
 
 @dataclass
