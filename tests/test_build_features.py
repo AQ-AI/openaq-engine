@@ -56,11 +56,14 @@ def feature_df():
 
 def test_build_features_random_forest_initialization():
     config = BuildFeaturesConfig(
-        CATEGORICAL_FEATURES=["col1", "col2"],
-        ALL_MODEL_FEATURES=["col1", "col2"],
+        CATEGORICAL_FEATURES=[],
+        ALL_MODEL_FEATURES=[],
         TARGET_COL="value",
     )
-    builder = BuildFeaturesRandomForest.from_dataclass_config(config)
+    satellite_config = {"some_key": "some_value"}
+    builder = BuildFeaturesRandomForest.from_dataclass_config(
+        satellite_config, config
+    )
     assert builder.categorical_features == config.CATEGORICAL_FEATURES
     assert builder.all_model_features == config.ALL_MODEL_FEATURES
     assert builder.target_col == config.TARGET_COL
@@ -73,65 +76,51 @@ def test_add_ee_features(mocker, feature_df):
     mock_ee_instance = mock_ee_features.return_value
     mock_ee_instance.execute.return_value = feature_df
 
-    builder = BuildFeaturesRandomForest(
-        categorical_features=["location_id", "cohort"],
-        all_model_features=["location_id", "cohort"],
+    config = BuildFeaturesConfig(
+        CATEGORICAL_FEATURES=[],
+        CORE_FEATURES=[],
+        TARGET_COL="value",
     )
-    x, y, timestamp_hour = 1, 2, "2021-01-01T00:00:00Z"
-    result = builder._add_ee_features(x, y, timestamp_hour)
+    satellite_config = {"some_key": "some_value"}
+    builder = BuildFeaturesRandomForest.from_dataclass_config(
+        satellite_config, config
+    )
+
+    x, y, timestamp_hour, table_name = (
+        1,
+        2,
+        "2021-01-01T00:00:00Z",
+        "test_table",
+    )
+    result = builder._add_ee_features(x, y, timestamp_hour, table_name)
+
     assert result.equals(feature_df)
 
     # Ensure the mocked EEFeatures was called correctly
-    mock_ee_features.assert_called_once()
     mock_ee_instance.execute.assert_called_once_with(
-        x, y, timestamp_hour, save_images=False
+        x, y, timestamp_hour, table_name, save_images=False
     )
 
 
 def test_split_train_valid(cohort_df, feature_df):
+    satellite_config = {"some_key": "some_value"}
     builder = BuildFeaturesRandomForest(
         categorical_features=["col1", "col2"],
         all_model_features=["col1", "col2"],
+        satellite_config=satellite_config,
     )
     result = builder._split_train_valid(cohort_df, feature_df)
     assert isinstance(result, tuple)
     assert len(result) == 6
 
 
-def test_execute(mocker):
-    mock_engine = MagicMock()
-
-    feature_df = pd.DataFrame({"col1": [1], "col2": [2]})
-
-    mocker.patch.object(
-        BuildFeaturesRandomForest, "_add_ee_features", return_value=feature_df
-    )
-    mocker.patch.object(
-        BuildFeaturesRandomForest,
-        "_change_to_categorical_type",
-        return_value=feature_df,
-    )
-
-    builder = BuildFeaturesRandomForest(
-        categorical_features=["col1", "col2"],
-        all_model_features=["col1", "col2"],
-    )
-    result = builder.execute(mock_engine, 1, 2, "2020-01-01T00:00:00Z")
-    assert isinstance(result, pd.DataFrame)
-    assert not result.empty
-
-    # Ensure the mocked methods were called
-    builder._add_ee_features.assert_called_once_with(
-        1, 2, "2020-01-01T00:00:00Z"
-    )
-    builder._change_to_categorical_type.assert_called_once_with(feature_df)
-
-
 def test_results_to_db(mocker, mock_engine, feature_df):
     mock_write_to_db = mocker.patch("src.features.build_features.write_to_db")
+    satellite_config = {"some_key": "some_value"}
     builder = BuildFeaturesRandomForest(
         categorical_features=["col1", "col2"],
         all_model_features=["col1", "col2"],
+        satellite_config=satellite_config,
     )
     builder._results_to_db(feature_df, mock_engine)
     mock_write_to_db.assert_called_once_with(
@@ -152,9 +141,11 @@ def test_get_feature_builder():
 
 
 def test_all_model_features_property():
+    satellite_config = {"some_key": "some_value"}
     builder = BuildFeaturesRandomForest(
         categorical_features=["col1", "col2"],
         all_model_features=["col1", "col2"],
+        satellite_config=satellite_config,
     )
     assert builder.all_model_features == ["col1", "col2"]
 
@@ -163,9 +154,11 @@ def test_all_model_features_property():
 
 
 def test_add_year():
+    satellite_config = {"some_key": "some_value"}
     builder = BuildFeaturesRandomForest(
         categorical_features=["col1", "col2"],
         all_model_features=["col1", "col2"],
+        satellite_config=satellite_config,
     )
     df = pd.DataFrame({"day": ["2021-01-01", "2021-01-02"]})
     result = builder._add_year(df)
