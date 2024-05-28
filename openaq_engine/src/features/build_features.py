@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, List, Optional, Type
 
 import pandas as pd
 from src.features.satellite._ee_data import EEFeatures
@@ -20,24 +20,27 @@ class BuildFeatureBase(ABC):
 class BuildFeaturesRandomForest(BuildFeatureBase):
     def __init__(
         self,
-        categorical_features: Dict[str, List[Any]],
+        satellite_config: dict,
+        categorical_features: List[str],
         all_model_features: Optional[List[str]],
     ) -> None:
+        self.satellite_config = satellite_config
         self.categorical_features = categorical_features
         self._all_model_features = all_model_features
         super().__init__(BuildFeaturesConfig.TARGET_COL)
 
     @classmethod
     def from_dataclass_config(
-        cls, config: BuildFeaturesConfig
+        cls, satellite_config, config: BuildFeaturesConfig
     ) -> "BuildFeaturesRandomForest":
         return cls(
+            satellite_config=satellite_config,
             categorical_features=config.CATEGORICAL_FEATURES,
             all_model_features=config.ALL_MODEL_FEATURES,
         )
 
     def execute(self, engine, x, y, table_name) -> pd.DataFrame:
-        df = self._add_ee_features(x, y, table_name)
+        df = self._add_ee_features(self.satellite_config, x, y, table_name)
         df = self._change_to_categorical_type(df)
         return df
 
@@ -51,9 +54,9 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
             raise ValueError("All the feature names should be strings!")
         self._all_model_features = features
 
-    def _add_ee_features(self, x, y, table_name):
+    def _add_ee_features(self, satellite_config, x, y, table_name):
         return EEFeatures.from_dataclass_config(EEConfig()).execute(
-            x, y, table_name, save_images=False
+            satellite_config, x, y, table_name, save_images=False
         )
 
     def _add_year(self, df: pd.DataFrame) -> pd.DataFrame:
