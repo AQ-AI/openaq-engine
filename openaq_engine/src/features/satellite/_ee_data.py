@@ -162,7 +162,7 @@ class EEFeatures:
             write_to_db(
                 ee_df,
                 engine,
-                f"{satellite.replace('/', '_')}_local_MN_new",
+                f"{satellite.replace('/', '_')}_test",
                 "public",
                 "append",
             )
@@ -396,72 +396,4 @@ class EEFeatures:
             df.groupby(groupby_cols)
             .apply(_weighted_means_by_column_ignoring_NaNs, avg_cols, "weight")
             .reset_index()
-        )
-
-    def get_satellite_data_within_lookback(
-        self,
-        image_collection,
-        image_bands,
-        location_id,
-        lon,
-        lat,
-        cohort,
-        resolution,
-        date_utc,
-        period,
-    ):
-        """
-        This function takes in an image collection
-        and a set of spatial and temporal parameters
-        to calculate the weighted temporal average
-        value for each satellite within a lookback.
-        """
-
-        centroid_point = ee.Geometry.Point(lon, lat)
-        day_of_interest = ee.Date(date_utc)
-
-        filtered_image_collection = image_collection.filterDate(
-            day_of_interest.advance(-(self.lookback_n * period), "days"),
-            day_of_interest,
-        )
-        info = filtered_image_collection.getRegion(
-            centroid_point, resolution
-        ).getInfo()
-        return self._create_satellite_dataframe(
-            info, image_bands, date_utc, lon, lat, cohort
-        )
-
-    def get_any_recent_satellite_data(
-        self,
-        image_collection,
-        image_bands,
-        location_id,
-        lon,
-        lat,
-        cohort,
-        resolution,
-        date_utc,
-    ):
-        """This function collects all satellite imagery from
-        between the specified date and the first date for a specific
-        geolocation with no time windor specified"""
-        centroid_point = ee.Geometry.Point(lon, lat)
-        day_of_interest = ee.Date(date_utc)
-        start_date = ee.Date(
-            "2015-01-01",
-        )
-        filtered_image_collection = image_collection.filterDate(
-            start_date,
-            day_of_interest,
-        )
-        filtered_image_collection = image_collection.limit(10)
-        info = filtered_image_collection.getRegion(
-            centroid_point, resolution
-        ).getInfo()
-        return self._create_satellite_dataframe(
-            info,
-            image_bands,
-            date_utc,
-            lon,
-            lat,
         )
