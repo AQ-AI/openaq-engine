@@ -6,7 +6,6 @@ from typing import Any, Dict, List
 
 import mlflow
 from dateutil.relativedelta import relativedelta
-
 from src.utils.utils import (
     extract_utc_date,
     get_data,
