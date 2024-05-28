@@ -35,7 +35,7 @@ class MatrixGeneratorConfig:
             "bands": ["SR_B4", "SR_B3", "SR_B2"],
             "resolution": 30,
             "time_ranges": [("03:30:00", "04:00:00")],
-            "frequency": None,  # Unknown frequency
+            "frequency": "weekly",
         },
         "NOAA/VIIRS/DNB/MONTHLY_V1/VCMCFG": {
             "bands": ["avg_rad"],
@@ -129,8 +129,10 @@ class BuildFeaturesConfig:
     TARGET_VARIABLE = "pm25"
     COUNTRY = "MN"
     CITY = ""  # "Chennai"
-    CATEGORICAL_FEATURES: List[StrictStr] = field(default_factory=lambda: [])
-    CORE_FEATURES: List[StrictStr] = field(default_factory=lambda: [])
+    CATEGORICAL_FEATURES: List[str] = field(
+        default_factory=lambda: ["locationId"]
+    )
+    CORE_FEATURES: List[str] = field(default_factory=list)
     SATELLITE_FEATURES: List[StrictStr] = field(
         default_factory=lambda: [
             "Optical_Depth_047",
