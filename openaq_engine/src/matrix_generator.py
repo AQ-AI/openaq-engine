@@ -65,21 +65,19 @@ class MatrixGenerator:
 
     def build_features(self, cohort_table):
         cohort_time_ranges = self.extract_time_ranges(cohort_table)
-        cohort_data_dict = {}
+        training_data = []
+        validation_data = []
 
         for tv_id, types in cohort_time_ranges.items():
-            cohort_data_dict[tv_id] = {"training": [], "validation": []}
-
-            locations_query = f"""
-                SELECT DISTINCT x, y FROM "{cohort_table}"
-                WHERE train_validation_set = {tv_id}
-            """
-            locations = get_data(locations_query)
-
             for c_type, time_ranges in types.items():
                 print(f"Processing {c_type} data for TV set {tv_id}")
                 for start_date, end_date in time_ranges:
                     print(f"Time range: {start_date} to {end_date}")
+                    locations_query = f"""
+                        SELECT DISTINCT x, y FROM "{cohort_table}"
+                        WHERE train_validation_set = {tv_id}
+                    """
+                    locations = get_data(locations_query)
                     for _, loc in locations.iterrows():
                         x, y = loc["x"], loc["y"]
                         print(f"Processing location: ({x}, {y})")
@@ -87,28 +85,64 @@ class MatrixGenerator:
                             tv_id, x, y, start_date, end_date, cohort_table
                         )
                         if not sat_data.empty:
-                            cohort_data_dict[tv_id][c_type].append(sat_data)
+                            sat_data["tv_set"] = sat_data["tv_set"].apply(
+                                lambda x: [tv_id]
+                            )
+                            if c_type == "training":
+                                training_data.append(sat_data)
+                            else:
+                                validation_data.append(sat_data)
+                        else:
+                            print(
+                                f"No satellite data found for location ({x}, {y}) and TV set {tv_id} between {start_date} and {end_date}"
+                            )
 
-                # Concatenate DataFrames if there are any
-                if cohort_data_dict[tv_id][c_type]:
-                    concatenated_df = pd.concat(
-                        cohort_data_dict[tv_id][c_type]
-                    )
-                    table_name = f"{tv_id}_{c_type}"
-                    print(
-                        f"Writing to DB: {table_name} with {len(concatenated_df)} rows"
-                    )
-                    write_to_db(
-                        concatenated_df,
-                        get_dbengine(),
-                        table_name,
-                        "public",
-                        "replace",
-                    )
-                else:
-                    print(f"No data to write for {tv_id} {c_type}")
+        # Concatenate and combine tv_set lists
+        training_df = self.combine_tv_sets(training_data)
+        validation_df = self.combine_tv_sets(validation_data)
 
-        return cohort_data_dict
+        # Write to DB
+        write_to_db(
+            training_df,
+            get_dbengine(),
+            f"{cohort_table}_training",
+            "public",
+            "replace",
+        )
+        write_to_db(
+            validation_df,
+            get_dbengine(),
+            f"{cohort_table}_validation",
+            "public",
+            "replace",
+        )
+
+        return {"training": training_df, "validation": validation_df}
+
+    def combine_tv_sets(self, data):
+        if not data:
+            return pd.DataFrame()
+
+        df = pd.concat(data)
+        # Ensure no duplicates before grouping
+        df = df.drop_duplicates(
+            subset=["sensor_longitude", "sensor_latitude", "datetime_hour"]
+            + [col for col in df.columns if col not in ["tv_set"]]
+        )
+
+        grouped = df.groupby(
+            ["sensor_longitude", "sensor_latitude", "datetime_hour"],
+            as_index=False,
+        ).agg(
+            {
+                **{
+                    col: "first" for col in df.columns if col not in ["tv_set"]
+                },
+                "tv_set": lambda x: list(set(sum(x, []))),
+            }
+        )
+
+        return grouped
 
     def extract_time_ranges(
         self, cohort_table: str
@@ -137,7 +171,6 @@ class MatrixGenerator:
     def query_satellite_data(
         self, tv_id, x, y, start_date, end_date, cohort_table
     ):
-        # Query to get the cohort data
         cohort_query = f"""
             SELECT x, y, value, date_trunc('hour', "timestamp_utc"::timestamp) AS "datetime_hour"
             FROM "{cohort_table}"
@@ -159,9 +192,10 @@ class MatrixGenerator:
         )
         cohort_df["sensor_longitude"] = cohort_df["x"]
         cohort_df["sensor_latitude"] = cohort_df["y"]
+        cohort_df["tv_set"] = cohort_df.apply(lambda x: [tv_id], axis=1)
 
         for satellite, config in self.satellite_config.items():
-            table_name = satellite.replace("/", "_") + "_local_MN_new"
+            table_name = satellite.replace("/", "_")
             columns = ", ".join([f'"{band}"' for band in config["bands"]])
             query = f"""
                 SELECT sensor_longitude, sensor_latitude, date_trunc('hour', "datetime"::timestamp) AS "datetime_hour", {columns}
