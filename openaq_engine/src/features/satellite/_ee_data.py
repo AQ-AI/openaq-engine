@@ -13,7 +13,6 @@ from haversine import haversine
 from joblib import Parallel, delayed
 from setup_environment import get_dbengine
 from sklearn.preprocessing import MinMaxScaler
-
 from src.utils.utils import ee_array_to_df, get_data, write_to_db
 
 from config.model_settings import EEConfig
@@ -23,14 +22,12 @@ class EEFeatures:
     def __init__(
         self,
         date_col: str,
-        satellite_config: dict,
         bucket_name: str,
         path_to_private_key: str,
         service_account: str,
         lookback_n: int,
     ):
         self.date_col = date_col
-        self.satellite_config = satellite_config
         self.bucket_name = bucket_name
         self.path_to_private_key = path_to_private_key
         self.service_account = service_account
@@ -40,14 +37,13 @@ class EEFeatures:
     def from_dataclass_config(cls, config: EEConfig) -> "EEFeatures":
         return cls(
             date_col=config.DATE_COL,
-            satellite_config=config.SATELLITE_CONFIG,
             bucket_name=config.BUCKET_NAME,
             path_to_private_key=config.PATH_TO_PRIVATE_KEY,
             service_account=config.SERVICE_ACCOUNT,
             lookback_n=config.LOOKBACK_N,
         )
 
-    def execute(self, x, y, table_name, save_images):
+    def execute(self, satellite_config, x, y, table_name, save_images):
         credentials = ee.ServiceAccountCredentials(
             self.service_account,
             self.path_to_private_key,
@@ -58,7 +54,7 @@ class EEFeatures:
             delayed(self.query_satellite_for_time_range)(
                 satellite, config, x, y, table_name, save_images
             )
-            for satellite, config in self.satellite_config.items()
+            for satellite, config in satellite_config.items()
         )
 
         # Flatten the list of DataFrames
@@ -166,7 +162,7 @@ class EEFeatures:
             write_to_db(
                 ee_df,
                 engine,
-                f"{satellite.replace('/', '_')}_local_MN",
+                f"{satellite.replace('/', '_')}_local_MN_new",
                 "public",
                 "append",
             )
