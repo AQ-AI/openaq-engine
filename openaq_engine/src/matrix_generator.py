@@ -124,12 +124,8 @@ class MatrixGenerator:
             return pd.DataFrame()
 
         df = pd.concat(data)
-        # Ensure no duplicates before grouping
-        df = df.drop_duplicates(
-            subset=["sensor_longitude", "sensor_latitude", "datetime_hour"]
-            + [col for col in df.columns if col not in ["tv_set"]]
-        )
 
+        # Group by the relevant columns and aggregate tv_set properly
         grouped = df.groupby(
             ["sensor_longitude", "sensor_latitude", "datetime_hour"],
             as_index=False,
@@ -199,7 +195,7 @@ class MatrixGenerator:
             columns = ", ".join([f'"{band}"' for band in config["bands"]])
             query = f"""
                 SELECT sensor_longitude, sensor_latitude, date_trunc('hour', "datetime"::timestamp) AS "datetime_hour", {columns}
-                FROM "{table_name}"
+                FROM "{table_name}_local_MN_new"
                 WHERE sensor_longitude = {x} AND sensor_latitude = {y}
                 AND "datetime"::timestamp BETWEEN '{start_date}' AND '{end_date}'
             """
