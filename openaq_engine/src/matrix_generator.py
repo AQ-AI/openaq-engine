@@ -124,7 +124,6 @@ class MatrixGenerator:
             return pd.DataFrame()
 
         df = pd.concat(data)
-
         # Group by the relevant columns and aggregate tv_set properly
         grouped = df.groupby(
             ["sensor_longitude", "sensor_latitude", "datetime_hour"],
