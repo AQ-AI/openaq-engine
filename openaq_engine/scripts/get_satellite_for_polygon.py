@@ -2,9 +2,11 @@ import time
 
 import ee
 
+SERVICE_ACCOUNT = ""
+PATH_TO_PRIVATE_KEY = ""
+
 credentials = ee.ServiceAccountCredentials(
-    "earth-engine@unicef-367711.iam.gserviceaccount.com",
-    "/home/ec2-user/openaq-engine/unicef-367711-a4ac0921e063.json",
+    SERVICE_ACCOUNT, PATH_TO_PRIVATE_KEY
 )  # Initialize the Earth Engine library.
 ee.Initialize(credentials)
 
