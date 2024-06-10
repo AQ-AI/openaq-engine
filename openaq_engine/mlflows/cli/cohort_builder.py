@@ -6,10 +6,19 @@ from config.model_settings import CohortBuilderConfig
 
 
 @parametrized
-def cohort_builder_options(fn, countries_option: bool = True):
+def cohort_builder_options(
+    fn,
+    countries_option: bool = True,
+    cities_option: bool = True,
+    local_data_option: bool = True,
+):
     """
     countries_option: bool = True
         Whether to provide the option to specify countries or not
+    cities_option: bool = True
+        Whether to provide the option to specify cities or not
+    local_data_option: bool = True
+        Whether to provide the option to load local data or not
     """
     cohort_builder_config = OptionGroup(
         "Options for defining the cohort",
@@ -27,6 +36,25 @@ def cohort_builder_options(fn, countries_option: bool = True):
             "Load timesplits from specific countries in the 'Country Code'"
             " format e.g. 'IN' (India)"
         ),
+    )
+    city = cohort_builder_config.option(
+        "-ci",
+        "--city",
+        default=CohortBuilderConfig.CITY,
+        type=click.STRING,
+        help="Load timesplits from a specific city",
+    )
+    sensor_type = cohort_builder_config.option(
+        "-s",
+        "--sensor-type",
+        default=CohortBuilderConfig.SENSOR_TYPE,
+        type=click.Choice(
+            [
+                "reference grade",
+                "low-cost sensor",
+            ]
+        ),
+        help="Load timesplits from data for the sensor type requested",
     )
     pollutant = cohort_builder_config.option(
         "-p",
@@ -59,8 +87,18 @@ def cohort_builder_options(fn, countries_option: bool = True):
         type=click.Choice(["openaq-aws", "openaq-api"]),
         help="Source to load the openaq data from",
     )
-    wrapped_func = source(pollutant(latest_date(fn)))
+    local_data = cohort_builder_config.option(
+        "-ld",
+        "--local-data",
+        type=click.STRING,
+        help="Name of local data table in database",
+    )
+    wrapped_func = source(sensor_type(pollutant(latest_date(fn))))
     if countries_option:
         wrapped_func = country_(wrapped_func)
+    if cities_option:
+        wrapped_func = city(wrapped_func)
+    if local_data_option:
+        wrapped_func = local_data(wrapped_func)
 
     return wrapped_func

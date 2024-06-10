@@ -11,8 +11,9 @@ from geetools import batch
 from googleapiclient.errors import HttpError
 from haversine import haversine
 from joblib import Parallel, delayed
+from setup_environment import get_dbengine
 from sklearn.preprocessing import MinMaxScaler
-from src.utils.utils import ee_array_to_df, get_data
+from src.utils.utils import ee_array_to_df, get_data, write_to_db
 
 from config.model_settings import EEConfig
 
@@ -28,7 +29,6 @@ class EEFeatures:
         service_account: str,
         lookback_n: int,
     ):
-
         self.date_col = date_col
         self.table_name = table_name
         self.all_satellites = all_satellites
@@ -50,24 +50,30 @@ class EEFeatures:
         )
 
     def execute(self, df, save_images):
-        ee.Authenticate()
-        # end_date, start_date = self._generate_timerange()
+        credentials = ee.ServiceAccountCredentials(
+            self.service_account,
+            self.path_to_private_key,
+        )
+        ee.Initialize(credentials)
         satellite_df = pd.concat(
             Parallel(n_jobs=-1, backend="multiprocessing", verbose=5)(
                 delayed(self.execute_for_location)(
-                    location_id, lon, lat, day, save_images
+                    location_id, lon, lat, day, cohort, save_images
                 )
-                for location_id, lon, lat, day in zip(
-                    df.locationId, df.x, df.y, df.timestamp_utc
+                for location_id, lon, lat, day, cohort in zip(
+                    df.locationId, df.x, df.y, df.timestamp_utc, df.cohort
                 )
             ),
         ).reset_index(drop=True)
+        engine = get_dbengine()
+        write_to_db(satellite_df, engine, "satellite_MN", "public", "append")
+
         features_df = self.generate_features(satellite_df)
 
         return features_df
 
     def execute_for_location(
-        self, location_id, lon, lat, date_utc, save_images
+        self, location_id, lon, lat, date_utc, cohort, save_images
     ):
         """
         Input
@@ -89,7 +95,6 @@ class EEFeatures:
         datetime:
             the date the sensor reading was taken
         """
-        ee.Initialize()
 
         df_list = []
 
@@ -111,6 +116,7 @@ class EEFeatures:
                 date_utc,
                 lon,
                 lat,
+                cohort,
                 period,
                 resolution,
             )
@@ -144,7 +150,6 @@ class EEFeatures:
         save_images:
             a boolean flag whether to write satellite data to google storage
         """
-        ee.Initialize()
 
         # logging.info(
         #     "please sigup to Google Earth Engine here:"
@@ -175,7 +180,6 @@ class EEFeatures:
                 f"""Image collection {image_collection.getInfo()}
                 does not match any existing location."""
             )
-            pass
 
     def generate_features(self, satellite_df):
         groupby_cols = [
@@ -189,6 +193,7 @@ class EEFeatures:
         cols_to_remove = [
             "longitude",
             "latitude",
+            "cohort",
             "time",
             "datetime",
             "sensor_timestamp",
@@ -230,31 +235,31 @@ class EEFeatures:
         day,
         lon,
         lat,
+        cohort,
         period,
         resolution,
     ):
         """This function builds an algorithm to compute
         thr representative satellite value for a sensor location."""
-
         try:
-            logging.info("Getting Most recent image info")
             ee_df = self.get_most_recent_satellite_data(
                 image_collection,
                 image_bands,
                 location_id,
                 lon,
                 lat,
+                cohort,
                 resolution,
                 day,
                 period,
             )
-            return ee_df
+            if not ee_df.empty:
+                logging.info("Getting Most recent image info")
+                print("recent image: ", ee_df)
+                return ee_df
+            else:
+                pass
         except (EEException, HttpError):
-            logging.info(
-                "Finding ee.ImageCollection between"
-                f" {day} and"
-                f" {self.lookback_n * period} days"
-            )
             try:
                 ee_df = self.get_satellite_data_within_lookback(
                     image_collection,
@@ -262,11 +267,21 @@ class EEFeatures:
                     location_id,
                     lon,
                     lat,
+                    cohort,
                     resolution,
                     day,
                     period,
                 )
-                return ee_df
+                if not ee_df.empty:
+                    logging.info(
+                        "Finding ee.ImageCollection between"
+                        f" {day} and"
+                        f" {self.lookback_n * period} days"
+                    )
+                    print("Within lookback image: ", ee_df)
+                    return ee_df
+                else:
+                    pass
             except (EEException, HttpError):
                 try:
                     ee_df = self.get_any_recent_satellite_data(
@@ -275,14 +290,19 @@ class EEFeatures:
                         location_id,
                         lon,
                         lat,
+                        cohort,
                         resolution,
                         day,
                     )
-
-                    return ee_df
+                    if not ee_df.empty:
+                        logging.info("Finding ee.ImageCollection after 2015")
+                        print("any image: ", ee_df)
+                        return ee_df
+                    else:
+                        pass
                 except (EEException, HttpError):
                     logging.warn(f"No image available for {lon}, {lat}")
-                    pass
+                    return pd.DataFrame()
 
     def get_most_recent_satellite_data(
         self,
@@ -291,6 +311,7 @@ class EEFeatures:
         location_id,
         lon,
         lat,
+        cohort,
         resolution,
         date_utc,
         period,
@@ -326,12 +347,19 @@ class EEFeatures:
         filtered_image_collection = image_collection.filterDate(
             day_of_interest.advance(-period, "days"), day_of_interest
         )
+
         info = filtered_image_collection.getRegion(
             centroid_point, resolution
         ).getInfo()
 
         return self._create_satellite_dataframe(
-            info, image_bands, location_id, date_utc, lon, lat
+            info,
+            image_bands,
+            location_id,
+            date_utc,
+            lon,
+            lat,
+            cohort,
         )
 
     def get_satellite_data_within_lookback(
@@ -341,6 +369,7 @@ class EEFeatures:
         location_id,
         lon,
         lat,
+        cohort,
         resolution,
         date_utc,
         period,
@@ -363,7 +392,7 @@ class EEFeatures:
             centroid_point, resolution
         ).getInfo()
         return self._create_satellite_dataframe(
-            info, image_bands, location_id, date_utc, lon, lat
+            info, image_bands, location_id, date_utc, lon, lat, cohort
         )
 
     def get_any_recent_satellite_data(
@@ -373,6 +402,7 @@ class EEFeatures:
         location_id,
         lon,
         lat,
+        cohort,
         resolution,
         date_utc,
     ):
@@ -393,11 +423,18 @@ class EEFeatures:
             centroid_point, resolution
         ).getInfo()
         return self._create_satellite_dataframe(
-            info, image_bands, location_id, date_utc, lon, lat
+            info, image_bands, location_id, date_utc, lon, lat, cohort
         )
 
     def _create_satellite_dataframe(
-        self, info, image_bands, location_id, date_utc, lon, lat
+        self,
+        info,
+        image_bands,
+        location_id,
+        date_utc,
+        lon,
+        lat,
+        cohort,
     ):
         """Creates a dataframe from returned satellite information and
         builds required fields for weighted average calculation"""
@@ -406,6 +443,8 @@ class EEFeatures:
         ee_df = self._calculate_spatial_weighted_average(
             ee_df, lon, lat, location_id
         )
+        ee_df["cohort"] = cohort
+        ee_df["timestamp_utc"] = date_utc
         return ee_df
 
     def _calculate_temporal_weighted_average(self, date_utc, ee_df):
@@ -429,20 +468,19 @@ class EEFeatures:
         ee_df["sensor_longitude"] = lon
         ee_df["sensor_latitude"] = lat
         ee_df["location_id"] = location_id
+        ee_df["distance"] = ee_df.apply(self.calculate_distance, axis=1)
+        return ee_df
 
+    def calculate_distance(self, row):
         try:
-            ee_df["distance"] = ee_df.apply(
-                lambda row: haversine(
-                    (row["sensor_longitude"], row["sensor_latitude"]),
-                    (row["longitude"], row["latitude"]),
-                    unit="m",
-                ),
-                axis=1,
+            return haversine(
+                (row["sensor_latitude"], row["sensor_longitude"]),
+                (row["latitude"], row["longitude"]),
+                unit="m",
             )
-            return ee_df
-
-        except ValueError:
-            pass
+        except Exception as e:
+            print(f"Error processing row {row}: {e}")
+            return None  # or appropriate error value
 
     def _weighted_mean_by_lambda(
         self, df, avg_cols, weight_cols, groupby_cols

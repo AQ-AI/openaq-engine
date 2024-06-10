@@ -71,45 +71,63 @@ class Preprocess:
 
     def filter_data(self, df: pd.DataFrame):
         if self.filter_pollutant:
-            df = Filter.filter_pollutant(
-                df,
-                CohortBuilderConfig.TARGET_VARIABLE,
-            )
-            logging.info(
-                f"""Total number of pollutant values left after
-                filtering for specific pollutant:
-                {len(df)}"""
-            )
+            try:
+                df = Filter.filter_pollutant(
+                    df,
+                    CohortBuilderConfig.TARGET_VARIABLE,
+                )
+                logging.info(
+                    f"""Total number of pollutant values left after
+                    filtering for specific pollutant:
+                    {len(df)}"""
+                )
+            except AttributeError:
+                return pd.DataFrame()
         if self.filter_no_coordinates:
-            df = df.pipe(Filter.filter_no_coordinates)
-            logging.info(
-                f"""Total number of pollutant values left after
-                filtering no coordinates {len(df)}"""
-            )
+            try:
+                df = df.pipe(Filter.filter_no_coordinates)
+                logging.info(
+                    f"""Total number of pollutant values left after
+                    filtering no coordinates {len(df)}"""
+                )
+            except AttributeError:
+                return pd.DataFrame()
         if self.filter_extreme_values:
-            df = df.pipe(Filter.filter_extreme_values)
-            logging.info(
-                f"""Total number of pollutant values left after
-                filtering extreme values {len(df)}"""
-            )
+            try:
+                df = df.pipe(Filter.filter_extreme_values)
+                logging.info(
+                    f"""Total number of pollutant values left after
+                    filtering extreme values {len(df)}"""
+                )
+            except AttributeError:
+                return pd.DataFrame()
         if self.filter_non_null_values:
-            df = df.pipe(Filter.filter_non_null_values)
-            logging.info(
-                f"""Total number of pollutant values left after
-                filtering non-null values : {len(df)}"""
-            )
+            try:
+                df = df.pipe(Filter.filter_non_null_values)
+                logging.info(
+                    f"""Total number of pollutant values left after
+                    filtering non-null values : {len(df)}"""
+                )
+            except AttributeError:
+                logging.info(f"""No Valid pollutants from {len(df)} points""")
         if self.filter_countries:
-            df = df.pipe(Filter.filter_countries)
-            logging.info(
-                f"""Total number of pollutant values left after
-                filtering countries: {len(df)}"""
-            )
+            try:
+                df = df.pipe(Filter.filter_countries)
+                logging.info(
+                    f"""Total number of pollutant values left after
+                    filtering countries: {len(df)}"""
+                )
+            except AttributeError:
+                logging.info(f"""No Valid countries from {len(df)} points""")
         if self.filter_cities:
-            df = df.pipe(Filter.filter_cities)
-            logging.info(
-                f"""Total number of pollutant values left after
-                filtering cities: {len(df)}"""
-            )
+            try:
+                df = df.pipe(Filter.filter_cities)
+                logging.info(
+                    f"""Total number of pollutant values left after
+                    filtering cities: {len(df)}"""
+                )
+            except AttributeError:
+                logging.info(f"""No Valid cities from {len(df)} points""")
         return df
 
     def get_timestamps(self, df: pd.DataFrame, source: str) -> pd.DataFrame:
@@ -135,34 +153,34 @@ class Preprocess:
         """
         row["timestamp_utc"] = (
             datetime.fromisoformat(
-                re.search("(?<=utc=)(.*)(?=,)", row["date"]).group(0)[:-1]
+                re.search("(?<=utc=)(.*)(?=,)", row["date"]).group(0)
             )
             .astimezone(timezone.utc)
             .strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         )
-        row["timestamp_local"] = (
-            datetime.fromisoformat(
-                re.search("(?<=local=)(.*)(?=})", row["date"]).group(0),
-            )
-            .astimezone(timezone.utc)
-            .strftime("%Y-%m-%dT%H:%M:%S%z")
-        )
+        row["timestamp_local"] = datetime.fromisoformat(
+            re.search("(?<=local=)(.*)(?=})", row["date"]).group(0),
+        ).strftime("%Y-%m-%dT%H:%M:%S%z")
         return row
 
     def _extract_timestamp_from_api(self, row: pd.Series) -> pd.Series:
         """
         Extract timezone into "utc" and "local" timezone columns from dict.
         """
+        date_info = row["date"]
+
+        # If date_info is a string, convert it to a dictionary
+        if isinstance(date_info, str):
+            date_info = json.loads(date_info)
+
         row["timestamp_utc"] = (
-            datetime.fromisoformat(row["date"]["utc"])
+            datetime.fromisoformat(date_info["utc"].replace("Z", "+00:00"))
             .astimezone(timezone.utc)
             .strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         )
-        row["timestamp_local"] = (
-            datetime.fromisoformat(row["date"]["local"])
-            .astimezone(timezone.utc)
-            .strftime("%Y-%m-%dT%H:%M:%S%z")
-        )
+        row["timestamp_local"] = datetime.fromisoformat(
+            date_info["local"]
+        ).strftime("%Y-%m-%dT%H:%M:%S%z")
         return row
 
     def extract_coordinates(
@@ -173,7 +191,6 @@ class Preprocess:
         Filters out rows with invalid point representations.
         """
         logging.info("Extracting coordinates")
-        # Filter out any invalid points
         if source == "openaq-aws":
             df = df.apply(
                 lambda row: self._extract_lat_lng_from_aws(row), axis=1
@@ -187,17 +204,23 @@ class Preprocess:
 
     def validate_point(self, df: pd.DataFrame) -> pd.DataFrame:
         """filters invalid geometries"""
-        df["point_is_valid"] = df.pnt.apply(lambda x: x.wkt != "POINT EMPTY")
-
-        if not all(df.point_is_valid):
-            num_invalid_pnts = len(df[~df.point_is_valid])
-            logging.info(
-                f"There were {num_invalid_pnts} rows with invalid points and"
-                " were filtered out"
+        try:
+            df["point_is_valid"] = df.pnt.apply(
+                lambda x: x.wkt != "POINT EMPTY"
             )
 
-        df_valid = df[df.point_is_valid]
-        return df_valid.drop(["pnt", "point_is_valid"], axis=1)
+            if not all(df.point_is_valid):
+                num_invalid_pnts = len(df[~df.point_is_valid])
+                logging.info(
+                    f"There were {num_invalid_pnts} rows with invalid points"
+                    " and were filtered out"
+                )
+            df_valid = df[df.point_is_valid]
+
+            return df_valid.drop(["pnt", "point_is_valid"], axis=1)
+        except (AttributeError, KeyError):
+            logging.info(f"None of the {len(df)} rows had valid points")
+            return pd.DataFrame()
 
     def _extract_lat_lng_from_aws(self, row: pd.Series) -> pd.Series:
         """Regex extraction of latitude and longtitude from string"""
@@ -212,8 +235,15 @@ class Preprocess:
 
     def _extract_lat_lng_from_api(self, row: pd.Series) -> pd.Series:
         """Extraction of latitude and longtitude from dict"""
-        row["y"] = float(row["coordinates"]["latitude"])
-        row["x"] = float(row["coordinates"]["longitude"])
+        # Filter out any invalid points
+        coordinates_info = row["coordinates"]
+
+        # If coordinates_info is a string, convert it to a dictionary
+        if isinstance(coordinates_info, str):
+            coordinates_info = json.loads(coordinates_info)
+
+        row["y"] = float(coordinates_info["latitude"])
+        row["x"] = float(coordinates_info["longitude"])
 
         return self._check_valid_create_pnt(row)
 
@@ -226,9 +256,11 @@ class Preprocess:
             return row
 
     def dict_cols_to_json(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Dumps cols containing dicts to json"""
-        for i in df.columns:
-            if isinstance(df[i][1], dict):
-                df[i] = list(map(lambda x: json.dumps(x), df[i]))
-
+        """Dumps columns containing dicts to JSON strings."""
+        for column in df.columns:
+            # Convert any dictionaries in the column to JSON strings
+            if df[column].apply(lambda x: isinstance(x, dict)).any():
+                df[column] = df[column].apply(
+                    lambda x: json.dumps(x) if isinstance(x, dict) else x
+                )
         return df
