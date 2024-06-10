@@ -214,7 +214,7 @@ class CohortBuilderConfig:
     DATE_COL: str = "date.utc"
     CITY = ""  
     SENSOR_TYPE = "reference grade"
-    REGION = ""
+    REGION = "us-east-1"
     S3_BUCKET = os.getenv("S3_BUCKET_OPENAQ")
     S3_OUTPUT = os.getenv("S3_OUTPUT_OPENAQ")
     TABLE_NAME = ""

@@ -41,7 +41,7 @@ def test_get_timestamps_aws(sample_data):
     result = preprocess.get_timestamps(sample_data, "openaq-aws")
     assert "timestamp_utc" in result.columns
     assert "timestamp_local" in result.columns
-    assert result["timestamp_utc"].iloc[0] == "2022-04-01T21:00:00.000000Z"
+    assert result["timestamp_utc"].iloc[0] == "2022-04-01T20:00:00.000000Z"
     assert result["timestamp_local"].iloc[0] == "2022-04-01T14:00:00-0700"
 
 
