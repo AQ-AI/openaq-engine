@@ -1,5 +1,6 @@
 import json
 import time
+from datetime import datetime
 from typing import Any, List
 
 import boto3
@@ -7,6 +8,7 @@ import numpy as np
 import pandas as pd
 import requests
 from pydantic.json import pydantic_encoder
+
 from setup_environment import connect_to_db
 
 
@@ -47,20 +49,37 @@ def write_csv(df: pd.DataFrame, path: str, **kwargs: Any) -> None:
 def query_results_from_api(params, query):
     url = query
     headers = params
-
     response = requests.get(url, headers=headers, timeout=None)
-
-    return response.text
+    return response
 
 
 def api_response_to_df(url):
-
+    """
+    Fetch data from the provided URL and return a DataFrame and the full response.
+    Implements retry with exponential backoff on rate limiting.
+    """
     headers = {"accept": "application/json"}
-    response = query_results_from_api(headers, url)
-    try:
-        return pd.DataFrame(json.loads(response)["results"])
-    except KeyError:
-        pass
+    max_retries = 5
+    retry_count = 0
+    base_wait_time = 10  # Base wait time in seconds
+
+    while retry_count < max_retries:
+        response = query_results_from_api(headers, url)
+
+        if response.status_code == 200:
+            return pd.DataFrame(json.loads(response.text)["results"])
+        elif response.status_code == 429:
+            wait_time = base_wait_time * (2**retry_count)
+            print(f"Rate limit exceeded. Retrying in {wait_time} seconds...")
+            time.sleep(wait_time)
+            retry_count += 1
+        else:
+            print(
+                f"API Error: {response.json().get('detail', 'No details provided.')}"
+            )
+            return pd.DataFrame()
+    print("Max retries exceeded. Unable to fetch data.")
+    return pd.DataFrame()
 
 
 def query_results_from_aws(params, query, wait=True):
@@ -75,7 +94,6 @@ def query_results_from_aws(params, query, wait=True):
             "OutputLocation": f"s3://{params['bucket']}/{params['path']}/"
         },
     )
-
     if not wait:
         return response_query_execution_id["QueryExecutionId"]
     else:
@@ -110,6 +128,7 @@ def query_results_from_aws(params, query, wait=True):
                         "QueryExecutionId"
                     ]
                 )
+                print("response_query_result", response_query_result)
                 return response_query_result
 
         else:
@@ -173,10 +192,27 @@ def get_data(query):
     data: DataFrame
        Dump of Query into a DataFrame
     """
-
     with connect_to_db() as conn:
+        print(conn)
         df = pd.read_sql_query(query, conn)
     return df
+
+
+def extract_utc_date(date_dict):
+    """
+    Extracts the UTC date from the date dictionary and converts it to a datetime.date object.
+
+    Parameters:
+    date_dict (dict): The dictionary containing date information with 'utc' and 'local' keys.
+
+    Returns:
+    datetime.date: The date part of the 'utc' datetime.
+    """
+    utc_datetime_str = json.loads(date_dict)["utc"]
+    utc_datetime = datetime.fromisoformat(
+        utc_datetime_str.replace("Z", "+00:00")
+    )
+    return utc_datetime.date()
 
 
 def write_to_db(
@@ -188,8 +224,6 @@ def write_to_db(
     index=False,
     **kwargs,
 ):
-    #     with engine.begin() as connection:
-    #         connection.execute(text("""SET ROLE "pakistan-ihhn-role" """))
     df.to_sql(
         name=table_name,
         schema=schema_name,
@@ -202,11 +236,7 @@ def write_to_db(
 
 def ee_array_to_df(arr, list_of_bands):
     """Transforms client-side ee.Image.getRegion array to pandas.DataFrame."""
-    df = pd.DataFrame(arr)
-
-    # Rearrange the header.
-    headers = df.iloc[0]
-    df = pd.DataFrame(df.values[1:], columns=headers)
+    df = pd.DataFrame(arr[1:], columns=arr[0])
 
     # Remove rows without data inside.
     df = df[["longitude", "latitude", "time", *list_of_bands]].dropna()
