@@ -8,8 +8,8 @@ import pandas as pd
 import requests
 
 # Initialize the Earth Engine module.
-path_to_private_key = "unicef-367711-a4ac0921e063.json"
-service_account = "earth-engine@unicef-367711.iam.gserviceaccount.com"
+path_to_private_key = ""
+service_account = ""
 credentials = ee.ServiceAccountCredentials(
     service_account, path_to_private_key
 )
