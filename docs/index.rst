@@ -1,6 +1,10 @@
-Welcome to openaq-engine's documentation!
-=========================================================
+.. openaq-engine documentation master file, created by
+   sphinx-quickstart on Tue Jun 11 14:14:03 2024.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
 
+Welcome to openaq-engine's documentation!
+=========================================
 
 The documentation is build up in the following parts: first, there is the
 quickstart tutorial which aims at getting you started with openaq-engine as quickly as
@@ -20,7 +24,8 @@ Our code of conduct is in: https://github.com/AQ-AI/openaq-engine/blob/master/.g
 Our community statement is in: https://github.com/AQ-AI/openaq-engine/blob/master/community-statement.md
 
 
-If at any point the documentation does not suffice, you can always get help by tweeting at tweeting https://twitter.com/airqualityai (@airqualityai)
+If at any point the documentation does not suffice, you can always get help by mailing at info@aqai.xyz
+
 
 .. toctree::
    :maxdepth: 2
@@ -35,26 +40,6 @@ If at any point the documentation does not suffice, you can always get help by t
    install/local_env_setup
    install/graphana_server_setup
    
-
-
-
-------------
-
-Quick answer:
-::
-
-	$ git clone git@github.com:AQ-AI/openaq-engine.git
-	$ poetry install
-
-Remember to define your psql environment variables and export them using:
-::
-	
-   $ source .env 
-
-Long answer:
-We keep more detailed installation instructions (including dependencies)
-up-to-date below
-
 
 
 
