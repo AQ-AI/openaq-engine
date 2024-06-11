@@ -1,0 +1,244 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>How To Install Grafana Server &#8212; openaq-engine 0.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="how-to-install-grafana-server">
+<h1>How To Install Grafana Server<a class="headerlink" href="#how-to-install-grafana-server" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="step-1-create-an-iam-role-and-policy">
+<h2>Step 1: Create an IAM Role and Policy<a class="headerlink" href="#step-1-create-an-iam-role-and-policy" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Go to IAM</p></li>
+<li><p>Create Policy</p></li>
+<li><p>Insert the policy below into the JSON</p></li>
+</ul>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+   <span class="nt">&quot;Version&quot;</span><span class="p">:</span> <span class="s2">&quot;2012-10-17&quot;</span><span class="p">,</span>
+   <span class="nt">&quot;Statement&quot;</span><span class="p">:</span> <span class="p">[</span>
+       <span class="p">{</span>
+           <span class="nt">&quot;Sid&quot;</span><span class="p">:</span> <span class="s2">&quot;AllowReadingMetricsFromCloudWatch&quot;</span><span class="p">,</span>
+           <span class="nt">&quot;Effect&quot;</span><span class="p">:</span> <span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+           <span class="nt">&quot;Action&quot;</span><span class="p">:</span> <span class="p">[</span>
+               <span class="s2">&quot;cloudwatch:ListMetrics&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;cloudwatch:GetMetricStatistics&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;cloudwatch:GetMetricData&quot;</span>
+           <span class="p">],</span>
+           <span class="nt">&quot;Resource&quot;</span><span class="p">:</span> <span class="s2">&quot;*&quot;</span>
+       <span class="p">},</span>
+       <span class="p">{</span>
+           <span class="nt">&quot;Sid&quot;</span><span class="p">:</span> <span class="s2">&quot;AllowReadingTagsInstancesRegionsFromEC2&quot;</span><span class="p">,</span>
+           <span class="nt">&quot;Effect&quot;</span><span class="p">:</span> <span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+           <span class="nt">&quot;Action&quot;</span><span class="p">:</span> <span class="p">[</span>
+               <span class="s2">&quot;ec2:DescribeTags&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;ec2:DescribeInstances&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;ec2:DescribeRegions&quot;</span>
+           <span class="p">],</span>
+           <span class="nt">&quot;Resource&quot;</span><span class="p">:</span> <span class="s2">&quot;*&quot;</span>
+       <span class="p">}</span>
+   <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Create Role</p></li>
+<li><p>EC2</p></li>
+<li><p>Choose Grafana policy</p></li>
+<li><p>Name it and Create a Role</p></li>
+</ul>
+</div>
+<div class="section" id="step-2-create-a-security-group">
+<h2>Step 2: Create a Security Group<a class="headerlink" href="#step-2-create-a-security-group" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Our Security Group will need ports 22, 80, and 3000 open, Port 3000 is for Grafana</p></li>
+<li><p>Go to Security Groups</p></li>
+<li><p>Add Port 22, 80, and 3000 for our inbound rules pointing to all CIDR ranges.</p></li>
+</ul>
+</div>
+<div class="section" id="step-3-create-ec2-instance">
+<h2>Step 3: Create EC2 Instance<a class="headerlink" href="#step-3-create-ec2-instance" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Go to EC2</p></li>
+<li><p>Create EC2</p></li>
+<li><p>Choose a public subnet</p></li>
+<li><p>Give it our Grafana security group</p></li>
+<li><p>Now SSH into our instance</p></li>
+</ul>
+<p>Update your packages with</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo yum update -y
+</pre></div>
+</div>
+<div class="section" id="install-git">
+<h3>Install Git<a class="headerlink" href="#install-git" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>To start you will need to update your server and then install git.</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo yum install git -y
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Clone this repo from grafana, and change the directory into tutorial-environment.</p></li>
+<li><p>We need to add a repository for grafana so our OS will know where it is.</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo nano /etc/yum.repos.d/grafana.repo
+</pre></div>
+</div>
+<p>Add the text below to the repo file. This will install the open-source Grafana.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[grafana]
+name=grafana
+baseurl=https://packages.grafana.com/oss/rpm
+repo_gpgcheck=1
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.grafana.com/gpg.key
+sslverify=1
+sslcacert=/etc/pki/tls/certs/ca-bundle.crt
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="step-4-install-grafana">
+<h2>Step 4: Install Grafana<a class="headerlink" href="#step-4-install-grafana" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Now we will install Grafana. If you wish to actually test Grafana skip to Section Two below before you install.</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo yum install grafana -y
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>The next command will reload the system</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo systemctl daemon-reload
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Then we will start our server and check our service with the following two commands.</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo systemctl start grafana-server
+sudo systemctl status grafana-server
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Our final command will ensure that Grafana will start up automatically if we stop and restart our instance.</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo systemctl <span class="nb">enable</span> grafana-server.service
+</pre></div>
+</div>
+</div>
+<div class="section" id="test-grafana">
+<h2>Test Grafana<a class="headerlink" href="#test-grafana" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>To test our server we will need to grab the public IPv4 from AWS and add a :3000 at the end, ie. ec2-43-XXX-YYYY:3000, and insert it into our browser URL.</p></li>
+<li><p>This will bring you to a login screen and our Username and Password will be admin and admin.</p></li>
+<li><p>You will be prompted to create a new password.</p></li>
+</ul>
+</div>
+<div class="section" id="using-grafana">
+<h2>Using Grafana<a class="headerlink" href="#using-grafana" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Then we can access our application which is a Grafana News app, this app will allow us to make some API calls and generate some errors so we can see Grafana in action.</p></li>
+<li><p>Go to your AWS console, grab your public IP and enter it in the URL with 8081, like so 10.10.10.10:8081. If you get here and cannot access your website make sure you open it up on port 3000!</p></li>
+<li><p>Once in the Grafana news app enter a name and in the URL enter example.com. Then vote for the title in the top right.</p></li>
+<li><p>Now we need to actually get to the Grafana website, so we will need to grab our public IPv4 from the AWS console and add a :3000 at the end, ie. 10.90.80.10:3000, and insert it into our browser URL. This will bring you to a login screen and our Username and Password will be admin. You will be prompted to create a new password.</p></li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">openaq-engine</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install/aws_setup.html">Connecting to EC2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install/postgres_setup.html">Local Postgres setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install/docker_setup.html">Docker setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install/docker_setup.html#id1">Docker setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install/local_env_setup.html">Local Environment Setup</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, Christina Last, Prithviraj Pramanik.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/graphana_server_setup.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
