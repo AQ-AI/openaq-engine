@@ -164,3 +164,19 @@ openssl-1.1.1k/*
 .history/*
 
 mlruns/*
+openaq_engine/mlruns/*
+
+google-cloud-sdk/*
+
+EarthEngineImages/*
+
+UnzippedImages/*
+
+get-docker.sh
+
+google-cloud-sdk-390.0.0-linux-x86_64.tar.gz
+
+data/*
+models/*
+plots/*
+myenv/*
