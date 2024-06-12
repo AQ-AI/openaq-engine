@@ -88,7 +88,10 @@ def test_query_results_from_aws(mocker):
     with patch("boto3.Session.client", return_value=mock_athena_client):
         result = query_results_from_aws(params, query)
         print("response_query_result", result)
-        data = [row["Data"][0]["VarCharValue"] for row in result["Rows"]]
+        data = [
+            row["Data"][0]["VarCharValue"]
+            for row in result["ResultSet"]["Rows"]
+        ]
         assert "row1" in data
         assert "row2" in data
 
