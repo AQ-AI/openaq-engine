@@ -180,7 +180,7 @@ def parametrized(dec):
     return layer
 
 
-def get_data(query):
+def get_data(query, use_test_db=False):
     """
     Pulls data from the db based on the query
     Input
@@ -192,7 +192,7 @@ def get_data(query):
     data: DataFrame
        Dump of Query into a DataFrame
     """
-    with connect_to_db() as conn:
+    with connect_to_db(use_test_db=use_test_db) as conn:
         print(conn)
         df = pd.read_sql_query(query, conn)
     return df
