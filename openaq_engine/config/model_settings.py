@@ -60,12 +60,6 @@ class MatrixGeneratorConfig:
             ],
             "frequency": "daily",
         },
-        "COPERNICUS/Landcover/100m/Proba-V-C3/Global": {
-            "bands": ["discrete_classification"],
-            "resolution": 100,
-            "time_ranges": [("00:00:00", "23:59:59")],
-            "frequency": "annual",
-        },
     }
 
 
