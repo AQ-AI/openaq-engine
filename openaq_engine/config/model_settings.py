@@ -11,7 +11,6 @@ from pydantic.dataclasses import dataclass
 class ModelVisualizerConfig:
     PLOT: bool = True
     PLOT_METRICS: Sequence[str] = field(default_factory=lambda: ["mean"])
-
     PLOTS_TABLE_NAME: str = "plots"
     PLOTS_SCHEMA_NAME: str = "model_output"
     RESULTS_TABLE_NAME: str = "results"
@@ -61,12 +60,12 @@ class MatrixGeneratorConfig:
             ],
             "frequency": "daily",
         },
-        # "COPERNICUS/Landcover/100m/Proba-V-C3/Global": {
-        #     "bands": ["discrete_classification"],
-        #     "resolution": 100,
-        #     "time_ranges": [("00:00:00", "23:59:59")],
-        #     "frequency": "annual",
-        # },
+        "COPERNICUS/Landcover/100m/Proba-V-C3/Global": {
+            "bands": ["discrete_classification"],
+            "resolution": 100,
+            "time_ranges": [("00:00:00", "23:59:59")],
+            "frequency": "annual",
+        },
     }
 
 
@@ -90,7 +89,6 @@ class ModelTrainerConfig:
 @dataclass
 class ModelEvaluatorConfig:
     METRICS: Sequence[str] = field(default_factory=lambda: ["mse", "mape"])
-
     SUMMARY_METHOD = "summary"
     VALID_MODELS: Sequence[str] = field(
         default_factory=lambda: ["DTC", "RFR", "XGB", "MNB", "MLR"]
@@ -127,8 +125,8 @@ class BuildFeaturesConfig:
     TABLE_NAME = ""
     TARGET_COL: str = "value"
     TARGET_VARIABLE = "pm25"
-    COUNTRY = "MN"
-    CITY = ""  # "Chennai"
+    COUNTRY = ""
+    CITY = ""
     CATEGORICAL_FEATURES: List[str] = field(
         default_factory=lambda: ["locationId"]
     )
@@ -186,7 +184,7 @@ class CohortBuilderConfig:
         ),
     )
     TARGET_VARIABLE = "pm25"
-    COUNTRY = "MN"
+    COUNTRY = ""
     SOURCE = "openaq-aws"
     LOCAL_DATA = ""
 
@@ -196,11 +194,37 @@ class EEConfig:
     LOOKBACK_N = 1
     DATE_COL: str = "timestamp_utc"
     TABLE_NAME = "cohorts"
-    BUCKET_NAME = "earthengine-bucket"
-    PATH_TO_PRIVATE_KEY = (
-        "/home/ec2-user/openaq-engine/unicef-367711-a4ac0921e063.json"
-    )
-    SERVICE_ACCOUNT = "earth-engine@unicef-367711.iam.gserviceaccount.com"
+    BUCKET_NAME = ""
+    PATH_TO_PRIVATE_KEY = ""
+    SERVICE_ACCOUNT = ""
+    ALL_SATELLITES = {
+        "MODIS/061/MCD19A2_GRANULES": {
+            "bands": ["Optical_Depth_047"],
+            "resolution": 1000,
+            "frequency": "daily",
+        },
+        "LANDSAT/LC08/C02/T1_L2": {
+            "bands": ["SR_B4", "SR_B3", "SR_B2"],
+            "resolution": 30,
+            "frequency": "weekly",
+        },
+        "NOAA/VIIRS/DNB/MONTHLY_V1/VCMCFG": {
+            "bands": ["avg_rad"],
+            "resolution": 463.83,
+            "frequency": "monthly",
+        },
+        "NOAA/GFS0P25": {
+            "bands": [
+                "temperature_2m_above_ground",
+                "relative_humidity_2m_above_ground",
+                "precipitable_water_entire_atmosphere",
+                "u_component_of_wind_10m_above_ground",
+                "v_component_of_wind_10m_above_ground",
+            ],
+            "resolution": 27830,
+            "frequency": "daily",
+        },
+    }
 
 
 @dataclass
