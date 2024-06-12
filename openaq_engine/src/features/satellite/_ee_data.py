@@ -1,5 +1,6 @@
 import datetime
 import logging
+import os
 from collections import Counter
 from typing import Tuple
 
@@ -157,7 +158,13 @@ class EEFeatures:
             resolution,
         )
 
-        engine = get_dbengine()
+        engine = get_dbengine(
+            os.getenv("PGDATABASE"),
+            os.getenv("PGHOST"),
+            os.getenv("PGPORT"),
+            os.getenv("PGUSER"),
+            os.getenv("PGPASSWORD"),
+        )
         if not ee_df.empty:
             write_to_db(
                 ee_df,

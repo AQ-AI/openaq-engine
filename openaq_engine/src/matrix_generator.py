@@ -104,14 +104,26 @@ class MatrixGenerator:
         # Write to DB
         write_to_db(
             training_df,
-            get_dbengine(),
+            get_dbengine(
+                os.getenv("PGDATABASE"),
+                os.getenv("PGHOST"),
+                os.getenv("PGPORT"),
+                os.getenv("PGUSER"),
+                os.getenv("PGPASSWORD"),
+            ),
             f"{cohort_table}_training",
             "public",
             "replace",
         )
         write_to_db(
             validation_df,
-            get_dbengine(),
+            get_dbengine(
+                os.getenv("PGDATABASE"),
+                os.getenv("PGHOST"),
+                os.getenv("PGPORT"),
+                os.getenv("PGUSER"),
+                os.getenv("PGPASSWORD"),
+            ),
             f"{cohort_table}_validation",
             "public",
             "replace",

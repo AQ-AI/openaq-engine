@@ -165,7 +165,13 @@ class CohortBuilder(CohortBuilderBase):
                 .from_options(list(self.filter_dict.keys()))
                 .execute(df, source)
             ).reset_index(drop=True)
-            engine = get_dbengine()
+            engine = get_dbengine(
+                os.getenv("PGDATABASE"),
+                os.getenv("PGHOST"),
+                os.getenv("PGPORT"),
+                os.getenv("PGUSER"),
+                os.getenv("PGPASSWORD"),
+            )
             self._results_to_db(filtered_df, engine, city)
 
     def execute_for_openaq_aws(

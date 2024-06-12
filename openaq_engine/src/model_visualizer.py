@@ -119,7 +119,9 @@ class ModelVisualizer:
             ax.legend(fontsize=16)
             fig.savefig(f"plots/{model_name}_metric_plot.png")
 
-    def get_results(self, run_date=None, last_run_model=None):
+    def get_results(
+        self, run_date=None, last_run_model=None, use_test_db=False
+    ):
         """Query the results data from the database for a specific run date and time"""
         if run_date is None and last_run_model is None:
             filter_query = """WHERE run_date = (SELECT MAX(run_date)
@@ -143,7 +145,8 @@ class ModelVisualizer:
                         {filter_query}""".format(
                 table=self.results_table_name,
                 filter_query=filter_query,
-            )
+            ),
+            use_test_db=use_test_db,
         )
 
         if df.shape[0] == 0:
