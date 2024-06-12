@@ -33,6 +33,7 @@ jobs:
           python -m pip install --upgrade pip
           curl -sSL https://install.python-poetry.org | python3 -
           poetry install
+          poetry run pip install psycopg2-binary
       - name: Set PYTHONPATH
         run: |
           echo "PYTHONPATH=$PYTHONPATH:$(pwd)/openaq_engine:$(pwd)/openaq_engine/src" >> $GITHUB_ENV
@@ -55,7 +56,7 @@ jobs:
           export TEST_PGPASSWORD=test_password
           export TEST_PGHOST=localhost
           export PGPORT=5432
-          python tests/create_test_database.py
+          poetry run python tests/create_test_database.py
       - name: Testing
         env:
           DB_NAME_OPENAQ: test_db
@@ -74,4 +75,4 @@ jobs:
           export TEST_PGPASSWORD=test_password
           export TEST_PGHOST=localhost
           export PGPORT=5432
-          python tests/cleanup_test_database.py
+          poetry run python tests/cleanup_test_database.py
