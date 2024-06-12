@@ -1,7 +1,8 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
+
 from src.features.build_features import (
     BuildFeaturesRandomForest,
     get_feature_builder,
@@ -69,10 +70,8 @@ def test_build_features_random_forest_initialization():
     assert builder.target_col == config.TARGET_COL
 
 
-def test_add_ee_features(mocker, feature_df):
-    mock_ee_features = mocker.patch(
-        "src.features.satellite._ee_data.EEFeatures.from_dataclass_config"
-    )
+@patch("src.features.satellite._ee_data.EEFeatures.from_dataclass_config")
+def test_add_ee_features(mock_ee_features, feature_df):
     mock_ee_instance = mock_ee_features.return_value
     mock_ee_instance.execute.return_value = feature_df
 
@@ -114,8 +113,8 @@ def test_split_train_valid(cohort_df, feature_df):
     assert len(result) == 6
 
 
-def test_results_to_db(mocker, mock_engine, feature_df):
-    mock_write_to_db = mocker.patch("src.features.build_features.write_to_db")
+@patch("src.features.build_features.write_to_db")
+def test_results_to_db(mock_write_to_db, mock_engine, feature_df):
     satellite_config = {"some_key": "some_value"}
     builder = BuildFeaturesRandomForest(
         categorical_features=["col1", "col2"],

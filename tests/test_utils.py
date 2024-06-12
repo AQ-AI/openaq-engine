@@ -87,10 +87,10 @@ def test_query_results_from_aws(mocker):
     # Patch boto3 client creation to return the mock client
     with patch("boto3.Session.client", return_value=mock_athena_client):
         result = query_results_from_aws(params, query)
-        print(result)
-        assert any("row1" or "row2" in d.values() for d in result.values())
-
-        # assert result == ["row1", "row2"]
+        print("response_query_result", result)
+        data = [row["Data"][0]["VarCharValue"] for row in result["Rows"]]
+        assert "row1" in data
+        assert "row2" in data
 
 
 def test_get_s3_file_path_list(mocker):
