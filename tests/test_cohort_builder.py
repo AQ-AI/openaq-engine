@@ -195,7 +195,13 @@ def test_results_to_db(mocker):
         source="openaq-aws",
     )
     with nullcontext():
-        engine = get_dbengine()
+        engine = get_dbengine(
+            os.getenv("TEST_PGDATABASE"),
+            os.getenv("TEST_PGHOST"),
+            os.getenv("PGPORT"),
+            os.getenv("TEST_PGUSER"),
+            os.getenv("TEST_PGPASSWORD"),
+        )
 
         # Test with city
         if city:

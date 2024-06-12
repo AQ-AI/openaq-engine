@@ -132,7 +132,6 @@ def test_combine_tv_sets(matrix_generator):
         ),
     ]
     combined_df = matrix_generator.combine_tv_sets(data)
-    print(combined_df)
     assert not combined_df.empty
     assert combined_df["tv_set"].iloc[0] == [1, 2]
 
