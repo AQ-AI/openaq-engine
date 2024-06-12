@@ -41,45 +41,14 @@ def get_athena_engine():
     return engine
 
 
-def get_dbengine(
-    PGDATABASE="",
-    PGHOST="",
-    PGPORT=5432,
-    PGPASSWORD="",
-    PGUSER="",
-    DBTYPE="postgresql",
-):
-    """
-    Returns a sql engine
-
-    Input
-    -----
-    PGDATABASE: str
-    DB Name
-    PGHOST: str
-    hostname
-    PGPASSWORD: str
-    DB password
-    DBTYPE: str
-    type of database, default is posgresql
-
-    Output
-    ------
-    engine: SQLalchemy engine
-    """
-    str_conn = "{dbtype}://{username}@{host}:{port}/{db}".format(
-        dbtype=DBTYPE,
-        username=os.getenv("PGUSER"),
-        db=os.getenv("PGDATABASE"),
-        host=os.getenv("PGHOST"),
-        port=PGPORT,
-    )
-
-    return create_engine(str_conn)
+def get_dbengine(PGDATABASE, PGHOST, PGPORT, PGUSER, PGPASSWORD):
+    url = f"postgresql://{PGUSER}:{PGPASSWORD}@{PGHOST}:{PGPORT}/{PGDATABASE}"
+    engine = create_engine(url)
+    return engine
 
 
 @contextmanager
-def connect_to_db(PGPORT=5432):
+def connect_to_db(PGDATABASE=None, PGPORT=5432, use_test_db=False):
     """
     Connects to database
     Output
@@ -87,16 +56,26 @@ def connect_to_db(PGPORT=5432):
     conn: object
        Database connection.
     """
+    if use_test_db:
+        PGDATABASE = os.getenv("TEST_PGDATABASE")
+        PGUSER = os.getenv("TEST_PGUSER")
+        PGPASSWORD = os.getenv("TEST_PGPASSWORD")
+        PGHOST = os.getenv("TEST_PGHOST")
+    else:
+        PGDATABASE = PGDATABASE or os.getenv("PGDATABASE")
+        PGUSER = os.getenv("PGUSER")
+        PGPASSWORD = os.getenv("PGPASSWORD")
+        PGHOST = os.getenv("PGHOST")
+
     try:
         engine = get_dbengine(
-            PGDATABASE=os.getenv("PGDATABASE"),
-            PGHOST=os.getenv("PGHOST"),
+            PGDATABASE=PGDATABASE,
+            PGHOST=PGHOST,
             PGPORT=PGPORT,
-            PGUSER=os.getenv("PGUSER"),
-            PGPASSWORD=os.getenv("PGPASSWORD"),
+            PGUSER=PGUSER,
+            PGPASSWORD=PGPASSWORD,
         )
         conn = engine.connect()
-
         yield conn
     except psycopg2.Error:
         raise SystemExit("Cannot Connect to DB")
