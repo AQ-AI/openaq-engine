@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import time
 from datetime import datetime, timedelta
 
@@ -156,7 +157,13 @@ def query_sensor_measurements(lat, lon, date_from, date_to):
         df = adjust_nested_column(df)
 
         # Connect to database and insert new data
-        engine = get_dbengine()
+        engine = get_dbengine(
+            os.getenv("PGDATABASE"),
+            os.getenv("PGHOST"),
+            os.getenv("PGPORT"),
+            os.getenv("PGUSER"),
+            os.getenv("PGPASSWORD"),
+        )
         unique_cols = [
             "location",
             "date",

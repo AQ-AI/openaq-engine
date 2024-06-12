@@ -190,7 +190,13 @@ def feature_builder(models_directory, plots_directory, cohort_table):
     )
 
     with mlflow.start_run(experiment_id=experiment_id, nested=True):
-        engine = get_dbengine()
+        engine = get_dbengine(
+            os.getenv("PGDATABASE"),
+            os.getenv("PGHOST"),
+            os.getenv("PGPORT"),
+            os.getenv("PGUSER"),
+            os.getenv("PGPASSWORD"),
+        )
 
         matrix_generator = MatrixGeneratorFlow().execute()
 
@@ -282,7 +288,13 @@ def run_pipeline(
     experiment_id = mlflow.create_experiment(
         f"run_pipeline_{str(datetime.now())}", os.getenv("MLFLOW_S3_BUCKET")
     )
-    engine = get_dbengine()
+    engine = get_dbengine(
+        os.getenv("PGDATABASE"),
+        os.getenv("PGHOST"),
+        os.getenv("PGPORT"),
+        os.getenv("PGUSER"),
+        os.getenv("PGPASSWORD"),
+    )
     with mlflow.start_run(experiment_id=experiment_id, nested=True):
 
         matrix_generator = MatrixGeneratorFlow().execute()
