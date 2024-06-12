@@ -1,4 +1,5 @@
 import json
+import os
 import re
 
 import numpy as np
@@ -17,7 +18,17 @@ def read_local_data(local_table_name, chunksize=1000):
         AND coordinates IS NOT NULL AND coordinates != ''
     """.strip()
 
-    return pd.read_sql_query(query, con=get_dbengine(), chunksize=chunksize)
+    return pd.read_sql_query(
+        query,
+        con=get_dbengine(
+            os.getenv("PGDATABASE"),
+            os.getenv("PGHOST"),
+            os.getenv("PGPORT"),
+            os.getenv("PGUSER"),
+            os.getenv("PGPASSWORD"),
+        ),
+        chunksize=chunksize,
+    )
 
 
 def correct_and_convert_json_coordinates(coord_str):
@@ -166,5 +177,15 @@ if __name__ == "__main__":
 
         # Write to database
         write_to_db(
-            new_df, get_dbengine(), "local_MN_data", "public", "append"
+            new_df,
+            get_dbengine(
+                os.getenv("PGDATABASE"),
+                os.getenv("PGHOST"),
+                os.getenv("PGPORT"),
+                os.getenv("PGUSER"),
+                os.getenv("PGPASSWORD"),
+            ),
+            "local_MN_data",
+            "public",
+            "append",
         )
