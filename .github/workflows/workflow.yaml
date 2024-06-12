@@ -8,6 +8,20 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.9", "3.10"]
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: openaq
+          POSTGRES_PASSWORD: openaq
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
@@ -34,6 +48,14 @@ jobs:
       - name: Analysing the code with flake8
         run: |
           poetry run flake8 $(git ls-files '*.py') --ignore=E501,W503
+      - name: Set up test database
+        run: |
+          export TEST_PGDATABASE=test_db
+          export TEST_PGUSER=test_user
+          export TEST_PGPASSWORD=test_password
+          export TEST_PGHOST=localhost
+          export PGPORT=5432
+          python tests/create_test_database.py
       - name: Testing
         env:
           DB_NAME_OPENAQ: test_db
@@ -45,3 +67,11 @@ jobs:
           DB_PASSWORD: test_password
         run: |
           poetry run pytest --cov --cov-fail-under=80
+      - name: Clean up test database
+        run: |
+          export TEST_PGDATABASE=test_db
+          export TEST_PGUSER=test_user
+          export TEST_PGPASSWORD=test_password
+          export TEST_PGHOST=localhost
+          export PGPORT=5432
+          python tests/cleanup_test_database.py
