@@ -137,6 +137,43 @@ def test_combine_tv_sets(matrix_generator):
 
 
 def test_extract_time_ranges(matrix_generator):
+    data = [
+        pd.DataFrame(
+            {
+                "sensor_longitude": [106.79481],
+                "sensor_latitude": [47.922497],
+                "datetime_hour": ["2020-05-07 03:00:00"],
+                "SR_B2": [13539],
+                "SR_B3": [12604],
+                "SR_B4": [11023],
+                "Optical_Depth_047": [0.174],
+                "tv_set": [[1]],
+            }
+        ),
+        pd.DataFrame(
+            {
+                "sensor_longitude": [106.79481],
+                "sensor_latitude": [47.922497],
+                "datetime_hour": ["2020-05-07 03:00:00"],
+                "SR_B2": [13539],
+                "SR_B3": [12604],
+                "SR_B4": [11023],
+                "Optical_Depth_047": [0.174],
+                "tv_set": [[2]],
+            }
+        ),
+    ]
+    combined_df = matrix_generator.combine_tv_sets(data)
+    assert not combined_df.empty
+    assert combined_df["tv_set"].iloc[0] == [1, 2]
+
+    # Ensure the correct environment variables are used
+    os.environ["TEST_PGDATABASE"] = "test_db"
+    os.environ["TEST_PGUSER"] = "test_user"
+    os.environ["TEST_PGPASSWORD"] = "test_password"
+    os.environ["TEST_PGHOST"] = "localhost"
+    os.environ["PGPORT"] = "5432"
+
     time_ranges = matrix_generator.extract_time_ranges("cohorts_Mumbai")
     assert time_ranges == {
         0: {
