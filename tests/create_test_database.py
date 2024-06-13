@@ -1,4 +1,5 @@
 import psycopg2
+
 from sqlalchemy import create_engine, text
 
 
@@ -18,6 +19,9 @@ def setup_test_database():
         con.autocommit = True
         cur = con.cursor()
         cur.execute("CREATE DATABASE test_db")
+        cur.execute(
+            "CREATE ROLE test_user WITH LOGIN PASSWORD 'test_password';"
+        )
         cur.close()
         con.close()
     except psycopg2.errors.DuplicateDatabase:
@@ -57,10 +61,9 @@ def setup_test_database():
             text(
                 """
             CREATE TABLE IF NOT EXISTS features (
-                location_id INT NOT NULL,
-                cohort VARCHAR(50) NOT NULL,
-                timestamp_utc TIMESTAMP NOT NULL,
-                PRIMARY KEY (location_id, timestamp_utc)
+                id SERIAL PRIMARY KEY,
+                feature_name VARCHAR(50) NOT NULL,
+                feature_value DOUBLE PRECISION NOT NULL
             )
         """
             )
@@ -72,10 +75,9 @@ def setup_test_database():
             text(
                 """
             CREATE TABLE IF NOT EXISTS cohorts_Mumbai (
-                x DOUBLE PRECISION NOT NULL,
-                y DOUBLE PRECISION NOT NULL,
-                value DOUBLE PRECISION NOT NULL,
-                datetime_hour TIMESTAMP NOT NULL
+                id SERIAL PRIMARY KEY,
+                cohort_name VARCHAR(50) NOT NULL,
+                cohort_value DOUBLE PRECISION NOT NULL
             )
         """
             )
