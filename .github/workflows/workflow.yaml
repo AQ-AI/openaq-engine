@@ -14,7 +14,7 @@ jobs:
         env:
           POSTGRES_USER: openaq
           POSTGRES_PASSWORD: openaq
-          POSTGRES_DB: postgres
+          POSTGRES_DB: openaq
         ports:
           - 5432:5432
         options: >-
@@ -37,13 +37,7 @@ jobs:
       - name: Set PYTHONPATH
         run: |
           echo "PYTHONPATH=$PYTHONPATH:$(pwd)/openaq_engine:$(pwd)/openaq_engine/src" >> $GITHUB_ENV
-      - name: Install package in editable mode
-        run: |
-          cd openaq_engine
-          poetry run pip install -e .
-          poetry run openaq-engine --help
-          cd ..
-      - name: Create test_user and test_db
+      - name: Set up test database and roles
         env:
           PGUSER: openaq
           PGPASSWORD: openaq
@@ -55,13 +49,20 @@ jobs:
           psql -h $PGHOST -U $PGUSER -c "CREATE DATABASE test_db OWNER test_user;"
           psql -h $PGHOST -U $PGUSER -d test_db -c "GRANT ALL PRIVILEGES ON DATABASE test_db TO test_user;"
           psql -h $PGHOST -U $PGUSER -d test_db -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO test_user;"
-      - name: Set up test database
+      - name: Install package in editable mode
         run: |
-          export TEST_PGDATABASE=test_db
-          export TEST_PGUSER=test_user
-          export TEST_PGPASSWORD=test_password
-          export TEST_PGHOST=localhost
-          export PGPORT=5432
+          cd openaq_engine
+          poetry run pip install -e .
+          poetry run openaq-engine --help
+          cd ..
+      - name: Run database setup script
+        env:
+          TEST_PGDATABASE: test_db
+          TEST_PGUSER: test_user
+          TEST_PGPASSWORD: test_password
+          TEST_PGHOST: localhost
+          PGPORT: 5432
+        run: |
           poetry run python tests/create_test_database.py
       - name: Analysing the code with black
         run: |
@@ -81,10 +82,11 @@ jobs:
         run: |
           poetry run pytest --cov --cov-fail-under=80
       - name: Clean up test database
+        env:
+          TEST_PGDATABASE: test_db
+          TEST_PGUSER: test_user
+          TEST_PGPASSWORD: test_password
+          TEST_PGHOST: localhost
+          PGPORT: 5432
         run: |
-          export TEST_PGDATABASE=test_db
-          export TEST_PGUSER=test_user
-          export TEST_PGPASSWORD=test_password
-          export TEST_PGHOST=localhost
-          export PGPORT=5432
           poetry run python tests/cleanup_test_database.py
