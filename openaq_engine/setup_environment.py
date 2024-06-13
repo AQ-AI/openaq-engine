@@ -11,7 +11,6 @@ import os
 from contextlib import contextmanager
 
 import pandas as pd
-import psycopg2
 from sqlalchemy.engine import create_engine
 
 
@@ -41,46 +40,41 @@ def get_athena_engine():
     return engine
 
 
-def get_dbengine(PGDATABASE, PGHOST, PGPORT, PGUSER, PGPASSWORD):
-    url = f"postgresql://{PGUSER}:{PGPASSWORD}@{PGHOST}:{PGPORT}/{PGDATABASE}"
+def get_dbengine(
+    database=None, user=None, password=None, host=None, port=None
+):
+    database = database or os.getenv("TEST_PGDATABASE")
+    user = user or os.getenv("TEST_PGUSER")
+    password = password or os.getenv("TEST_PGPASSWORD")
+    host = host or os.getenv("TEST_PGHOST")
+    port = port or os.getenv("PGPORT")
+
+    url = f"postgresql://{user}:{password}@{host}:{port}/{database}"
     engine = create_engine(url)
     return engine
 
 
 @contextmanager
-def connect_to_db(PGDATABASE=None, PGPORT=5432, use_test_db=False):
-    """
-    Connects to database
-    Output
-    ------
-    conn: object
-       Database connection.
-    """
+def connect_to_db(use_test_db=False):
     if use_test_db:
-        PGDATABASE = os.getenv("TEST_PGDATABASE")
-        PGUSER = os.getenv("TEST_PGUSER")
-        PGPASSWORD = os.getenv("TEST_PGPASSWORD")
-        PGHOST = os.getenv("TEST_PGHOST")
+        database = os.getenv("TEST_PGDATABASE")
+        user = os.getenv("TEST_PGUSER")
+        password = os.getenv("TEST_PGPASSWORD")
+        host = os.getenv("TEST_PGHOST")
+        port = os.getenv("PGPORT")
     else:
-        PGDATABASE = PGDATABASE or os.getenv("PGDATABASE")
-        PGUSER = os.getenv("PGUSER")
-        PGPASSWORD = os.getenv("PGPASSWORD")
-        PGHOST = os.getenv("PGHOST")
+        database = os.getenv("PGDATABASE")
+        user = os.getenv("PGUSER")
+        password = os.getenv("PGPASSWORD")
+        host = os.getenv("PGHOST")
+        port = os.getenv("PGPORT")
 
+    engine = get_dbengine(database, user, password, host, port)
+    connection = engine.connect()
     try:
-        engine = get_dbengine(
-            PGDATABASE=PGDATABASE,
-            PGHOST=PGHOST,
-            PGPORT=PGPORT,
-            PGUSER=PGUSER,
-            PGPASSWORD=PGPASSWORD,
-        )
-        conn = engine.connect()
-        yield conn
-    except psycopg2.Error:
-        raise SystemExit("Cannot Connect to DB")
-    else:
-        conn.close()
+        yield connection
+    finally:
+        connection.close()
 
 
 def run_query(query):
