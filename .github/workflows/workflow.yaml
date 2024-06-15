@@ -33,7 +33,7 @@ jobs:
           python -m pip install --upgrade pip
           curl -sSL https://install.python-poetry.org | python3 -
           poetry install
-          poetry run pip install psycopg2-binary
+          poetry run pip install psycopg2-binary pandas
       - name: Set PYTHONPATH
         run: |
           echo "PYTHONPATH=$PYTHONPATH:$(pwd)/openaq_engine:$(pwd)/openaq_engine/src" >> $GITHUB_ENV
@@ -49,31 +49,15 @@ jobs:
           psql -h $PGHOST -U $PGUSER -c "CREATE DATABASE test_db OWNER test_user;"
           psql -h $PGHOST -U $PGUSER -d test_db -c "GRANT ALL PRIVILEGES ON DATABASE test_db TO test_user;"
           psql -h $PGHOST -U $PGUSER -d test_db -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO test_user;"
-      - name: Debug environment variables
-        run: |
-          echo "TEST_PGDATABASE=$TEST_PGDATABASE"
-          echo "TEST_PGUSER=$TEST_PGUSER"
-          echo "TEST_PGPASSWORD=$TEST_PGPASSWORD"
-          echo "TEST_PGHOST=$TEST_PGHOST"
-          echo "PGPORT=$PGPORT"
-        env:
-          TEST_PGDATABASE: test_db
-          TEST_PGUSER: test_user
-          TEST_PGPASSWORD: test_password
-          TEST_PGHOST: localhost
-          PGPORT: 5432
-      - name: Install package in editable mode
-        run: |
-          cd openaq_engine
-          poetry run pip install -e .
-          poetry run openaq-engine --help
-          cd ..
       - name: Run database setup script
         env:
           TEST_PGDATABASE: test_db
           TEST_PGUSER: test_user
           TEST_PGPASSWORD: test_password
           TEST_PGHOST: localhost
+          PGUSER: openaq
+          PGPASSWORD: openaq
+          PGHOST: localhost
           PGPORT: 5432
         run: |
           poetry run python tests/create_test_database.py
@@ -101,10 +85,9 @@ jobs:
           poetry run pytest --cov --cov-fail-under=80
       - name: Clean up test database
         env:
-          TEST_PGDATABASE: test_db
-          TEST_PGUSER: test_user
-          TEST_PGPASSWORD: test_password
-          TEST_PGHOST: localhost
+          PGUSER: openaq
+          PGPASSWORD: openaq
+          PGHOST: localhost
           PGPORT: 5432
         run: |
-          poetry run python tests/cleanup_test_database.py
+          psql -h $PGHOST -U $PGUSER -d postgres -c "DROP DATABASE IF EXISTS test_db;"

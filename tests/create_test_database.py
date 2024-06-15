@@ -8,13 +8,16 @@ def setup_test_database():
     # Retrieve superuser connection details from environment variables
     superuser = os.getenv("PGUSER")
     superuser_password = os.getenv("PGPASSWORD")
+    pg_host = os.getenv("PGHOST", "localhost")
+    pg_port = os.getenv("PGPORT", "5432")
 
     # Connect to the default postgres database to create the test_db
     try:
         con = psycopg2.connect(
             dbname="postgres",
             user=superuser,
-            host="localhost",
+            host=pg_host,
+            port=pg_port,
             password=superuser_password,
         )
         con.autocommit = True
@@ -28,9 +31,7 @@ def setup_test_database():
         )
 
     # Connect to the test_db as superuser
-    test_db_url = (
-        f"postgresql://{superuser}:{superuser_password}@localhost:5432/test_db"
-    )
+    test_db_url = f"postgresql://{superuser}:{superuser_password}@{pg_host}:{pg_port}/test_db"
     test_engine = create_engine(test_db_url, isolation_level="AUTOCOMMIT")
 
     with test_engine.connect() as connection:

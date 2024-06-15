@@ -41,7 +41,7 @@ def get_athena_engine():
 
 
 def get_dbengine(
-    database=None, user=None, password=None, host=None, port=None
+    database=None, host=None, port=None, user=None, password=None
 ):
     database = database or os.getenv("TEST_PGDATABASE")
     user = user or os.getenv("TEST_PGUSER")
