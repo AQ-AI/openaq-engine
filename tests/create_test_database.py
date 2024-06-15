@@ -1,12 +1,13 @@
 import psycopg2
+import os
 
 from sqlalchemy import create_engine, text
 
 
 def setup_test_database():
     # Retrieve superuser connection details from environment variables
-    superuser = "openaq"
-    superuser_password = "openaq"
+    superuser = os.getenv("PGUSER")
+    superuser_password = os.getenv("PGPASSWORD")
 
     # Connect to the default postgres database to create the test_db
     try:
@@ -19,9 +20,6 @@ def setup_test_database():
         con.autocommit = True
         cur = con.cursor()
         cur.execute("CREATE DATABASE test_db")
-        cur.execute(
-            "CREATE ROLE test_user WITH LOGIN PASSWORD 'test_password';"
-        )
         cur.close()
         con.close()
     except psycopg2.errors.DuplicateDatabase:
@@ -76,27 +74,18 @@ def setup_test_database():
                 """
             CREATE TABLE IF NOT EXISTS cohorts_Mumbai (
                 id SERIAL PRIMARY KEY,
-                cohort_name VARCHAR(50) NOT NULL,
-                cohort_value DOUBLE PRECISION NOT NULL
+                train_validation_set INT,
+                cohort VARCHAR(50),
+                cohort_type VARCHAR(50),
+                x FLOAT,
+                y FLOAT,
+                value FLOAT,
+                timestamp_utc TIMESTAMP
             )
         """
             )
         )
         print("Table cohorts_Mumbai created successfully.")
-
-        # Grant all privileges on the test_db to test_user
-        connection.execute(
-            text("GRANT ALL PRIVILEGES ON DATABASE test_db TO test_user")
-        )
-        print("Granted all privileges on test_db to test_user.")
-
-        # Grant all privileges on all tables in test_db to test_user
-        connection.execute(
-            text(
-                "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO test_user"
-            )
-        )
-        print("Granted all privileges on all tables in test_db to test_user.")
 
         # Insert example data into test_results table
         connection.execute(
@@ -114,10 +103,33 @@ def setup_test_database():
         )
         print("Data inserted into test_results table successfully.")
 
-        # Verify that the data is inserted
-        result = connection.execute(text("SELECT * FROM test_results"))
-        rows = result.fetchall()
-        print(f"Inserted rows: {rows}")
+        # Insert example data into cohorts_Mumbai table
+        connection.execute(
+            text(
+                """
+            INSERT INTO cohorts_Mumbai (train_validation_set, cohort, cohort_type, x, y, value, timestamp_utc) VALUES
+            (0, 'A', 'training', -70.214134, 44.089355, 10, '2022-04-01 21:00:00.000000Z'),
+            (0, 'A', 'training', -70.214134, 44.089355, 20, '2022-05-01 21:00:00.000000Z'),
+            (1, 'B', 'validation', -70.214134, 44.089355, 30, '2022-06-01 21:00:00.000000Z'),
+            (1, 'B', 'validation', -70.214134, 44.089355, 40, '2022-07-01 21:00:00.000000Z')
+        """
+            )
+        )
+        print("Data inserted into cohorts_Mumbai table successfully.")
+
+        # Grant all privileges on the test_db to test_user
+        connection.execute(
+            text("GRANT ALL PRIVILEGES ON DATABASE test_db TO test_user")
+        )
+        print("Granted all privileges on test_db to test_user.")
+
+        # Grant all privileges on all tables in test_db to test_user
+        connection.execute(
+            text(
+                "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO test_user"
+            )
+        )
+        print("Granted all privileges on all tables in test_db to test_user.")
 
 
 if __name__ == "__main__":
