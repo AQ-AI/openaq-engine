@@ -9,7 +9,7 @@ from sqlalchemy import create_engine
 from openaq_engine.src.model_visualizer import ModelVisualizer
 
 
-@pytest.fixture
+@pytest.fixture(scope="function", autouse=True)
 def setup_environment():
     # Setup any necessary environment variables or configurations here
     os.environ["TEST_PGDATABASE"] = "test_db"
@@ -17,6 +17,13 @@ def setup_environment():
     os.environ["TEST_PGPASSWORD"] = "test_password"
     os.environ["TEST_PGHOST"] = "localhost"
     os.environ["PGPORT"] = "5432"
+    # Print environment variables for debugging
+    print("Environment Variables:")
+    print(f"TEST_PGDATABASE={os.getenv('TEST_PGDATABASE')}")
+    print(f"TEST_PGUSER={os.getenv('TEST_PGUSER')}")
+    print(f"TEST_PGPASSWORD={os.getenv('TEST_PGPASSWORD')}")
+    print(f"TEST_PGHOST={os.getenv('TEST_PGHOST')}")
+    print(f"PGPORT={os.getenv('PGPORT')}")
     yield
     # Teardown logic if needed
 
@@ -71,7 +78,6 @@ class TestModelVisualizer(unittest.TestCase):
 
     @patch("openaq_engine.src.utils.utils.get_data")
     @patch("openaq_engine.setup_environment.get_dbengine")
-    @pytest.mark.usefixtures("setup_environment")
     def test_get_results(self, mock_get_dbengine, mock_get_data):
         # Mock the return value of get_data
         mock_get_data.return_value = pd.DataFrame(
