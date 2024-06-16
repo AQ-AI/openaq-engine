@@ -85,7 +85,7 @@ def setup_test_database():
         )
         print("Table features created successfully.")
 
-        # Create the cohorts_Mumbai table
+        # Create the cohorts_Mumbai table with both x, y and latitude, longitude columns
         connection.execute(
             text(
                 """
@@ -94,6 +94,8 @@ def setup_test_database():
                 train_validation_set INT,
                 cohort VARCHAR(50),
                 cohort_type VARCHAR(50),
+                x FLOAT,
+                y FLOAT,
                 longitude FLOAT,
                 latitude FLOAT,
                 value FLOAT,
@@ -124,11 +126,11 @@ def setup_test_database():
         connection.execute(
             text(
                 """
-            INSERT INTO cohorts_Mumbai (train_validation_set, cohort, cohort_type, longitude, latitude, value, timestamp_utc) VALUES
-            (0, 'A', 'training', -70.214134, 44.089355, 10, '2022-04-01 21:00:00'),
-            (0, 'A', 'training', -70.214134, 44.089355, 20, '2022-05-01 21:00:00'),
-            (1, 'B', 'validation', -70.214134, 44.089355, 30, '2022-06-01 21:00:00'),
-            (1, 'B', 'validation', -70.214134, 44.089355, 40, '2022-07-01 21:00:00')
+            INSERT INTO cohorts_Mumbai (train_validation_set, cohort, cohort_type, x, y, longitude, latitude, value, timestamp_utc) VALUES
+            (0, 'A', 'training', -70.214134, 44.089355, -70.214134, 44.089355, 10, '2022-04-01 21:00:00'),
+            (0, 'A', 'training', -70.214134, 44.089355, -70.214134, 44.089355, 20, '2022-05-01 21:00:00'),
+            (1, 'B', 'validation', -70.214134, 44.089355, -70.214134, 44.089355, 30, '2022-06-01 21:00:00'),
+            (1, 'B', 'validation', -70.214134, 44.089355, -70.214134, 44.089355, 40, '2022-07-01 21:00:00')
         """
             )
         )
