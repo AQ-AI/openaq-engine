@@ -93,6 +93,19 @@ def setup_test_database():
         )
         print("Table cohorts_Mumbai created successfully.")
 
+        # Verify table structure
+        result = connection.execute(
+            text(
+                """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name = 'cohorts_Mumbai'
+        """
+            )
+        )
+        columns = [row["column_name"] for row in result]
+        print(f"Columns in cohorts_Mumbai: {columns}")
+
         # Insert example data into test_results table
         connection.execute(
             text(
