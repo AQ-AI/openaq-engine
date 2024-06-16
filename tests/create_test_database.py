@@ -1,6 +1,5 @@
-import os
-
 import psycopg2
+import os
 
 from sqlalchemy import create_engine, text
 
@@ -12,7 +11,11 @@ def setup_test_database():
     pg_host = os.getenv("PGHOST", "localhost")
     pg_port = os.getenv("PGPORT", "5432")
 
-    # Connect to the default postgres database to create the test_db
+    test_db_user = os.getenv("TEST_PGUSER", "test_user")
+    test_db_password = os.getenv("TEST_PGPASSWORD", "test_password")
+    test_db_name = os.getenv("TEST_PGDATABASE", "test_db")
+
+    # Connect to the default postgres database to create the test_db and user
     try:
         con = psycopg2.connect(
             dbname="postgres",
@@ -23,9 +26,19 @@ def setup_test_database():
         )
         con.autocommit = True
         cur = con.cursor()
-        cur.execute("CREATE DATABASE test_db")
-        cur.execute("CREATE USER test_user WITH PASSWORD 'test_password'")
-        cur.execute("GRANT ALL PRIVILEGES ON DATABASE test_db TO test_user")
+
+        # Create test database
+        cur.execute(f"CREATE DATABASE {test_db_name}")
+        print("Database created successfully.")
+
+        # Create test user
+        cur.execute(
+            f"DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '{test_db_user}') THEN CREATE ROLE {test_db_user} WITH LOGIN PASSWORD '{test_db_password}'; END IF; END $$;"
+        )
+        print("User created successfully.")
+
+        cur.execute(f"ALTER ROLE {test_db_user} WITH SUPERUSER;")
+
         cur.close()
         con.close()
     except psycopg2.errors.DuplicateDatabase:
@@ -34,7 +47,7 @@ def setup_test_database():
         )
 
     # Connect to the test_db as superuser
-    test_db_url = f"postgresql://{superuser}:{superuser_password}@{pg_host}:{pg_port}/test_db"
+    test_db_url = f"postgresql://{superuser}:{superuser_password}@{pg_host}:{pg_port}/{test_db_name}"
     test_engine = create_engine(test_db_url, isolation_level="AUTOCOMMIT")
 
     with test_engine.connect() as connection:
@@ -72,7 +85,10 @@ def setup_test_database():
         )
         print("Table features created successfully.")
 
-        # Create the cohorts_Mumbai table
+        # Drop the cohorts_Mumbai table if it exists to avoid conflicts
+        connection.execute(text("DROP TABLE IF EXISTS cohorts_Mumbai"))
+
+        # Create the cohorts_Mumbai table with both x, y and latitude, longitude columns
         connection.execute(
             text(
                 """
@@ -92,19 +108,6 @@ def setup_test_database():
             )
         )
         print("Table cohorts_Mumbai created successfully.")
-
-        # Verify table structure
-        result = connection.execute(
-            text(
-                """
-            SELECT column_name
-            FROM information_schema.columns
-            WHERE table_name = 'cohorts_Mumbai'
-        """
-            )
-        )
-        columns = [row["column_name"] for row in result]
-        print(f"Columns in cohorts_Mumbai: {columns}")
 
         # Insert example data into test_results table
         connection.execute(
@@ -136,10 +139,18 @@ def setup_test_database():
         )
         print("Data inserted into cohorts_Mumbai table successfully.")
 
+        # Grant all privileges on the test_db to test_user
+        connection.execute(
+            text(
+                f"GRANT ALL PRIVILEGES ON DATABASE {test_db_name} TO {test_db_user}"
+            )
+        )
+        print("Granted all privileges on test_db to test_user.")
+
         # Grant all privileges on all tables in test_db to test_user
         connection.execute(
             text(
-                "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO test_user"
+                f"GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO {test_db_user}"
             )
         )
         print("Granted all privileges on all tables in test_db to test_user.")
