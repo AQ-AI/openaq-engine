@@ -1,9 +1,24 @@
 import unittest
 from unittest.mock import MagicMock, patch
+import os
 
 import pandas as pd
+import pytest
+from sqlalchemy import create_engine
 
 from openaq_engine.src.model_visualizer import ModelVisualizer
+
+
+@pytest.fixture
+def setup_environment():
+    # Setup any necessary environment variables or configurations here
+    os.environ["TEST_PGDATABASE"] = "test_db"
+    os.environ["TEST_PGUSER"] = "test_user"
+    os.environ["TEST_PGPASSWORD"] = "test_password"
+    os.environ["TEST_PGHOST"] = "localhost"
+    os.environ["PGPORT"] = "5432"
+    yield
+    # Teardown logic if needed
 
 
 class TestModelVisualizer(unittest.TestCase):
@@ -55,7 +70,11 @@ class TestModelVisualizer(unittest.TestCase):
         )
 
     @patch("openaq_engine.src.utils.utils.get_data")
-    def test_get_results(self, mock_get_data, setup_environment):
+    @patch("openaq_engine.setup_environment.get_dbengine")
+    def test_get_results(
+        self, mock_get_dbengine, mock_get_data, setup_environment
+    ):
+        # Mock the return value of get_data
         mock_get_data.return_value = pd.DataFrame(
             {
                 "model_id": ["model_1", "model_1", "model_1"],
@@ -69,10 +88,22 @@ class TestModelVisualizer(unittest.TestCase):
             }
         )
 
-        results = self.visualizer.get_results(
+        # Mock the return value of get_dbengine
+        mock_get_dbengine.return_value = create_engine(
+            "postgresql://test_user:test_password@localhost:5432/test_db"
+        )
+
+        # Create an instance of ModelVisualizer
+        visualizer = ModelVisualizer()
+
+        # Call the method under test
+        results = visualizer.get_results(
             run_date="2024-01-01 00:00:00", use_test_db=True
         )
-        assert not results.empty
+
+        # Assertions to check if the results are as expected
+        assert len(results) == 3
+        assert results["model_id"].iloc[0] == "model_1"
 
 
 if __name__ == "__main__":
