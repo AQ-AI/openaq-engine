@@ -71,9 +71,8 @@ class TestModelVisualizer(unittest.TestCase):
 
     @patch("openaq_engine.src.utils.utils.get_data")
     @patch("openaq_engine.setup_environment.get_dbengine")
-    def test_get_results(
-        self, mock_get_dbengine, mock_get_data, setup_environment
-    ):
+    @pytest.mark.usefixtures("setup_environment")
+    def test_get_results(self, mock_get_dbengine, mock_get_data):
         # Mock the return value of get_data
         mock_get_data.return_value = pd.DataFrame(
             {
@@ -93,11 +92,8 @@ class TestModelVisualizer(unittest.TestCase):
             "postgresql://test_user:test_password@localhost:5432/test_db"
         )
 
-        # Create an instance of ModelVisualizer
-        visualizer = ModelVisualizer()
-
         # Call the method under test
-        results = visualizer.get_results(
+        results = self.visualizer.get_results(
             run_date="2024-01-01 00:00:00", use_test_db=True
         )
 
