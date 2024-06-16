@@ -38,6 +38,13 @@ def mock_db_connection():
 
 
 def test_cohort_builder(mocker):
+    # Set environment variables
+    os.environ["TEST_PGDATABASE"] = "test_db"
+    os.environ["TEST_PGUSER"] = "test_user"
+    os.environ["TEST_PGPASSWORD"] = "test_password"
+    os.environ["TEST_PGHOST"] = "localhost"
+    os.environ["PGPORT"] = "5432"
+
     # Mock the required arguments
     end_date = datetime.datetime(
         2022, 4, 1, 21, 0, 0, tzinfo=pytz.UTC
@@ -96,7 +103,6 @@ def test_cohort_builder(mocker):
         pollutant,
         local_data,
     )
-
     cohort_builder.execute_for_openaq_aws.assert_called_with(
         date_tuple,
         city,
@@ -181,11 +187,11 @@ def test_execute_for_openaq_aws(mocker):
 
 
 def test_results_to_db(mocker):
-    # Mock write_to_db call
-    mocker.patch.object(
-        CohortBuilder,
-        "_results_to_db",
-    )
+    os.environ["TEST_PGDATABASE"] = "test_db"
+    os.environ["TEST_PGUSER"] = "test_user"
+    os.environ["TEST_PGPASSWORD"] = "test_password"
+    os.environ["TEST_PGHOST"] = "localhost"
+    os.environ["PGPORT"] = "5432"
     city = "London"
     cohort_builder = CohortBuilder(
         date_col="date",
@@ -202,20 +208,22 @@ def test_results_to_db(mocker):
             os.getenv("TEST_PGUSER"),
             os.getenv("TEST_PGPASSWORD"),
         )
-
-        # Test with city
-        if city:
-            df = pd.DataFrame({"city": "London", "value": [1]})
-            cohort_builder._results_to_db(df, engine, city)
-            cohort_builder._results_to_db.assert_called_with(
-                df, engine, "London"
-            )
-            city = ""
-        else:
-            # Test without city
-            df = pd.DataFrame({"country": "UK", "value": [1]})
-            cohort_builder._results_to_db(df, engine, city)
-            cohort_builder._results_to_db.assert_called_with(df, engine, "")
+    # Mock write_to_db call
+    mocker.patch.object(
+        CohortBuilder,
+        "_results_to_db",
+    )
+    # Test with city
+    if city:
+        df = pd.DataFrame({"city": "London", "value": [1]})
+        cohort_builder._results_to_db(df, engine, city)
+        cohort_builder._results_to_db.assert_called_with(df, engine, "London")
+        city = ""
+    else:
+        # Test without city
+        df = pd.DataFrame({"country": "UK", "value": [1]})
+        cohort_builder._results_to_db(df, engine, city)
+        cohort_builder._results_to_db.assert_called_with(df, engine, "")
 
 
 def test_execute_for_openaq_api(mocker, mock_db_connection):
