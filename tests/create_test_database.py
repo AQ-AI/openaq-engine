@@ -11,9 +11,9 @@ def setup_test_database():
     pg_host = os.getenv("PGHOST", "localhost")
     pg_port = os.getenv("PGPORT", "5432")
 
-    test_db_user = "test_user"
-    test_db_password = "test_password"
-    test_db_name = "test_db"
+    test_db_user = os.getenv("TEST_PGUSER", "test_user")
+    test_db_password = os.getenv("TEST_PGPASSWORD", "test_password")
+    test_db_name = os.getenv("TEST_PGDATABASE", "test_db")
 
     # Connect to the default postgres database to create the test_db and user
     try:
