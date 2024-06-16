@@ -11,21 +11,20 @@ from openaq_engine.src.model_visualizer import ModelVisualizer
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_environment():
-    # Setup any necessary environment variables or configurations here
-    os.environ["TEST_PGDATABASE"] = "test_db"
-    os.environ["TEST_PGUSER"] = "test_user"
-    os.environ["TEST_PGPASSWORD"] = "test_password"
-    os.environ["TEST_PGHOST"] = "localhost"
-    os.environ["PGPORT"] = "5432"
-    # Print environment variables for debugging
-    print("Environment Variables:")
-    print(f"TEST_PGDATABASE={os.getenv('TEST_PGDATABASE')}")
-    print(f"TEST_PGUSER={os.getenv('TEST_PGUSER')}")
-    print(f"TEST_PGPASSWORD={os.getenv('TEST_PGPASSWORD')}")
-    print(f"TEST_PGHOST={os.getenv('TEST_PGHOST')}")
-    print(f"PGPORT={os.getenv('PGPORT')}")
-    yield
-    # Teardown logic if needed
+    # Setup environment variables for the test
+    env_vars = {
+        "TEST_PGDATABASE": "test_db",
+        "TEST_PGUSER": "test_user",
+        "TEST_PGPASSWORD": "test_password",
+        "TEST_PGHOST": "localhost",
+        "PGPORT": "5432",
+    }
+    with patch.dict(os.environ, env_vars):
+        # Print environment variables for debugging
+        print("Environment Variables:")
+        for key, value in env_vars.items():
+            print(f"{key}={value}")
+        yield
 
 
 class TestModelVisualizer(unittest.TestCase):
@@ -78,6 +77,16 @@ class TestModelVisualizer(unittest.TestCase):
 
     @patch("openaq_engine.src.utils.utils.get_data")
     @patch("openaq_engine.setup_environment.get_dbengine")
+    @patch.dict(
+        os.environ,
+        {
+            "TEST_PGDATABASE": "test_db",
+            "TEST_PGUSER": "test_user",
+            "TEST_PGPASSWORD": "test_password",
+            "TEST_PGHOST": "localhost",
+            "PGPORT": "5432",
+        },
+    )
     def test_get_results(self, mock_get_dbengine, mock_get_data):
         # Mock the return value of get_data
         mock_get_data.return_value = pd.DataFrame(
@@ -104,8 +113,8 @@ class TestModelVisualizer(unittest.TestCase):
         )
 
         # Assertions to check if the results are as expected
-        assert len(results) == 3
-        assert results["model_id"].iloc[0] == "model_1"
+        self.assertEqual(len(results), 3)
+        self.assertEqual(results["model_id"].iloc[0], "model_1")
 
 
 if __name__ == "__main__":
