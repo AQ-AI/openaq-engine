@@ -55,6 +55,7 @@ jobs:
           TEST_PGUSER: test_user
           TEST_PGPASSWORD: test_password
           TEST_PGHOST: localhost
+          TEST_PGPORT: 5432
           PGUSER: openaq
           PGPASSWORD: openaq
           PGHOST: localhost
@@ -80,7 +81,7 @@ jobs:
           TEST_PGUSER: test_user
           TEST_PGPASSWORD: test_password
           TEST_PGHOST: localhost
-          PGPORT: 5432
+          TEST_PGPORT: 5432
         run: |
           poetry run pytest --cov --cov-fail-under=80
       - name: Clean up test database
