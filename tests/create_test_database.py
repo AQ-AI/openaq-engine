@@ -85,6 +85,9 @@ def setup_test_database():
         )
         print("Table features created successfully.")
 
+        # Drop the cohorts_Mumbai table if it exists to avoid conflicts
+        connection.execute(text("DROP TABLE IF EXISTS cohorts_Mumbai"))
+
         # Create the cohorts_Mumbai table with both x, y and latitude, longitude columns
         connection.execute(
             text(
