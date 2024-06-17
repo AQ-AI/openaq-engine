@@ -4,7 +4,6 @@ import tempfile
 
 import joblib
 from unittest.mock import patch, MagicMock
-from sqlalchemy import create_engine, text
 import pandas as pd
 import pytest
 
@@ -175,26 +174,11 @@ def test_extract_time_ranges(matrix_generator):
     assert not combined_df.empty
     assert combined_df["tv_set"].iloc[0] == [1, 2]
 
+    time_ranges = matrix_generator.extract_time_ranges("cohorts_mumbai")
+    assert time_ranges is not None
+
 
 def test_query_satellite_data(matrix_generator):
-    os.environ["TEST_PGDATABASE"] = "test_db"
-    os.environ["TEST_PGUSER"] = "test_user"
-    os.environ["TEST_PGPASSWORD"] = "test_password"
-    os.environ["TEST_PGHOST"] = "localhost"
-    os.environ["TEST_PGPORT"] = "5432"
-
-    # Create a new engine using the test environment variables
-    db_url = f"postgresql://{os.getenv('TEST_PGUSER')}:{os.getenv('TEST_PGPASSWORD')}@{os.getenv('TEST_PGHOST')}:{os.getenv('TEST_PGPORT')}/{os.getenv('TEST_PGDATABASE')}"
-    engine = create_engine(db_url)
-
-    # Debugging step: Check if the cohorts_Mumbai table exists
-    with engine.connect() as connection:
-        result = connection.execute(
-            text("SELECT to_regclass('public.cohorts_Mumbai')")
-        )
-        table_exists = result.scalar()
-        print(f"Debug: cohorts_Mumbai table exists: {table_exists}")
-
     cohort_data = pd.DataFrame(
         {
             "x": [-70.214134],
@@ -225,9 +209,11 @@ def test_query_satellite_data(matrix_generator):
             y=44.089355,
             start_date="2022-04-01T21:00:00.000000Z",
             end_date="2023-04-01T21:00:00.000000Z",
-            cohort_table="cohorts_Mumbai",
+            cohort_table="cohorts_mumbai",
         )
+
         assert not result_df.empty
+        assert "value" in result_df.columns
 
 
 def test_get_csr(mocker):
