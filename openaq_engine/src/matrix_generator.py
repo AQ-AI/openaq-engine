@@ -206,7 +206,7 @@ class MatrixGenerator:
             columns = ", ".join([f'"{band}"' for band in config["bands"]])
             query = f"""
                 SELECT sensor_longitude, sensor_latitude, date_trunc('hour', "datetime"::timestamp) AS "datetime_hour", {columns}
-                FROM "{table_name}_local_MN_new"
+                FROM "{table_name}"
                 WHERE sensor_longitude = {x} AND sensor_latitude = {y}
                 AND "datetime"::timestamp BETWEEN '{start_date}' AND '{end_date}'
             """
