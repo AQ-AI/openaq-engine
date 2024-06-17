@@ -1,7 +1,6 @@
-import os
-import time
-
 import psycopg2
+import os
+
 from sqlalchemy import create_engine, text
 
 
@@ -26,7 +25,6 @@ def setup_test_database():
         cur.execute("CREATE DATABASE test_db")
         cur.close()
         con.close()
-        print("Database 'test_db' created successfully.")
     except psycopg2.errors.DuplicateDatabase:
         print("Database 'test_db' already exists. Continuing...")
 
@@ -35,15 +33,19 @@ def setup_test_database():
     test_engine = create_engine(test_db_url, isolation_level="AUTOCOMMIT")
 
     with test_engine.connect() as connection:
-        # Debug: Check the connection
-        result = connection.execute(text("SELECT 1"))
-        print(f"Connection test result: {result.scalar()}")
-
-        # Cleanup: Drop existing tables if they exist
+        # Drop existing tables if they exist
         connection.execute(text("DROP TABLE IF EXISTS test_results"))
         connection.execute(text("DROP TABLE IF EXISTS features"))
         connection.execute(text("DROP TABLE IF EXISTS cohorts_Mumbai"))
+        connection.execute(
+            text("DROP TABLE IF EXISTS MODIS_061_MCD19A2_GRANULES")
+        )
+
         print("Existing tables dropped successfully.")
+
+        # Debug: Check the connection
+        result = connection.execute(text("SELECT 1"))
+        print(f"Connection test result: {result.scalar()}")
 
         # Create the test_results table
         connection.execute(
@@ -96,6 +98,25 @@ def setup_test_database():
         )
         print("Table cohorts_Mumbai created successfully.")
 
+        # Create the MODIS_061_MCD19A2_GRANULES table
+        connection.execute(
+            text(
+                """
+            CREATE TABLE IF NOT EXISTS MODIS_061_MCD19A2_GRANULES (
+                id SERIAL PRIMARY KEY,
+                sensor_longitude FLOAT,
+                sensor_latitude FLOAT,
+                datetime TIMESTAMP,
+                Optical_Depth_047 FLOAT,
+                SR_B2 FLOAT,
+                SR_B3 FLOAT,
+                SR_B4 FLOAT
+            )
+        """
+            )
+        )
+        print("Table MODIS_061_MCD19A2_GRANULES created successfully.")
+
         # Insert example data into test_results table
         connection.execute(
             text(
@@ -117,14 +138,30 @@ def setup_test_database():
             text(
                 """
             INSERT INTO cohorts_Mumbai (train_validation_set, cohort, cohort_type, x, y, longitude, latitude, value, timestamp_utc) VALUES
-            (0, 'A_2022-04-01_2022-05-01', 'training', -70.214134, 44.089355, -70.214134, 44.089355, 10, '2022-04-01 21:00:00'),
-            (0, 'A_2022-05-01_2022-06-01', 'training', -70.214134, 44.089355, -70.214134, 44.089355, 20, '2022-05-01 21:00:00'),
-            (1, 'B_2022-06-01_2022-07-01', 'validation', -70.214134, 44.089355, -70.214134, 44.089355, 30, '2022-06-01 21:00:00'),
-            (1, 'B_2022-07-01_2022-08-01', 'validation', -70.214134, 44.089355, -70.214134, 44.089355, 40, '2022-07-01 21:00:00')
+            (0, 'A', 'training', -70.214134, 44.089355, -70.214134, 44.089355, 10, '2022-04-01 21:00:00'),
+            (0, 'A', 'training', -70.214134, 44.089355, -70.214134, 44.089355, 20, '2022-05-01 21:00:00'),
+            (1, 'B', 'validation', -70.214134, 44.089355, -70.214134, 44.089355, 30, '2022-06-01 21:00:00'),
+            (1, 'B', 'validation', -70.214134, 44.089355, -70.214134, 44.089355, 40, '2022-07-01 21:00:00')
         """
             )
         )
         print("Data inserted into cohorts_Mumbai table successfully.")
+
+        # Insert example data into MODIS_061_MCD19A2_GRANULES table
+        connection.execute(
+            text(
+                """
+            INSERT INTO MODIS_061_MCD19A2_GRANULES (sensor_longitude, sensor_latitude, datetime, Optical_Depth_047, SR_B2, SR_B3, SR_B4) VALUES
+            (-70.214134, 44.089355, '2022-04-01 21:00:00', 0.174, 13539, 12604, 11023),
+            (-70.214134, 44.089355, '2022-05-01 21:00:00', 0.175, 13540, 12605, 11024),
+            (-70.214134, 44.089355, '2022-06-01 21:00:00', 0.176, 13541, 12606, 11025),
+            (-70.214134, 44.089355, '2022-07-01 21:00:00', 0.177, 13542, 12607, 11026)
+        """
+            )
+        )
+        print(
+            "Data inserted into MODIS_061_MCD19A2_GRANULES table successfully."
+        )
 
         # Grant all privileges on the test_db to test_user
         connection.execute(
@@ -140,31 +177,21 @@ def setup_test_database():
         )
         print("Granted all privileges on all tables in test_db to test_user.")
 
-        # Verify the table creation and data insertion
-        verify_table_creation(connection)
-
-
-def verify_table_creation(connection):
-    retries = 5
-    for i in range(retries):
-        try:
-            result = connection.execute(
-                text("SELECT COUNT(*) FROM cohorts_Mumbai")
-            )
-            count = result.scalar()
-            print(f"Verification: cohorts_Mumbai table has {count} rows.")
-            if count > 0:
-                print(
-                    "Verification successful: cohorts_Mumbai table exists and is populated."
-                )
-                break
-        except Exception as e:
-            print(f"Verification attempt {i+1} failed: {e}")
-            time.sleep(1)
-    else:
-        raise Exception(
-            "Failed to verify the cohorts_Mumbai table creation and population after multiple attempts."
+        # Verification: Ensure the tables exist and are populated
+        result = connection.execute(
+            text("SELECT COUNT(*) FROM cohorts_Mumbai")
         )
+        print(
+            f"Verification: cohorts_Mumbai table has {result.scalar()} rows."
+        )
+
+        result = connection.execute(
+            text("SELECT COUNT(*) FROM MODIS_061_MCD19A2_GRANULES")
+        )
+        print(
+            f"Verification: MODIS_061_MCD19A2_GRANULES table has {result.scalar()} rows."
+        )
+        print("Verification successful: tables exist and are populated.")
 
 
 if __name__ == "__main__":
