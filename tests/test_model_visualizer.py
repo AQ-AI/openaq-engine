@@ -81,10 +81,10 @@ class TestModelVisualizer(unittest.TestCase):
         os.environ,
         {
             "TEST_PGDATABASE": "test_db",
-            "TEST_PGUSER": "test_user",
-            "TEST_PGPASSWORD": "test_password",
             "TEST_PGHOST": "localhost",
             "PGPORT": "5432",
+            "TEST_PGUSER": "test_user",
+            "TEST_PGPASSWORD": "test_password",
         },
     )
     def test_get_results(self, mock_get_dbengine, mock_get_data):

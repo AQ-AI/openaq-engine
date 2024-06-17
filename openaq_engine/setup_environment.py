@@ -69,7 +69,7 @@ def connect_to_db(use_test_db=False):
         host = os.getenv("PGHOST")
         port = os.getenv("PGPORT")
 
-    engine = get_dbengine(database, user, password, host, port)
+    engine = get_dbengine(database, host, port, user, password)
     connection = engine.connect()
     try:
         yield connection
