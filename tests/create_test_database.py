@@ -1,6 +1,7 @@
-import psycopg2
 import os
+import time
 
+import psycopg2
 from sqlalchemy import create_engine, text
 
 
@@ -116,10 +117,10 @@ def setup_test_database():
             text(
                 """
             INSERT INTO cohorts_Mumbai (train_validation_set, cohort, cohort_type, x, y, longitude, latitude, value, timestamp_utc) VALUES
-            (0, 'A', 'training', -70.214134, 44.089355, -70.214134, 44.089355, 10, '2022-04-01 21:00:00'),
-            (0, 'A', 'training', -70.214134, 44.089355, -70.214134, 44.089355, 20, '2022-05-01 21:00:00'),
-            (1, 'B', 'validation', -70.214134, 44.089355, -70.214134, 44.089355, 30, '2022-06-01 21:00:00'),
-            (1, 'B', 'validation', -70.214134, 44.089355, -70.214134, 44.089355, 40, '2022-07-01 21:00:00')
+            (0, 'A_2022-04-01_2022-05-01', 'training', -70.214134, 44.089355, -70.214134, 44.089355, 10, '2022-04-01 21:00:00'),
+            (0, 'A_2022-05-01_2022-06-01', 'training', -70.214134, 44.089355, -70.214134, 44.089355, 20, '2022-05-01 21:00:00'),
+            (1, 'B_2022-06-01_2022-07-01', 'validation', -70.214134, 44.089355, -70.214134, 44.089355, 30, '2022-06-01 21:00:00'),
+            (1, 'B_2022-07-01_2022-08-01', 'validation', -70.214134, 44.089355, -70.214134, 44.089355, 40, '2022-07-01 21:00:00')
         """
             )
         )
@@ -138,6 +139,32 @@ def setup_test_database():
             )
         )
         print("Granted all privileges on all tables in test_db to test_user.")
+
+        # Verify the table creation and data insertion
+        verify_table_creation(connection)
+
+
+def verify_table_creation(connection):
+    retries = 5
+    for i in range(retries):
+        try:
+            result = connection.execute(
+                text("SELECT COUNT(*) FROM cohorts_Mumbai")
+            )
+            count = result.scalar()
+            print(f"Verification: cohorts_Mumbai table has {count} rows.")
+            if count > 0:
+                print(
+                    "Verification successful: cohorts_Mumbai table exists and is populated."
+                )
+                break
+        except Exception as e:
+            print(f"Verification attempt {i+1} failed: {e}")
+            time.sleep(1)
+    else:
+        raise Exception(
+            "Failed to verify the cohorts_Mumbai table creation and population after multiple attempts."
+        )
 
 
 if __name__ == "__main__":
