@@ -25,10 +25,9 @@ def setup_test_database():
         cur.execute("CREATE DATABASE test_db")
         cur.close()
         con.close()
+        print("Database 'test_db' created successfully.")
     except psycopg2.errors.DuplicateDatabase:
-        print(
-            "Database creation might have failed (or it already exists). Continuing..."
-        )
+        print("Database 'test_db' already exists. Continuing...")
 
     # Connect to the test_db as superuser
     test_db_url = f"postgresql://{superuser}:{superuser_password}@{pg_host}:{pg_port}/test_db"
@@ -38,6 +37,12 @@ def setup_test_database():
         # Debug: Check the connection
         result = connection.execute(text("SELECT 1"))
         print(f"Connection test result: {result.scalar()}")
+
+        # Cleanup: Drop existing tables if they exist
+        connection.execute(text("DROP TABLE IF EXISTS test_results"))
+        connection.execute(text("DROP TABLE IF EXISTS features"))
+        connection.execute(text("DROP TABLE IF EXISTS cohorts_Mumbai"))
+        print("Existing tables dropped successfully.")
 
         # Create the test_results table
         connection.execute(
