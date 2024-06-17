@@ -209,7 +209,7 @@ def test_query_satellite_data(matrix_generator):
             y=44.089355,
             start_date="2022-04-01T21:00:00.000000Z",
             end_date="2023-04-01T21:00:00.000000Z",
-            cohort_table="cohorts_Mumbai",
+            cohort_table="cohorts_mumbai",
         )
 
         assert not result_df.empty
