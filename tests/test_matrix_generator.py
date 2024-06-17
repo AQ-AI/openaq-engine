@@ -178,6 +178,48 @@ def test_extract_time_ranges(matrix_generator):
     assert time_ranges is not None
 
 
+def test_query_satellite_data(matrix_generator):
+    cohort_data = pd.DataFrame(
+        {
+            "x": [-70.214134],
+            "y": [44.089355],
+            "value": [10],
+            "datetime_hour": pd.to_datetime(["2022-04-01 21:00:00"]),
+        }
+    )
+
+    satellite_data = pd.DataFrame(
+        {
+            "sensor_longitude": [-70.214134],
+            "sensor_latitude": [44.089355],
+            "datetime_hour": pd.to_datetime(["2022-04-01 21:00:00"]),
+            "SR_B2": [13539],
+            "SR_B3": [12604],
+            "SR_B4": [11023],
+            "Optical_Depth_047": [0.174],
+        }
+    )
+
+    with patch(
+        "src.utils.utils.get_data", side_effect=[cohort_data, satellite_data]
+    ):
+        result_df = matrix_generator.query_satellite_data(
+            tv_id=0,
+            x=-70.214134,
+            y=44.089355,
+            start_date="2022-04-01T21:00:00.000000Z",
+            end_date="2023-04-01T21:00:00.000000Z",
+            cohort_table="cohorts_Mumbai",
+        )
+
+        assert not result_df.empty
+        assert "value" in result_df.columns
+        assert "Optical_Depth_047" in result_df.columns
+        assert "SR_B2" in result_df.columns
+        assert "SR_B3" in result_df.columns
+        assert "SR_B4" in result_df.columns
+
+
 def test_get_csr(mocker):
     config = MatrixGeneratorConfig()
     matrix_generator = MatrixGenerator(
