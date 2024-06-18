@@ -20,7 +20,7 @@ def config():
     config = MatrixGeneratorConfig()
     config.SATELLITE_CONFIG = {
         "modis_061_mcd19a2_granules": {
-            "bands": ["Optical_Depth_047", "SR_B2", "SR_B3", "SR_B4"],
+            "bands": ["optical_depth_047", "sr_b2", "sr_b3", "sr_b4"],
             "frequency": "daily",
         }
     }
@@ -46,7 +46,12 @@ def cohort_df():
     return pd.DataFrame(
         {
             "locationId": [1, 2, 3, 4],
-            "cohort": ["A", "A", "B", "B"],
+            "cohort": [
+                "A_2021-01-01_2021-01-02",
+                "A_2021-01-02_2021-01-03",
+                "B_2021-01-01_2021-01-02",
+                "B_2021-01-02_2021-01-03",
+            ],
             "timestamp_utc": [
                 "2021-01-01",
                 "2021-01-02",
@@ -119,10 +124,10 @@ def test_combine_tv_sets(matrix_generator):
                 "sensor_longitude": [106.79481],
                 "sensor_latitude": [47.922497],
                 "datetime_hour": ["2020-05-07 03:00:00"],
-                "SR_B2": [13539],
-                "SR_B3": [12604],
-                "SR_B4": [11023],
-                "Optical_Depth_047": [0.174],
+                "sr_b2": [13539],
+                "sr_b3": [12604],
+                "sr_b4": [11023],
+                "optical_depth_047": [0.174],
                 "tv_set": [[1]],
             }
         ),
@@ -131,10 +136,10 @@ def test_combine_tv_sets(matrix_generator):
                 "sensor_longitude": [106.79481],
                 "sensor_latitude": [47.922497],
                 "datetime_hour": ["2020-05-07 03:00:00"],
-                "SR_B2": [13539],
-                "SR_B3": [12604],
-                "SR_B4": [11023],
-                "Optical_Depth_047": [0.174],
+                "sr_b2": [13539],
+                "sr_b3": [12604],
+                "sr_b4": [11023],
+                "optical_depth_047": [0.174],
                 "tv_set": [[2]],
             }
         ),
@@ -158,10 +163,10 @@ def test_extract_time_ranges(matrix_generator):
                 "sensor_longitude": [106.79481],
                 "sensor_latitude": [47.922497],
                 "datetime_hour": ["2020-05-07 03:00:00"],
-                "SR_B2": [13539],
-                "SR_B3": [12604],
-                "SR_B4": [11023],
-                "Optical_Depth_047": [0.174],
+                "sr_b2": [13539],
+                "sr_b3": [12604],
+                "sr_b4": [11023],
+                "optical_depth_047": [0.174],
                 "tv_set": [[1]],
             }
         ),
@@ -170,10 +175,10 @@ def test_extract_time_ranges(matrix_generator):
                 "sensor_longitude": [106.79481],
                 "sensor_latitude": [47.922497],
                 "datetime_hour": ["2020-05-07 03:00:00"],
-                "SR_B2": [13539],
-                "SR_B3": [12604],
-                "SR_B4": [11023],
-                "Optical_Depth_047": [0.174],
+                "sr_b2": [13539],
+                "sr_b3": [12604],
+                "sr_b4": [11023],
+                "optical_depth_047": [0.174],
                 "tv_set": [[2]],
             }
         ),
@@ -201,10 +206,10 @@ def test_query_satellite_data(matrix_generator):
             "sensor_longitude": [-70.214134],
             "sensor_latitude": [44.089355],
             "datetime_hour": pd.to_datetime(["2022-04-01 21:00:00"]),
-            "SR_B2": [13539],
-            "SR_B3": [12604],
-            "SR_B4": [11023],
-            "Optical_Depth_047": [0.174],
+            "sr_b2": [13539],
+            "sr_b3": [12604],
+            "sr_b4": [11023],
+            "optical_depth_047": [0.174],
         }
     )
 
@@ -222,10 +227,10 @@ def test_query_satellite_data(matrix_generator):
 
         assert not result_df.empty
         assert "value" in result_df.columns
-        assert "Optical_Depth_047" in result_df.columns
-        assert "SR_B2" in result_df.columns
-        assert "SR_B3" in result_df.columns
-        assert "SR_B4" in result_df.columns
+        assert "optical_depth_047" in result_df.columns
+        assert "sr_b2" in result_df.columns
+        assert "sr_b3" in result_df.columns
+        assert "sr_b4" in result_df.columns
 
 
 def test_get_csr(mocker):
