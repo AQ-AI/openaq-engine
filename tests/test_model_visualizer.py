@@ -7,6 +7,7 @@ import pytest
 from sqlalchemy import create_engine
 
 from openaq_engine.src.model_visualizer import ModelVisualizer
+from openaq_engine.src.matrix_generator import MatrixGenerator
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -25,6 +26,17 @@ def setup_environment():
         for key, value in env_vars.items():
             print(f"{key}={value}")
         yield
+
+
+@pytest.fixture
+def matrix_generator():
+    satellite_config = {
+        "modis/061/mcd19a2/granules": {
+            "bands": ["Optical_Depth_047", "SR_B2", "SR_B3", "SR_B4"],
+            "frequency": "daily",
+        }
+    }
+    return MatrixGenerator(satellite_config=satellite_config)
 
 
 class TestModelVisualizer(unittest.TestCase):

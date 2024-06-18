@@ -16,7 +16,15 @@ from config.model_settings import MatrixGeneratorConfig
 # Fixtures
 @pytest.fixture
 def config():
-    return MatrixGeneratorConfig()
+    # Create a custom configuration with a single satellite for testing
+    config = MatrixGeneratorConfig()
+    config.SATELLITE_CONFIG = {
+        "modis_061_mcd19a2_granules": {
+            "bands": ["Optical_Depth_047", "SR_B2", "SR_B3", "SR_B4"],
+            "frequency": "daily",
+        }
+    }
+    return config
 
 
 @pytest.fixture
