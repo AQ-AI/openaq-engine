@@ -11,9 +11,8 @@ from geetools import batch
 from googleapiclient.errors import HttpError
 from haversine import haversine
 from joblib import Parallel, delayed
-from setup_environment import get_dbengine
 from sklearn.preprocessing import MinMaxScaler
-from src.utils.utils import ee_array_to_df, get_data, write_to_db
+from src.utils.utils import ee_array_to_df, get_data
 
 from config.model_settings import EEConfig
 
@@ -29,6 +28,7 @@ class EEFeatures:
         service_account: str,
         lookback_n: int,
     ):
+
         self.date_col = date_col
         self.table_name = table_name
         self.all_satellites = all_satellites
@@ -49,33 +49,25 @@ class EEFeatures:
             lookback_n=config.LOOKBACK_N,
         )
 
-
     def execute(self, df, save_images):
-        credentials = ee.ServiceAccountCredentials(
-            self.service_account,
-            self.path_to_private_key,
-        )
-        ee.Initialize(credentials)
+        ee.Authenticate()
+        # end_date, start_date = self._generate_timerange()
         satellite_df = pd.concat(
             Parallel(n_jobs=-1, backend="multiprocessing", verbose=5)(
                 delayed(self.execute_for_location)(
-                    location_id, lon, lat, day, cohort, save_images
+                    location_id, lon, lat, day, save_images
                 )
-                for location_id, lon, lat, day, cohort in zip(
-                    df.locationId, df.x, df.y, df.timestamp_utc, df.cohort
+                for location_id, lon, lat, day in zip(
+                    df.locationId, df.x, df.y, df.timestamp_utc
                 )
             ),
         ).reset_index(drop=True)
-        engine = get_dbengine()
-        write_to_db(satellite_df, engine, "satellite_MN", "public", "append")
-
         features_df = self.generate_features(satellite_df)
 
         return features_df
 
-
     def execute_for_location(
-        self, location_id, lon, lat, date_utc, cohort, save_images
+        self, location_id, lon, lat, date_utc, save_images
     ):
         """
         Input
@@ -97,6 +89,7 @@ class EEFeatures:
         datetime:
             the date the sensor reading was taken
         """
+        ee.Initialize()
 
         df_list = []
 
@@ -118,7 +111,6 @@ class EEFeatures:
                 date_utc,
                 lon,
                 lat,
-                cohort,
                 period,
                 resolution,
             )
@@ -128,7 +120,6 @@ class EEFeatures:
             return pd.concat(df_list).reset_index(drop=True)
         except ValueError:
             return pd.DataFrame()
-
 
     def execute_for_collection(
         self,
@@ -151,6 +142,7 @@ class EEFeatures:
         save_images:
             a boolean flag whether to write satellite data to google storage
         """
+        ee.Initialize()
 
         # logging.info(
         #     "please sigup to Google Earth Engine here:"
@@ -181,6 +173,7 @@ class EEFeatures:
                 f"""Image collection {image_collection.getInfo()}
                 does not match any existing location."""
             )
+            pass
 
     def generate_features(self, satellite_df):
         groupby_cols = [
@@ -194,7 +187,6 @@ class EEFeatures:
         cols_to_remove = [
             "longitude",
             "latitude",
-            "cohort",
             "time",
             "datetime",
             "sensor_timestamp",
@@ -236,7 +228,6 @@ class EEFeatures:
         date_utc,
         lon,
         lat,
-        cohort,
         period,
         resolution,
     ):
@@ -252,16 +243,19 @@ class EEFeatures:
                 location_id,
                 lon,
                 lat,
-                cohort,
                 resolution,
                 date_utc,
             )
             if not ee_df.empty:
-                logging.info("Getting satellite data within the hour of interest")
+                logging.info(
+                    "Getting satellite data within the hour of interest"
+                )
                 print("Hourly image: ", ee_df)
                 return ee_df
             else:
-                logging.warn(f"No matching satellite data within the hour for {lon}, {lat} at {date_utc}")
+                logging.warn(
+                    f"No matching satellite data within the hour for {lon}, {lat} at {date_utc}"
+                )
                 return pd.DataFrame()
         except (EEException, HttpError) as e:
             logging.error(f"Error retrieving satellite data: {e}")
@@ -283,12 +277,17 @@ class EEFeatures:
         to calculate the satellite value for a sensor location within the hour of the sensor reading.
         """
         centroid_point = ee.Geometry.Point(lon, lat)
-        sensor_datetime = datetime.datetime.strptime(date_utc, "%Y-%m-%dT%H:%M:%S.%fZ")
-        start_of_hour = sensor_datetime.replace(minute=0, second=0, microsecond=0)
+        sensor_datetime = datetime.datetime.strptime(
+            date_utc, "%Y-%m-%dT%H:%M:%S.%fZ"
+        )
+        start_of_hour = sensor_datetime.replace(
+            minute=0, second=0, microsecond=0
+        )
         end_of_hour = start_of_hour + datetime.timedelta(hours=1)
 
         filtered_image_collection = image_collection.filterDate(
-            ee.Date(start_of_hour.isoformat()), ee.Date(end_of_hour.isoformat())
+            ee.Date(start_of_hour.isoformat()),
+            ee.Date(end_of_hour.isoformat()),
         )
 
         info = filtered_image_collection.getRegion(
@@ -298,40 +297,6 @@ class EEFeatures:
         return self._create_satellite_dataframe(
             info, image_bands, location_id, date_utc, lon, lat, cohort
         )
-
-
-    def get_satellite_data_within_hour(
-        self,
-        image_collection,
-        image_bands,
-        location_id,
-        lon,
-        lat,
-        cohort,
-        resolution,
-        date_utc,
-    ):
-        """
-        This function takes in an image collection and a set of spatial and temporal parameters
-        to calculate the satellite value for a sensor location within the hour of the sensor reading.
-        """
-        centroid_point = ee.Geometry.Point(lon, lat)
-        sensor_datetime = datetime.datetime.strptime(date_utc, "%Y-%m-%dT%H:%M:%S.%fZ")
-        start_of_hour = sensor_datetime.replace(minute=0, second=0, microsecond=0)
-        end_of_hour = start_of_hour + datetime.timedelta(hours=1)
-
-        filtered_image_collection = image_collection.filterDate(
-            ee.Date(start_of_hour.isoformat()), ee.Date(end_of_hour.isoformat())
-        )
-
-        info = filtered_image_collection.getRegion(
-            centroid_point, resolution
-        ).getInfo()
-
-        return self._create_satellite_dataframe(
-            info, image_bands, location_id, date_utc, lon, lat, cohort
-        )
-
 
     def get_most_recent_satellite_data(
         self,
@@ -340,7 +305,6 @@ class EEFeatures:
         location_id,
         lon,
         lat,
-        cohort,
         resolution,
         date_utc,
         period,
@@ -376,19 +340,12 @@ class EEFeatures:
         filtered_image_collection = image_collection.filterDate(
             day_of_interest.advance(-period, "days"), day_of_interest
         )
-
         info = filtered_image_collection.getRegion(
             centroid_point, resolution
         ).getInfo()
 
         return self._create_satellite_dataframe(
-            info,
-            image_bands,
-            location_id,
-            date_utc,
-            lon,
-            lat,
-            cohort,
+            info, image_bands, location_id, date_utc, lon, lat
         )
 
     def get_satellite_data_within_lookback(
@@ -398,7 +355,6 @@ class EEFeatures:
         location_id,
         lon,
         lat,
-        cohort,
         resolution,
         date_utc,
         period,
@@ -421,7 +377,7 @@ class EEFeatures:
             centroid_point, resolution
         ).getInfo()
         return self._create_satellite_dataframe(
-            info, image_bands, location_id, date_utc, lon, lat, cohort
+            info, image_bands, location_id, date_utc, lon, lat
         )
 
     def get_any_recent_satellite_data(
@@ -431,7 +387,6 @@ class EEFeatures:
         location_id,
         lon,
         lat,
-        cohort,
         resolution,
         date_utc,
     ):
@@ -452,18 +407,11 @@ class EEFeatures:
             centroid_point, resolution
         ).getInfo()
         return self._create_satellite_dataframe(
-            info, image_bands, location_id, date_utc, lon, lat, cohort
+            info, image_bands, location_id, date_utc, lon, lat
         )
 
     def _create_satellite_dataframe(
-        self,
-        info,
-        image_bands,
-        location_id,
-        date_utc,
-        lon,
-        lat,
-        cohort,
+        self, info, image_bands, location_id, date_utc, lon, lat
     ):
         """Creates a dataframe from returned satellite information and
         builds required fields for weighted average calculation"""
@@ -472,8 +420,6 @@ class EEFeatures:
         ee_df = self._calculate_spatial_weighted_average(
             ee_df, lon, lat, location_id
         )
-        ee_df["cohort"] = cohort
-        ee_df["timestamp_utc"] = date_utc
         return ee_df
 
     def _calculate_temporal_weighted_average(self, date_utc, ee_df):
@@ -497,19 +443,20 @@ class EEFeatures:
         ee_df["sensor_longitude"] = lon
         ee_df["sensor_latitude"] = lat
         ee_df["location_id"] = location_id
-        ee_df["distance"] = ee_df.apply(self.calculate_distance, axis=1)
-        return ee_df
 
-    def calculate_distance(self, row):
         try:
-            return haversine(
-                (row["sensor_latitude"], row["sensor_longitude"]),
-                (row["latitude"], row["longitude"]),
-                unit="m",
+            ee_df["distance"] = ee_df.apply(
+                lambda row: haversine(
+                    (row["sensor_longitude"], row["sensor_latitude"]),
+                    (row["longitude"], row["latitude"]),
+                    unit="m",
+                ),
+                axis=1,
             )
-        except Exception as e:
-            print(f"Error processing row {row}: {e}")
-            return None  # or appropriate error value
+            return ee_df
+
+        except ValueError:
+            pass
 
     def _weighted_mean_by_lambda(
         self, df, avg_cols, weight_cols, groupby_cols
