@@ -8,27 +8,11 @@ from pydantic.dataclasses import dataclass
 
 
 @dataclass
-class ModelVisualizerConfig:
-    PLOT: bool = True
-    PLOT_METRICS: Sequence[str] = field(default_factory=lambda: ["mean"])
-
-    PLOTS_TABLE_NAME: str = "plots"
-    PLOTS_SCHEMA_NAME: str = "model_output"
-    RESULTS_TABLE_NAME: str = "results"
-
-
-@dataclass
 class MatrixGeneratorConfig:
     ALGORITHM = "RFR"
     ID_COLUMN_LIST: Sequence[str] = field(
         default_factory=lambda: ["locationId", "cohort", "cohort_type"]
     )
-
-
-@dataclass
-class FeatureImportanceConfig:
-    NUM_RECORDS: int = 5
-    TABLE_NAME: str = "feature_importance"
 
 
 @dataclass
@@ -40,16 +24,21 @@ class ModelTrainerConfig:
         "cohort_type",
     ]
     RANDOM_STATE = 99
-
-
-@dataclass
-class ModelEvaluatorConfig:
-    METRICS: Sequence[str] = field(default_factory=lambda: ["mse", "mape"])
-
-    SUMMARY_METHOD = "summary"
-    VALID_MODELS: Sequence[str] = field(
-        default_factory=lambda: ["DTC", "RFR", "XGB", "MNB", "MLR"]
-    )
+    All_MODEL_FEATURES = [
+        "Optical_Depth_047",
+        "B4",
+        "B3",
+        "B2",
+        "avg_rad",
+        "temperature_2m_above_ground",
+        "relative_humidity_2m_above_ground",
+        "total_precipitation_surface",
+        "total_cloud_cover_entire_atmosphere",
+        "u_component_of_wind_10m_above_ground",
+        "v_component_of_wind_10m_above_ground",
+        "basic_demographic_characteristics",
+        "discrete_classification",
+    ]
 
 
 @dataclass
@@ -81,37 +70,25 @@ class HyperparamConfig:
 class BuildFeaturesConfig:
     TARGET_COL: str = "value"
     TARGET_VARIABLE = "pm25"
-    COUNTRY = "MN"
-    CITY = ""  # "Chennai"
+    COUNTRY = "WO"
+
     CATEGORICAL_FEATURES: List[StrictStr] = field(default_factory=lambda: [])
-    CORE_FEATURES: List[StrictStr] = field(default_factory=lambda: [])
-    SATELLITE_FEATURES: List[StrictStr] = field(
+    CORE_FEATURES: List[StrictStr] = field(
         default_factory=lambda: [
-            "Optical_Depth_047",
-            "B4",
-            "B3",
-            "B2",
-            "avg_rad",
-            "temperature_2m_above_ground",
-            "relative_humidity_2m_above_ground",
-            "total_precipitation_surface",
-            "total_cloud_cover_entire_atmosphere",
-            "u_component_of_wind_10m_above_ground",
-            "v_component_of_wind_10m_above_ground",
-            "discrete_classification",
+            "city",
+            "country",
+            "pca_lat",
+            "pca_lng",
+            "sourcetype",
+            "mobile",
         ]
     )
+    SATELLITE_FEATURES = []
 
     @property
     def ALL_MODEL_FEATURES(self) -> List[str]:
         """Return all features to be fed into the model"""
-        return list(
-            set(
-                self.CORE_FEATURES
-                + self.CATEGORICAL_FEATURES
-                + self.SATELLITE_FEATURES
-            )
-        )
+        return list(set(self.CORE_FEATURES + self.CATEGORICAL_FEATURES))
 
 
 @dataclass
@@ -120,15 +97,15 @@ class EEConfig:
     DATE_COL: str = "timestamp_utc"
     TABLE_NAME = "cohorts"
     # Satellite configurations
-    AOD_IMAGE_COLLECTION: str = "MODIS/061/MCD19A2_GRANULES"
+    AOD_IMAGE_COLLECTION: str = "MODIS/006/MCD19A2_GRANULES"
     AOD_IMAGE_BAND: Sequence[str] = field(
         default_factory=lambda: ["Optical_Depth_047"]
     )
     AOD_IMAGE_PERIOD = 2
     AOD_IMAGE_RES = 1000
-    LANDSAT_IMAGE_COLLECTION: str = "LANDSAT/LC08/C02/T1_L2"
+    LANDSAT_IMAGE_COLLECTION: str = "LANDSAT/LC08/C01/T1"
     LANDSAT_IMAGE_BAND: Sequence[str] = field(
-        default_factory=lambda: ["SR_B4", "SR_B3", "SR_B2"]
+        default_factory=lambda: ["B4", "B3", "B2"]
     )
     LANDSAT_PERIOD = 8
     LANDSAT_RES = 30
@@ -168,18 +145,8 @@ class EEConfig:
     LAND_COVER_IMAGE_RES = 100
     LAND_COVER_PERIOD = 1500
     BUCKET_NAME = "earthengine-bucket"
-    PATH_TO_PRIVATE_KEY = (
-        "/home/ec2-user/openaq-engine/unicef-367711-a4ac0921e063.json"
-    )
-    BUCKET_NAME = "earthengine-bucket"
+    PATH_TO_PRIVATE_KEY = "private_keys/unicef-367711-29676476912d.json"
     SERVICE_ACCOUNT = "earth-engine@unicef-367711.iam.gserviceaccount.com"
-
-    # service_account = "ali.quidwai@aqai.xyz"
-    # credentials = ee.ServiceAccountCredentials(
-    #     service_account,
-    #     '/home/ec2-user/elevated-watch-399519-d191df2b047f.json',
-    # )
-    # ee.Initialize(credentials)
 
     @property
     def ALL_SATELLITES(self) -> zip(List[str], List[str]):
@@ -190,7 +157,7 @@ class EEConfig:
                 self.LANDSAT_IMAGE_COLLECTION,
                 self.NIGHTTIME_LIGHT_IMAGE_COLLECTION,
                 self.METEROLOGICAL_IMAGE_COLLECTION,
-                # self.POPULATION_IMAGE_COLLECTION,
+                self.POPULATION_IMAGE_COLLECTION,
                 self.LAND_COVER_IMAGE_COLLECTION,
             ],
             [
@@ -198,7 +165,7 @@ class EEConfig:
                 self.LANDSAT_IMAGE_BAND,
                 self.NIGHTTIME_LIGHT_IMAGE_BAND,
                 self.METEROLOGICAL_IMAGE_BAND,
-                # self.POPULATION_IMAGE_BAND,
+                self.POPULATION_IMAGE_BAND,
                 self.LAND_COVER_IMAGE_BAND,
             ],
             [
@@ -206,7 +173,7 @@ class EEConfig:
                 self.LANDSAT_PERIOD,
                 self.NIGHTTIME_LIGHT_PERIOD,
                 self.METEROLOGICAL_IMAGE_PERIOD,
-                # self.POPULATION_PERIOD,
+                self.POPULATION_PERIOD,
                 self.LAND_COVER_PERIOD,
             ],
             [
@@ -214,7 +181,7 @@ class EEConfig:
                 self.LANDSAT_RES,
                 self.NIGHTTIME_LIGHT_RES,
                 self.METEROLOGICAL_IMAGE_RES,
-                # self.POPULATION_IMAGE_RES,
+                self.POPULATION_IMAGE_RES,
                 self.LAND_COVER_IMAGE_RES,
             ],
         )
@@ -226,8 +193,6 @@ class CohortBuilderConfig:
         default_factory=lambda: ["unique_id"]
     )
     DATE_COL: str = "date.utc"
-    CITY = ""  # "Chennai"
-    SENSOR_TYPE = "reference grade"
     REGION = "us-east-1"
     S3_BUCKET = os.getenv("S3_BUCKET_OPENAQ")
     S3_OUTPUT = os.getenv("S3_OUTPUT_OPENAQ")
@@ -239,29 +204,24 @@ class CohortBuilderConfig:
             filter_non_null_values=["value"],
             filter_extreme_values=["value"],
             filter_no_coordinates=["coordinates"],
-            filter_countries=["country"],
-            filter_cities=["city"],
+            # filter_countries=["country"],
+            # filter_cities=["city"],
         ),
     )
     TARGET_VARIABLE = "pm25"
-    COUNTRY = "MN"
+    COUNTRY = "WO"
     SOURCE = "openaq-aws"
-    LOCAL_DATA = ""
 
 
 @dataclass
 class TimeSplitterConfig:
     DATE_COL: str = "date.utc"
     TARGET_VARIABLE = "pm25"
-    COUNTRY = "MN"
-    CITY = ""  # "Chennai"
-    SENSOR_TYPE = "reference grade"
-    SOURCE = "openaq-aws"
-    LOCAL_DATA = ""
-
-    TIME_WINDOW_LENGTH: int = 4
-    WITHIN_WINDOW_SAMPLER: int = 4
-    WINDOW_COUNT: int = 30  # this will increase for more than one split
+    COUNTRY = "IN"
+    SOURCE = "openaq-api"
+    TIME_WINDOW_LENGTH: int = 12
+    WITHIN_WINDOW_SAMPLER: int = 3
+    WINDOW_COUNT: int = 3  # this will increase for more than one split
     TABLE_NAME: str = "openaq"
     REGION = "us-east-1"
     DATABASE = os.getenv("DB_NAME_OPENAQ")
@@ -276,19 +236,6 @@ class TimeSplitterConfig:
             training=[],
         )
     )
-    STATE_CODES = ["TX"]
-    PLACE = "Texas"
-    STATE_BOUNDING_BOXES = {
-        "TX": (
-            "Texas",
-            (
-                -106.64719063660635,
-                25.840437651866516,
-                -93.5175532104321,
-                36.50050935248352,
-            ),
-        ),
-    }
     COUNTRY_BOUNDING_BOXES = {
         "AF": (
             "Afghanistan",
