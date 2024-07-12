@@ -1,12 +1,10 @@
 import json
-from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
 from src.utils.utils import (
     api_response_to_df,
     ee_array_to_df,
-    extract_utc_date,
     get_categorical_feature_indices,
     get_s3_file_path_list,
     json_provider,
@@ -134,17 +132,6 @@ def test_json_provider(mocker):
     result = json_provider("dummy_path", "dummy_cmd")
     assert result == {"key": "value"}
     mock_open.assert_called_once_with("dummy_path")
-
-
-def test_extract_utc_date():
-    date_dict = json.dumps(
-        {
-            "utc": "2023-03-31T23:30:00+00:00",
-            "local": "2023-03-31T23:30:00+05:30",
-        }
-    )
-    date = extract_utc_date(date_dict)
-    assert date == datetime(2023, 3, 31).date()
 
 
 def test_write_to_db(mocker):
