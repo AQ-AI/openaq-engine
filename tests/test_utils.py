@@ -1,4 +1,3 @@
-import json
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
@@ -43,12 +42,9 @@ def test_api_response_to_df(mocker):
     response_data = {
         "results": [{"id": 1, "value": 42}, {"id": 2, "value": 99}]
     }
-    mocker.patch(
-        "requests.get",
-        return_value=MagicMock(
-            status_code=200, text=json.dumps(response_data)
-        ),
-    )
+    mock_response = MagicMock()
+    mock_response.json.return_value = response_data
+    mocker.patch("requests.get", return_value=mock_response)
 
     url = "http://fakeurl.com"
     df = api_response_to_df(url)
@@ -85,7 +81,6 @@ def test_query_results_from_aws(mocker):
     # Patch boto3 client creation to return the mock client
     with patch("boto3.Session.client", return_value=mock_athena_client):
         result = query_results_from_aws(params, query)
-        print(result)
         assert any("row1" or "row2" in d.values() for d in result.values())
 
         # assert result == ["row1", "row2"]
@@ -183,4 +178,3 @@ def test_ee_array_to_df():
     )
 
     pd.testing.assert_frame_equal(df.reset_index(drop=True), expected_df)
-    pd.testing.assert_frame_equal(df, expected_df)

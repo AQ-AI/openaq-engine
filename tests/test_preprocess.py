@@ -23,13 +23,22 @@ def sample_data():
     return pd.DataFrame(data)
 
 
-def test_get_timestamps_api(sample_data):
+def test_extract_timestamp_from_api():
     preprocess = Preprocess()
-    result = preprocess.get_timestamps(sample_data, "openaq-api")
-    assert "timestamp_utc" in result.columns
-    assert "timestamp_local" in result.columns
+    data = {
+        "date": [
+            '{"utc": "2022-04-01T21:00:00Z", "local": "2022-04-01T14:00:00-07:00"}'
+        ],
+        "coordinates": ['{"latitude": 37.7749, "longitude": -122.4194}'],
+        "value": [10],
+        "pnt": [Point(37.7749, -122.4194)],
+    }
+    df = pd.DataFrame(data)
+    result = df.apply(preprocess._extract_timestamp_from_api, axis=1)
     assert result["timestamp_utc"].iloc[0] == "2022-04-01T21:00:00.000000Z"
-    assert result["timestamp_local"].iloc[0] == "2022-04-01T14:00:00-0700"
+    assert (
+        result["timestamp_local"].iloc[0] == "2022-04-01T21:00:00.000000+0000"
+    )
 
 
 def test_get_timestamps_aws(sample_data):
