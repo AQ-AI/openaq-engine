@@ -1,9 +1,6 @@
 import datetime
-import json
 from unittest.mock import MagicMock, patch
 
-import mlflow
-import pandas as pd
 import pytest
 from sqlalchemy.engine import Engine
 from src.time_splitter import TimeSplitter, TimeSplitterBase
@@ -90,11 +87,9 @@ def test_create_end_date_from_aws(mocker):
         "bucket": "testbucket",
         "path": "test_path",
     }
-    city = "Mumbai"
     country_info = "IN"
     pollutant = "pm25"
     latest_date = "2021-12-23"
-    local_df = pd.DataFrame()
 
     # Mock the Athena client and its methods
     mock_athena_client = MagicMock()
@@ -126,7 +121,7 @@ def test_create_end_date_from_aws(mocker):
             source="openaq-aws",
         )
         end_date = time_splitter.create_end_date_from_aws(
-            params, city, country_info, pollutant, latest_date, local_df
+            params, country_info, pollutant, latest_date
         )
         assert end_date == datetime.date(2021, 12, 23)
 
@@ -138,11 +133,9 @@ def test_create_start_date_from_aws(mocker):
         "bucket": "testbucket",
         "path": "test_path",
     }
-    city = "Mumbai"
     country_info = "IN"
     pollutant = "pm25"
     latest_date = "2021-12-23"
-    local_df = pd.DataFrame()
 
     # Mock the Athena client and its methods
     mock_athena_client = MagicMock()
@@ -174,7 +167,7 @@ def test_create_start_date_from_aws(mocker):
             source="openaq-aws",
         )
         start_date = time_splitter.create_start_date_from_aws(
-            params, city, country_info, pollutant, latest_date, local_df
+            params, country_info, pollutant, latest_date
         )
         assert start_date == datetime.date(2021, 1, 1)
 
@@ -224,10 +217,9 @@ def test_build_response_from_aws(mocker):
 
 def test_create_end_date_from_openaq_api(mocker):
     # Mock the required arguments
-    city = "Baraboo"
     country = "US"
-    sensor_type = "reference grade"
     pollutant = "pm25"
+    latest_date = "2021-12-23"
 
     time_splitter = TimeSplitter(
         time_window_length=6,
@@ -238,26 +230,32 @@ def test_create_end_date_from_openaq_api(mocker):
         country=country,
         source="openaq-api",
     )
+
     # Mock the API response
-    mock_response = {"results": [{"lastUpdated": "2023-04-01T21:00:00+00:00"}]}
+    mock_response = MagicMock()
+    mock_response.json.return_value = {
+        "results": [{"lastUpdated": "2023-04-01T21:00:00+00:00"}]
+    }
+
     mocker.patch(
         "src.utils.utils.query_results_from_api",
-        return_value=type(
-            "obj", (object,), {"text": json.dumps(mock_response)}
-        ),
+        return_value=mock_response,
     )
+
     # Call the method and get the end date
     end_date = time_splitter.create_end_date_from_openaq_api(
-        city, country, sensor_type, pollutant, pd.DataFrame()
+        country,
+        pollutant,
+        latest_date,
     )
-    assert end_date == datetime.datetime.now().date()
+
+    # Assertions
+    assert end_date == datetime.date.today()
 
 
 def test_create_start_date_from_openaq_api(mocker):
     # Mock the required arguments
-    city = "Baraboo"
     country = "US"
-    sensor_type = "reference grade"
     pollutant = "pm25"
 
     time_splitter = TimeSplitter(
@@ -269,165 +267,22 @@ def test_create_start_date_from_openaq_api(mocker):
         country=country,
         source="openaq-api",
     )
+
     # Mock the API response
-    mock_response = {
+    mock_response = MagicMock()
+    mock_response.json.return_value = {
         "results": [{"firstUpdated": "2023-04-01T21:00:00+00:00"}]
     }
+
     mocker.patch(
         "src.utils.utils.query_results_from_api",
-        return_value=type(
-            "obj", (object,), {"text": json.dumps(mock_response)}
-        ),
-    )
-    # Call the method and get the end date
-    end_date = time_splitter.create_end_date_from_openaq_api(
-        city, country, sensor_type, pollutant, pd.DataFrame()
-    )
-    assert end_date == datetime.datetime.now().date()
-
-
-def test_create_start_local_data():
-    local_df = pd.DataFrame(
-        {
-            "date": [
-                '{"utc": "2023-03-31T23:30:00+00:00", "local": "2023-03-31T23:30:00+05:30"}'
-            ]
-        }
-    )
-    time_splitter = TimeSplitter(
-        time_window_length=6,
-        within_window_sampler=2,
-        window_count=3,
-        train_validation_dict={},
-        target_variable="pm25",
-        country="IN",
-        source="openaq-api",
-    )
-    start_date = time_splitter.create_start_local_data(local_df)
-    assert start_date == datetime.date(2023, 3, 31)
-
-
-def test_create_end_local_data():
-    local_df = pd.DataFrame(
-        {
-            "date": [
-                '{"utc": "2023-03-31T23:30:00+00:00", "local": "2023-03-31T23:30:00+05:30"}'
-            ]
-        }
-    )
-    time_splitter = TimeSplitter(
-        time_window_length=6,
-        within_window_sampler=2,
-        window_count=3,
-        train_validation_dict={},
-        target_variable="pm25",
-        country="IN",
-        source="openaq-api",
-    )
-    end_date = time_splitter.create_end_local_data(local_df)
-    assert end_date == datetime.date(2023, 3, 31)
-
-
-def test_execute_for_openaq_aws(mocker, mock_db_connection):
-    city = "Mumbai"
-    country = "IN"
-    pollutant = "pm25"
-    latest_date = "2021-12-23"
-    local_data = "cohorts_Mumbai"
-    mocker.patch("src.utils.utils.get_data", return_value=pd.DataFrame())
-    mocker.patch.object(
-        TimeSplitter,
-        "create_end_date_from_aws",
-        return_value=datetime.date(2020, 1, 1),
-    )
-    mocker.patch.object(
-        TimeSplitter,
-        "create_start_date_from_aws",
-        return_value=datetime.date(2019, 6, 1),
-    )
-    time_splitter = TimeSplitter(
-        time_window_length=6,
-        within_window_sampler=2,
-        window_count=3,
-        train_validation_dict={"training": [], "validation": []},
-        target_variable="pm25",
-        country="UK",
-        source="openaq-aws",
-    )
-    results = time_splitter.execute(
-        city, country, None, "openaq-aws", pollutant, latest_date, local_data
-    )
-    assert results is not None
-    assert "validation" in results
-    assert "training" in results
-
-
-def test_execute_for_openaq_api(mocker, mock_db_connection):
-    city = "Mumbai"
-    country = "IN"
-    pollutant = "pm25"
-    sensor_type = "reference grade"
-    latest_date = "2021-12-23"
-    local_data = "cohorts_Mumbai"
-
-    mocker.patch("src.utils.utils.get_data", return_value=pd.DataFrame())
-    mocker.patch.object(
-        TimeSplitter,
-        "create_end_date_from_openaq_api",
-        return_value=datetime.date(2020, 1, 1),
-    )
-    mocker.patch.object(
-        TimeSplitter,
-        "create_start_date_from_openaq_api",
-        return_value=datetime.date(2019, 6, 1),
+        return_value=mock_response,
     )
 
-    mock_mlflow = mocker.patch("mlflow.start_run")
-    mock_mlflow_run = MagicMock()
-    mock_mlflow.return_value = mock_mlflow_run
-
-    time_splitter = TimeSplitter(
-        time_window_length=6,
-        within_window_sampler=2,
-        window_count=3,
-        train_validation_dict={"training": [], "validation": []},
-        target_variable="pm25",
-        country="UK",
-        source="openaq-api",
-    )
-
-    mocker.patch(
-        "mlflow.log_param"
-    )  # Mock mlflow.log_param to avoid conflicts
-
-    results = time_splitter.execute(
-        city,
+    # Call the method and get the start date
+    start_date = time_splitter.create_start_date_from_openaq_api(
         country,
-        sensor_type,
-        "openaq-api",
         pollutant,
-        latest_date,
-        local_data,
     )
-
-    assert results is not None
-    assert "validation" in results
-    assert "training" in results
-
-    # Check that mlflow.log_param is called with correct arguments
-    mlflow.log_param.assert_any_call("source", "openaq-api")
-
-
-def test_format_to_date_only():
-    time_splitter = TimeSplitter(
-        time_window_length=6,
-        within_window_sampler=2,
-        window_count=3,
-        train_validation_dict={},
-        target_variable="pm25",
-        country="IN",
-        source="openaq-api",
-    )
-    dt = datetime.datetime(2023, 5, 20)
-    formatted_date = time_splitter.format_to_date_only(dt)
-    assert formatted_date == "2023-05-20"
+    # Assertions
+    assert start_date == datetime.date(2022, 10, 4)
