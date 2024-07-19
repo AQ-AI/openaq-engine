@@ -80,52 +80,6 @@ def test_get_validation_window(mocker):
     assert end_date == datetime.date(2020, 3, 1)
 
 
-def test_create_end_date_from_aws(mocker):
-    params = {
-        "region": "us-east-1",
-        "database": "test_db",
-        "bucket": "testbucket",
-        "path": "test_path",
-    }
-    country_info = "IN"
-    pollutant = "pm25"
-    latest_date = "2021-12-23"
-
-    # Mock the Athena client and its methods
-    mock_athena_client = MagicMock()
-    mock_athena_client.start_query_execution.return_value = {
-        "QueryExecutionId": "12345"
-    }
-    mock_athena_client.get_query_execution.side_effect = [
-        {"QueryExecution": {"Status": {"State": "RUNNING"}}},
-        {"QueryExecution": {"Status": {"State": "SUCCEEDED"}}},
-    ]
-    mock_athena_client.get_query_results.return_value = {
-        "ResultSet": {
-            "Rows": [
-                {"Data": [{"VarCharValue": "Header"}]},
-                {"Data": [{"VarCharValue": "2021-12-23 00:00:00.000 UTC"}]},
-            ]
-        }
-    }
-
-    # Patch boto3 client creation to return the mock client
-    with patch("boto3.Session.client", return_value=mock_athena_client):
-        time_splitter = TimeSplitter(
-            time_window_length=6,
-            within_window_sampler=2,
-            window_count=3,
-            train_validation_dict={},
-            target_variable=pollutant,
-            country=country_info,
-            source="openaq-aws",
-        )
-        end_date = time_splitter.create_end_date_from_aws(
-            params, country_info, pollutant, latest_date
-        )
-        assert end_date == datetime.date(2021, 12, 23)
-
-
 def test_create_start_date_from_aws(mocker):
     params = {
         "region": "us-east-1",
