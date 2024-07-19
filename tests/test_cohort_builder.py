@@ -1,5 +1,4 @@
 import datetime
-import json
 import os
 from contextlib import nullcontext
 from unittest.mock import MagicMock, patch
@@ -233,8 +232,8 @@ def test_execute_for_openaq_api(mocker, mock_db_connection):
         ]
     }
 
+    # Mock the requests.get function to return the desired response
     mock_response = MagicMock()
-    mock_response.text = json.dumps(api_response)
     mock_response.json.return_value = api_response
     mocker.patch("requests.get", return_value=mock_response)
 
