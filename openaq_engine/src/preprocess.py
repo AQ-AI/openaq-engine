@@ -167,11 +167,10 @@ class Preprocess:
         )
 
         # Parse 'local' time
-        row["timestamp_local"] = (
-            datetime.fromisoformat(local_time)
-            .astimezone()
-            .strftime("%Y-%m-%dT%H:%M:%S.%f%z")
+        row["timestamp_local"] = datetime.fromisoformat(local_time).strftime(
+            "%Y-%m-%dT%H:%M:%S.%f%z"
         )
+
         return row
 
     def extract_coordinates(
