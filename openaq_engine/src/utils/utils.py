@@ -44,21 +44,17 @@ def write_csv(df: pd.DataFrame, path: str, **kwargs: Any) -> None:
     )
 
 
-def query_results_from_api(params, query):
-    url = query
-    headers = params
-
-    response = requests.get(url, headers=headers, timeout=None)
-
-    return response.text
+def query_results_from_api(headers, url):
+    response = requests.get(url, headers=headers)
+    return response
 
 
 def api_response_to_df(url):
-
     headers = {"accept": "application/json"}
     response = query_results_from_api(headers, url)
     try:
-        return pd.DataFrame(json.loads(response)["results"])
+        # Directly use response.json() without json.loads
+        return pd.DataFrame(response.json()["results"])
     except KeyError:
         pass
 
@@ -205,13 +201,16 @@ def ee_array_to_df(arr, list_of_bands):
     df = pd.DataFrame(arr)
 
     # Rearrange the header.
-    headers = df.iloc[0]
+    headers = df.iloc[0].tolist()  # Ensure headers are in list format
     df = pd.DataFrame(df.values[1:], columns=headers)
 
     # Remove rows without data inside.
     df = df[["longitude", "latitude", "time", *list_of_bands]].dropna()
 
     # Convert the data to numeric values.
+    df["longitude"] = pd.to_numeric(df["longitude"], errors="coerce")
+    df["latitude"] = pd.to_numeric(df["latitude"], errors="coerce")
+    df["time"] = pd.to_numeric(df["time"], errors="coerce")
     for band in list_of_bands:
         df[band] = pd.to_numeric(df[band], errors="coerce")
 
@@ -221,4 +220,4 @@ def ee_array_to_df(arr, list_of_bands):
     # Keep the columns of interest.
     df = df[["longitude", "latitude", "time", "datetime", *list_of_bands]]
 
-    return df
+    return df.reset_index(drop=True)
