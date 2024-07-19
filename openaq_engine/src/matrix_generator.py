@@ -190,15 +190,8 @@ class MatrixGenerator:
                 run_date.strftime("%Y%m%d_%H%M%S%f"),
             ]
         )
-        return [
-            load(
-                os.path.join(
-                    self.text_features_path,
-                    x + "_" + filename + ".joblib",
-                )
-            )
-            for x in self.text_column_list
-        ]
+        file_path = os.path.join(filename + ".joblib")
+        return load(file_path)
 
     def _concat_csr(self, X, csr_list):
         structured_csr = sp.csr_matrix(X.drop(self.id_column_list, axis=1))
