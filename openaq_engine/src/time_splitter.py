@@ -137,6 +137,7 @@ class TimeSplitterBase(ABC):
         headers = {"accept": "application/json"}
         response = query_results_from_api(headers, url)
         response_json = response.json()
+        print("Response JSON:", response_json)  # Debugging statement
 
         if "results" in response_json and response_json["results"]:
             return datetime.strptime(
