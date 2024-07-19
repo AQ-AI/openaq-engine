@@ -250,7 +250,7 @@ def test_create_end_date_from_openaq_api(mocker):
     )
 
     # Assertions
-    assert end_date == datetime.date.today()
+    assert end_date == datetime.date(2023, 4, 1)
 
 
 def test_create_start_date_from_openaq_api(mocker):
