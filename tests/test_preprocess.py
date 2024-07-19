@@ -35,10 +35,12 @@ def test_extract_timestamp_from_api():
     }
     df = pd.DataFrame(data)
     result = df.apply(preprocess._extract_timestamp_from_api, axis=1)
-    assert result["timestamp_utc"].iloc[0] == "2022-04-01T21:00:00.000000Z"
-    assert (
-        result["timestamp_local"].iloc[0] == "2022-04-01T21:00:00.000000+0000"
-    )
+
+    expected_utc = "2022-04-01T21:00:00.000000Z"
+    expected_local = "2022-04-01T14:00:00.000000-0700"
+
+    assert result["timestamp_utc"].iloc[0] == expected_utc
+    assert result["timestamp_local"].iloc[0] == expected_local
 
 
 def test_get_timestamps_aws(sample_data):
