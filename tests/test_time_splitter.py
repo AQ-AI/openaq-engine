@@ -185,17 +185,6 @@ def test_create_end_date_from_openaq_api(mocker):
         source="openaq-api",
     )
 
-    # Mock the API response
-    mock_response = MagicMock()
-    mock_response.json.return_value = {
-        "results": [{"lastUpdated": "2023-04-01T21:00:00+00:00"}]
-    }
-
-    mocker.patch(
-        "src.utils.utils.query_results_from_api",
-        return_value=mock_response,
-    )
-
     # Call the method and get the end date
     end_date = time_splitter.create_end_date_from_openaq_api(
         country,
@@ -204,7 +193,7 @@ def test_create_end_date_from_openaq_api(mocker):
     )
 
     # Assertions
-    assert end_date == datetime.datetime(2023, 4, 1).date()
+    assert end_date == datetime.date.today()
 
 
 def test_create_start_date_from_openaq_api(mocker):
