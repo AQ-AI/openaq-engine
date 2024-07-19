@@ -1,4 +1,3 @@
-import json
 import logging
 from abc import ABC
 from datetime import datetime
@@ -135,37 +134,39 @@ class TimeSplitterBase(ABC):
                 pollutant=pollutant
             )
         else:
-            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&country_id={country}&order_by=lastUpdated&dumpRaw=false""".format(
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&country={country}&order_by=lastUpdated&dumpRaw=false""".format(
                 country=country, pollutant=pollutant
             )
 
         headers = {"accept": "application/json"}
         response = query_results_from_api(headers, url)
+        response_json = response.json()
+
         return datetime.strptime(
-            json.loads(response)["results"][0]["lastUpdated"],
+            response_json["results"][0]["lastUpdated"],
             "%Y-%m-%dT%H:%M:%S+00:00",
         ).date()
 
-    def create_start_date_from_openaq_api(
-        self,
-        country,
-        pollutant,
-    ):
+    def create_start_date_from_openaq_api(self, country, pollutant):
         if country == "WO":
             url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=asc&parameter={pollutant}&radius=1000&order_by=firstUpdated&dumpRaw=false""".format(
                 pollutant=pollutant
             )
         else:
-            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=asc&parameter={pollutant}&radius=1000&country_id={country}&order_by=firstUpdated&dumpRaw=false""".format(
+            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=asc&parameter={pollutant}&radius=1000&country={country}&order_by=firstUpdated&dumpRaw=false""".format(
                 country=country, pollutant=pollutant
             )
 
         headers = {"accept": "application/json"}
-
         response = query_results_from_api(headers, url)
+        response_json = response.json()
+
+        # Print statements for debugging
+        print("API URL:", url)
+        print("Response JSON:", response_json)
 
         return datetime.strptime(
-            json.loads(response)["results"][0]["firstUpdated"],
+            response_json["results"][0]["firstUpdated"],
             "%Y-%m-%dT%H:%M:%S+00:00",
         ).date()
 
@@ -254,8 +255,8 @@ class TimeSplitter(TimeSplitterBase):
             )
             if window_start_date < start_date:
                 logging.warning(
-                    f"""Date: {window_start_date.date()} is earlier than
-                    the first date within data: {start_date.date()}"""
+                    f"""Date: {window_start_date} is earlier than
+                    the first date within data: {start_date}"""
                 )
                 window_no += 1
             else:
