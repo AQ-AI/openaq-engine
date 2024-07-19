@@ -130,22 +130,23 @@ class TimeSplitterBase(ABC):
 
     def create_end_date_from_openaq_api(self, country, pollutant, latest_date):
         if country == "WO":
-            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&order_by=lastUpdated&dumpRaw=false""".format(
-                pollutant=pollutant
-            )
+            url = f"https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&order_by=lastUpdated&dumpRaw=false"
         else:
-            url = """https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&country={country}&order_by=lastUpdated&dumpRaw=false""".format(
-                country=country, pollutant=pollutant
-            )
+            url = f"https://api.openaq.org/v2/locations?limit=1000&page=1&offset=0&sort=desc&parameter={pollutant}&radius=1000&country={country}&order_by=lastUpdated&dumpRaw=false"
 
         headers = {"accept": "application/json"}
         response = query_results_from_api(headers, url)
         response_json = response.json()
 
-        return datetime.strptime(
-            response_json["results"][0]["lastUpdated"],
-            "%Y-%m-%dT%H:%M:%S+00:00",
-        ).date()
+        if "results" in response_json and response_json["results"]:
+            return datetime.datetime.strptime(
+                response_json["results"][0]["lastUpdated"],
+                "%Y-%m-%dT%H:%M:%S+00:00",
+            ).date()
+        else:
+            return (
+                datetime.date.today()
+            )  # fallback in case of unexpected response
 
     def create_start_date_from_openaq_api(self, country, pollutant):
         if country == "WO":
