@@ -38,9 +38,9 @@ class MatrixGenerator:
             algorithm=config.ALGORITHM, id_column_list=config.ID_COLUMN_LIST
         )
 
-    def execute_train_valid_set(self):
-        cohorts_query = """select distinct "locationId", "cohort", "cohort_type",
-        "train_validation_set" from "cohorts";"""
+    def execute_train_valid_set(self, place):
+        cohorts_query = f"""select distinct "location", "cohort", "cohort_type",
+        "train_validation_set" from "cohorts_local_{place}";"""
         cohorts_df = get_data(cohorts_query)
 
         return cohorts_df.train_validation_set.unique()
@@ -190,15 +190,8 @@ class MatrixGenerator:
                 run_date.strftime("%Y%m%d_%H%M%S%f"),
             ]
         )
-        return [
-            load(
-                os.path.join(
-                    self.text_features_path,
-                    x + "_" + filename + ".joblib",
-                )
-            )
-            for x in self.text_column_list
-        ]
+        file_path = os.path.join(filename + ".joblib")
+        return load(file_path)
 
     def _concat_csr(self, X, csr_list):
         structured_csr = sp.csr_matrix(X.drop(self.id_column_list, axis=1))
