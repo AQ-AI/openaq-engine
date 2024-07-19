@@ -139,7 +139,7 @@ class TimeSplitterBase(ABC):
         response_json = response.json()
 
         if "results" in response_json and response_json["results"]:
-            return datetime.datetime.strptime(
+            return datetime.strptime(
                 response_json["results"][0]["lastUpdated"],
                 "%Y-%m-%dT%H:%M:%S+00:00",
             ).date()
