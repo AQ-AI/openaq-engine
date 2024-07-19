@@ -151,15 +151,26 @@ class Preprocess:
         """
         Extract timezone into "utc" and "local" timezone columns from dict.
         """
+        if isinstance(row["date"], str):
+            row["date"] = json.loads(row["date"])
+
+        utc_time = row["date"]["utc"]
+        local_time = row["date"]["local"]
+
+        # Parse 'utc' time
+        if utc_time.endswith("Z"):
+            utc_time = utc_time[:-1] + "+00:00"
         row["timestamp_utc"] = (
-            datetime.fromisoformat(row["date"]["utc"])
+            datetime.fromisoformat(utc_time)
             .astimezone(timezone.utc)
             .strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         )
+
+        # Parse 'local' time
         row["timestamp_local"] = (
-            datetime.fromisoformat(row["date"]["local"])
-            .astimezone(timezone.utc)
-            .strftime("%Y-%m-%dT%H:%M:%S%z")
+            datetime.fromisoformat(local_time)
+            .astimezone()
+            .strftime("%Y-%m-%dT%H:%M:%S.%f%z")
         )
         return row
 
@@ -184,8 +195,10 @@ class Preprocess:
         return df
 
     def validate_point(self, df: pd.DataFrame) -> pd.DataFrame:
-        """filters invalid geometries"""
-        df["point_is_valid"] = df.pnt.apply(lambda x: x.wkt != "POINT EMPTY")
+        """Filters invalid geometries"""
+        df["point_is_valid"] = df.pnt.apply(
+            lambda x: not x.is_empty and isinstance(x, Point)
+        )
 
         if not all(df.point_is_valid):
             num_invalid_pnts = len(df[~df.point_is_valid])
@@ -195,7 +208,7 @@ class Preprocess:
             )
 
         df_valid = df[df.point_is_valid]
-        return df_valid.drop(["pnt", "point_is_valid"], axis=1)
+        return df_valid.drop(["point_is_valid"], axis=1)
 
     def _extract_lat_lng_from_aws(self, row: pd.Series) -> pd.Series:
         """Regex extraction of latitude and longtitude from string"""
@@ -209,10 +222,11 @@ class Preprocess:
         return self._check_valid_create_pnt(row)
 
     def _extract_lat_lng_from_api(self, row: pd.Series) -> pd.Series:
-        """Extraction of latitude and longtitude from dict"""
+        """Extraction of latitude and longitude from dict"""
+        if isinstance(row["coordinates"], str):
+            row["coordinates"] = json.loads(row["coordinates"])
         row["y"] = float(row["coordinates"]["latitude"])
         row["x"] = float(row["coordinates"]["longitude"])
-
         return self._check_valid_create_pnt(row)
 
     def _check_valid_create_pnt(self, row: pd.Series) -> pd.Series:
@@ -224,9 +238,9 @@ class Preprocess:
             return row
 
     def dict_cols_to_json(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Dumps cols containing dicts to json"""
-        for i in df.columns:
-            if isinstance(df[i][1], dict):
-                df[i] = list(map(lambda x: json.dumps(x), df[i]))
-
+        for col in df.columns:
+            if df[col].apply(lambda x: isinstance(x, dict)).any():
+                df[col] = df[col].apply(
+                    lambda x: json.dumps(x) if isinstance(x, dict) else x
+                )
         return df
