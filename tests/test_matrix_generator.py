@@ -3,6 +3,7 @@ import os
 import tempfile
 from contextlib import nullcontext
 from inspect import isclass
+from unittest.mock import patch
 
 import joblib
 import pandas as pd
@@ -86,9 +87,11 @@ def test_get_csr(mocker):
         joblib.dump(mock_data, tmp_file)
         tmp_file_path = tmp_file.name
 
-    result = matrix_generator._get_csr(
-        0, "training", datetime.datetime(2020, 1, 1)
-    )
+    with patch("joblib.load", return_value=mock_data):
+        with patch("os.path.join", return_value=tmp_file_path):
+            result = matrix_generator._get_csr(
+                0, "training", datetime.datetime(2020, 1, 1)
+            )
 
     assert result == mock_data
 
