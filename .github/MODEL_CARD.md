@@ -1,5 +1,4 @@
 ---
-{{ card_data }}
 language:
 - {en}
 license: {BSD 3}
