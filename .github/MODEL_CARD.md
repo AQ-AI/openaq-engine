@@ -80,7 +80,8 @@ Use the code below to get started with the model.
 
 <!-- This should link to a Dataset Card, perhaps with a short stub of information on what the training data is all about as well as documentation related to data pre-processing or additional filtering. -->
 
-The training data includes 169,101,933 PM2.5 measurements from OpenAQ's historic data hosted on AWS S3 and recent measurements are collected from OpenAQ's APIs. The data has been preprocessed to integrate satellite data (AOD, NO2, Night-light), ground sensor data, and meteorological variables.
+Training data for our global air pollution models are provided by [OpenAQ](https://openaq.org/), and collected global air quality data from air quality monitoring stations across the globe (sample size 𝑛=1601), measuring
+ground-level PM2.5 concentrations from January 2019 to September 2020. The training data includes 169,101,933 PM2.5 measurements from OpenAQ's historic data hosted on AWS S3 and recent measurements are collected from OpenAQ's APIs. The data has been preprocessed to integrate satellite data (AOD, NO2, Night-light), ground sensor data, and meteorological variables.
 
 ### Training Procedure
 
@@ -168,7 +169,7 @@ AWS EC2 Instances
 
 The model uses Python libraries such as scikit-learn, pandas, and numpy for data processing and model training.
 
-## Citation [optional]
+## Citation
 
 <!-- If there is a paper or blog post introducing the model, the APA and Bibtex information for that should go in this section. -->
 ```bibtex
