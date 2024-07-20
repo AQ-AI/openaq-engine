@@ -1,7 +1,13 @@
 ---
-# For reference on model card metadata, see the spec: https://github.com/huggingface/hub-docs/blob/main/modelcard.md?plain=1
-# Doc / guide: https://huggingface.co/docs/hub/model-cards
 {{ card_data }}
+language:
+- {en}
+license: {BSD 3}
+license_link: {https://github.com/AQ-AI/openaq-engine/blob/develop/license}
+library_name: {openaq-engine}
+metrics:
+- {mae}
+- {mape}
 ---
 
 # Model Card for Global PM2.5 Air Quality Prediction Model
