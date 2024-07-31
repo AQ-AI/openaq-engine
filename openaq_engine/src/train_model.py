@@ -55,7 +55,7 @@ class ModelTrainer:
                 itertools.chain(
                     *[x[1] for x in list(EEConfig().ALL_SATELLITES)]
                 )
-            )
+            ),
             # best_model=RetrainingConfig().BEST_MODEL,
             # best_model_hyperparams=RetrainingConfig().BEST_MODEL_HYPERPARAMS,
         )

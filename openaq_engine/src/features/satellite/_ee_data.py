@@ -463,11 +463,13 @@ class EEFeatures:
             try:
                 return pd.Series(
                     [
-                        np.nan
-                        if x.dropna(subset=[c]).empty
-                        else np.average(
-                            x.dropna(subset=[c])[c],
-                            weights=x.dropna(subset=[c])[w],
+                        (
+                            np.nan
+                            if x.dropna(subset=[c]).empty
+                            else np.average(
+                                x.dropna(subset=[c])[c],
+                                weights=x.dropna(subset=[c])[w],
+                            )
                         )
                         for c in cols
                     ],
@@ -476,10 +478,12 @@ class EEFeatures:
             except ZeroDivisionError:
                 pd.Series(
                     [
-                        np.nan
-                        if x.dropna(subset=[c]).empty
-                        else np.average(
-                            x.dropna(subset=[c])[c],
+                        (
+                            np.nan
+                            if x.dropna(subset=[c]).empty
+                            else np.average(
+                                x.dropna(subset=[c])[c],
+                            )
                         )
                         for c in cols
                     ],

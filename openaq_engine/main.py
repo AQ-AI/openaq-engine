@@ -180,7 +180,7 @@ def run_pipeline(country, source, pollutant, latest_date, models_directory):
 @click.group("openaq-engine", help="Library to query openaq data")
 @click.pass_context
 def cli(ctx):
-    ...
+    pass
 
 
 cli.add_command(time_splitter)

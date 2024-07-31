@@ -14,7 +14,7 @@ class BuildFeatureBase(ABC):
 
     @abstractmethod
     def execute(self, *args: Any) -> pd.DataFrame:
-        ...
+        pass
 
 
 class BuildFeaturesRandomForest(BuildFeatureBase):
@@ -65,7 +65,9 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
 
     @all_model_features.setter
     def all_model_features(self, features: List[str]):
-        if not all(type(feat) == str for feat in features):
+        # edited
+        # if not all(type(feat) == str for feat in features):
+        if not all(isinstance(feat, str) for feat in features):
             raise ValueError("All the feature names should be strings!")
         self._all_model_features = features
 
