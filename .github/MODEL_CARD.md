@@ -24,20 +24,20 @@ This model predicts PM2.5 air quality at a 1km resolution globally using satelli
 This model leverages machine learning techniques to predict PM2.5 concentrations globally at a high resolution (1km). It uses a combination of satellite data, meteorological data, and ground sensor data to provide accurate air quality predictions. The model supports various input parameters such as latitude, longitude, and date to generate predictions. It is integrated with a CLI tool and can be deployed on AWS for scalable predictions.
 
 - **Developed by:** AQAI
-- **Funded by [optional]:** UNICEF Office for Innovation
-- **Shared by [optional]:** AQAI
+- **Funded by:** UNICEF Office for Innovation
+- **Shared by:** AQAI
 - **Model type:** Machine Learning Regression Model
 - **Language(s) (NLP):** Not Applicable
 - **License:** BSD 3-Clause License
-- **Finetuned from model [optional]:** Custom implementation
+- **Finetuned from model:** Custom implementation
 
-### Model Sources [optional]
+### Model Sources
 
 <!-- Provide the basic links for the model. -->
 
 - **Repository:** [AQAI GitHub Repository](https://github.com/AQ-AI/openaq-engine)
-- **Paper [optional]:** Not Available
-- **Demo [optional]:** [Model Deployment](https://github.com/AQ-AI/openaq-engine/releases/tag/v0.1.0)
+- **Paper:** Not Available
+- **Demo:** [Model Deployment](https://github.com/AQ-AI/openaq-engine/releases/tag/v0.1.0)
 
 ## Uses
 
@@ -49,7 +49,7 @@ This model leverages machine learning techniques to predict PM2.5 concentrations
 
 The model can be directly used to predict PM2.5 concentrations for specific locations and dates by using the provided CLI tool. It is designed for environmental researchers, policy makers, and public health officials to monitor and predict air quality.
 
-### Downstream Use [optional]
+### Downstream Use
 
 <!-- This section is for the model use when fine-tuned for a task, or when plugged into a larger ecosystem/app -->
 
@@ -92,7 +92,7 @@ ground-level PM2.5 concentrations from January 2019 to September 2020. The train
 
 <!-- This relates heavily to the Technical Specifications. Content here should link to that section when it is relevant to the training procedure. -->
 
-#### Preprocessing [optional]
+#### Preprocessing
 
 Data preprocessing involves cleaning and integrating data from multiple sources, extracting relevant features, and handling missing values.
 
@@ -100,7 +100,7 @@ Data preprocessing involves cleaning and integrating data from multiple sources,
 
 - **Training regime:** fp32 precision
 
-#### Speeds, Sizes, Times [optional]
+#### Speeds, Sizes, Times
 
 <!-- This section provides information about throughput, start/end time, checkpoint size if relevant, etc. -->
 
@@ -128,7 +128,10 @@ Evaluation factors include geographic regions, urban vs. rural areas, and differ
 
 <!-- These are the evaluation metrics being used, ideally with a description of why. -->
 
-Evaluation metrics include F1-Score, Mean Absolute Error (MAE), and Root Mean Squared Error (RMSE).
+Evaluation metrics include Root Mean Squared Error (RMSE), calculated as the square root of the average of the squared differences between the predicted and actual values. RMSE is a widely used metric for regression tasks as it provides a measure of how accurately the model predicts the target variable. It is particularly useful in this context because it penalizes larger errors more than smaller ones, giving a clear indication of the model's prediction accuracy.
+
+In this project, RMSE is used to evaluate the performance of the satellite-derived machine learning model in predicting air pollution levels compared to real measurements taken at a local sensor. By comparing these two sets of data, we can determine how well the model is able to generalize from satellite data to ground-level pollution measurements, which is crucial for assessing the model's practical applicability in real-world scenarios.
+
 
 ### Results
 
@@ -138,7 +141,7 @@ The model achieved F1-Scores of 0.66 and 0.71 for Gradient Boosting and Random F
 
 The model demonstrates robust performance in predicting PM2.5 concentrations across diverse regions and conditions.
 
-## Model Examination [optional]
+## Model Examination
 
 <!-- Relevant interpretability work for the model goes here -->
 
@@ -156,7 +159,7 @@ Carbon emissions can be estimated using the [Machine Learning Impact calculator]
 - **Compute Region:** US East (N. Virginia)
 - **Carbon Emitted:** Estimated using ML Impact calculator
 
-## Technical Specifications [optional]
+## Technical Specifications
 
 ### Model Architecture and Objective
 
