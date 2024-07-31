@@ -65,7 +65,15 @@ The model should not be used for predicting other pollutants without retraining 
 
 <!-- This section is meant to convey both technical and sociotechnical limitations. -->
 
-The model relies on the quality and coverage of the input data, which may vary by region and over time. There is a potential for bias in regions with sparse ground sensor coverage. The model's performance may degrade in areas with rapid changes in air quality due to local events like wildfires or industrial accidents.
+The model relies on the quality and coverage of the input data, which may vary by region and over time. There is a potential for bias in regions with sparse ground sensor coverage, leading to less accurate predictions in these areas. Additionally, the model's performance may degrade in areas with rapid changes in air quality due to local events like wildfires or industrial accidents, which can introduce sudden and significant deviations from typical pollution patterns.
+
+### Environmental Impact
+
+The development and deployment of machine learning models for predicting air pollution can have several environmental impacts. On the positive side, accurate predictions can help in mitigating adverse health effects by informing timely interventions and policy decisions. However, the computational resources required for training and running these models can contribute to energy consumption and carbon emissions.
+
+Reliance on satellite data involves the production, launch, and operation of satellites, all of which have environmental footprints. The manufacturing process of satellites includes the extraction and processing of raw materials, which can lead to habitat destruction and pollution. The launch process also releases greenhouse gases and other pollutants.
+
+While the model has the potential to significantly benefit public health and environmental monitoring, it is essential to consider and mitigate its environmental impact through measures such as optimizing algorithms for energy efficiency, using renewable energy sources for data centers, and supporting sustainable practices in satellite technology.
 
 ### Recommendations
 
@@ -171,8 +179,19 @@ The model can be deployed on any Linux service or cloud environment. Currently, 
 
 #### Hardware
 
-AWS EC2 Instances
 
+The model can be deployed on any Linux service or cloud environment. Currently, the model and infrastructure are trained and deployed on AWS using services including Lambda, S3, Athena, EC2, and EBS.
+
+#### Hardware
+
+AWS EC2 Instances:
+
+- **Instance Type:** m5.xlarge
+- **RAM:** 16 GB
+- **SSD:** 100 GB
+- **vCPUs:** 4
+
+These specifications provide a balance of computational power, memory, and storage to efficiently handle the training and deployment of the model. The use of AWS EC2 instances ensures scalability and flexibility, allowing for adjustments based on workload requirements.
 #### Software
 
 The model uses Python libraries such as scikit-learn, pandas, and numpy for data processing and model training.
