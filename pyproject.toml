@@ -30,10 +30,13 @@ black = "^22.10.0"
 autoflake8 = "^0.4.0"
 autopep8 = "^2.0.0"
 flake8 = "^5.0.4"
-isort = "^5.10.1"
+isort = "^5.12.0"
 pre-commit = "^2.20.0"
 pytest-cov = "^4.0.0"
 commitizen = "^2.38.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest-mock = "^3.14.0"
 
 [tool.isort]
 line_length = 79
