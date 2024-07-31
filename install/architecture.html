@@ -1,0 +1,185 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>AQAI Pipeline &#8212; openaq-engine 0.1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="aqai-pipeline">
+<h1>AQAI Pipeline<a class="headerlink" href="#aqai-pipeline" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>The AQAI Pipeline is a comprehensive data processing and machine learning system designed to handle various data sources, process them, and generate predictive models. The pipeline consists of several key components:</p>
+<ol class="arabic simple">
+<li><p>Data Sources</p></li>
+<li><p>AQAI.DB</p></li>
+<li><p>AQAI.FLOW</p></li>
+<li><p>AQAI.Board</p></li>
+<li><p>VPC</p></li>
+</ol>
+</div>
+<div class="section" id="data-sources">
+<h2>Data Sources<a class="headerlink" href="#data-sources" title="Permalink to this headline">¶</a></h2>
+<p>The pipeline ingests data from multiple sources:</p>
+<ul class="simple">
+<li><p>Global, historic data (PM2.5): Sourced from OpenAQ</p></li>
+<li><p>Global, current data: Source not specified in the diagram</p></li>
+<li><p>Local data:
+- raw .xlsx files
+- raw .xls files
+- raw .csv files</p></li>
+</ul>
+</div>
+<div class="section" id="aqai-db">
+<h2>AQAI.DB<a class="headerlink" href="#aqai-db" title="Permalink to this headline">¶</a></h2>
+<p>This component handles data storage and processing:</p>
+<ul class="simple">
+<li><p>Ingests raw data from various file formats</p></li>
+<li><p>Stores data in raw psql tables</p></li>
+<li><p>Processes the raw data into processed psql tables</p></li>
+<li><p>Creates modelling psql tables for further analysis</p></li>
+</ul>
+</div>
+<div class="section" id="aqai-flow">
+<h2>AQAI.FLOW<a class="headerlink" href="#aqai-flow" title="Permalink to this headline">¶</a></h2>
+<p>AQAI.FLOW is the core processing and machine learning component:</p>
+<ul class="simple">
+<li><p>Utilizes MLflow for pipeline management</p></li>
+<li><p>Includes a Pipeline Runner with the following stages:
+1. Time series
+2. Dataset Creator
+3. Feature Generator
+4. Matrix Generator
+5. Model Trainer
+6. Model Evaluator</p></li>
+<li><p>Interacts with a central Database for data storage and retrieval</p></li>
+<li><p>Performs score prediction and model evaluation</p></li>
+</ul>
+</div>
+<div class="section" id="aqai-board">
+<h2>AQAI.Board<a class="headerlink" href="#aqai-board" title="Permalink to this headline">¶</a></h2>
+<p>This component serves as a dashboard or monitoring system:</p>
+<ul class="simple">
+<li><p>Utilizes Grafana for visualization</p></li>
+<li><p>Incorporates InfluxDB for time-series data storage</p></li>
+</ul>
+</div>
+<div class="section" id="vpc-virtual-private-cloud">
+<h2>VPC (Virtual Private Cloud)<a class="headerlink" href="#vpc-virtual-private-cloud" title="Permalink to this headline">¶</a></h2>
+<p>A separate AQAI.Board instance runs within a VPC:</p>
+<ul class="simple">
+<li><p>Includes ModelServing capabilities</p></li>
+<li><p>Stores Artifacts, likely for model deployment and serving</p></li>
+</ul>
+</div>
+<div class="section" id="integration">
+<h2>Integration<a class="headerlink" href="#integration" title="Permalink to this headline">¶</a></h2>
+<p>The components are integrated as follows:</p>
+<ul class="simple">
+<li><p>Data flows from various sources into AQAI.DB</p></li>
+<li><p>AQAI.DB feeds processed and modelling data into AQAI.FLOW</p></li>
+<li><p>AQAI.FLOW interacts with its internal database and produces model artifacts</p></li>
+<li><p>Model artifacts are stored in the VPC for serving</p></li>
+<li><p>AQAI.Board instances provide monitoring and visualization capabilities</p></li>
+</ul>
+<p>This pipeline allows for efficient data ingestion, processing, model training, evaluation, and deployment in a cohesive system.</p>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">openaq-engine</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="aws_setup.html">Connecting to EC2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="postgres_setup.html">Local Postgres setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docker_setup.html">Docker setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docker_setup.html#id1">Docker setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="local_env_setup.html">Local Environment Setup</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, Christina Last, Prithviraj Pramanik.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/install/architecture.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
