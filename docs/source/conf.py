@@ -11,7 +11,6 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
-import sys
 
 print("We are here!!!!!!!!!!: ")
 os.chdir(os.path.abspath('../../openaq_engine'))
