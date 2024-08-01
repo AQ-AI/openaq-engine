@@ -126,3 +126,7 @@ local_data/*
 openaq_engine/scripts/plume_labs.ipynb
 
 /home/ec2-user/openaq-engine/openssl-1.1.1k/
+
+/home/ec2-user/openaq-engine/google-cloud-sdk/*
+
+/home/ec2-user/openaq-engine/EarthEngineImages/
