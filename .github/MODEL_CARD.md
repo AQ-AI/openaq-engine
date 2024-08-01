@@ -49,10 +49,6 @@ This model leverages machine learning techniques to predict PM2.5 concentrations
 
 The model can be directly used to predict PM2.5 concentrations for specific locations and dates by using the provided CLI tool. It is designed for environmental researchers, policy makers, and public health officials to monitor and predict air quality.
 
-### Downstream Use
-
-<!-- This section is for the model use when fine-tuned for a task, or when plugged into a larger ecosystem/app -->
-
 The model can be integrated into larger environmental monitoring systems, urban planning tools, and public health advisory platforms to provide real-time air quality information and forecasts.
 
 ### Out-of-Scope Use
@@ -108,12 +104,6 @@ Data preprocessing involves cleaning and integrating data from multiple sources,
 
 - **Training regime:** fp32 precision
 
-#### Speeds, Sizes, Times
-
-<!-- This section provides information about throughput, start/end time, checkpoint size if relevant, etc. -->
-
-Training times and model sizes vary depending on the dataset and computational resources used.
-
 ## Evaluation
 
 <!-- This section describes the evaluation protocols and provides the results. -->
@@ -148,12 +138,6 @@ The model achieved F1-Scores of 0.66 and 0.71 for Gradient Boosting and Random F
 #### Summary
 
 The model demonstrates robust performance in predicting PM2.5 concentrations across diverse regions and conditions.
-
-## Model Examination
-
-<!-- Relevant interpretability work for the model goes here -->
-
-Further interpretability work can include feature importance analysis and visualizations of model predictions against actual observations.
 
 ## Environmental Impact
 
@@ -198,7 +182,6 @@ The model uses Python libraries such as scikit-learn, pandas, and numpy for data
 
 ## Citation
 
-<!-- If there is a paper or blog post introducing the model, the APA and Bibtex information for that should go in this section. -->
 ```bibtex
 @INPROCEEDINGS{2022AGUFMIN42C0346L,
        author = {{Last}, Christina and {Pramanik}, Prithviraj},
