@@ -63,9 +63,11 @@ warn_unused_configs = true
 name = "cz_conventional_commits"
 version = "0.1.0"
 tag_format = "v$version"
+
 [build-system]
-requires = ["poetry-core>=1.1.13"]
+requires = ["poetry-core>=1.0.0", "setuptools>=42", "wheel"]
 build-backend = "poetry.core.masonry.api"
+
 
 [tool.semantic_release]
 version_variable = [
