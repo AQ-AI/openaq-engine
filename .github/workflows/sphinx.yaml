@@ -12,7 +12,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
-          python-version: '3.9'
+          python-version: '3.11'
 
       - name: Install Poetry
         run: |
@@ -21,9 +21,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install cython
           pip install setuptools wheel
-          pip install numpy==1.24.4 --no-use-pep517 --prefer-binary
+          pip install numpy --prefer-binary
           poetry install
 
       - name: Build HTML
