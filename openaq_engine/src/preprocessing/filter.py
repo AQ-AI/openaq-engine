@@ -9,12 +9,19 @@ class Filter:
         df: pd.DataFrame, pollutant_to_predict: str
     ) -> pd.DataFrame:
         """
-        Filter for rows selected pollutant
+        Filters the DataFrame for rows containing the specified pollutant.
 
         Parameters
         ----------
         df : pd.DataFrame
-            Dataframe with selected `pollutant`
+            The DataFrame containing air quality data.
+        pollutant_to_predict : str
+            The pollutant to filter for.
+
+        Returns
+        -------
+        pd.DataFrame
+            The filtered DataFrame containing only rows with the specified pollutant.
         """
         return (
             df.assign(
@@ -32,12 +39,17 @@ class Filter:
     @staticmethod
     def filter_no_coordinates(df: pd.DataFrame) -> pd.DataFrame:
         """
-        Filter for rows selected pollutant
+        Filters the DataFrame to remove rows with empty coordinates.
 
         Parameters
         ----------
         df : pd.DataFrame
-            Dataframe with no empty `coordinates`
+            The DataFrame containing coordinate data.
+
+        Returns
+        -------
+        pd.DataFrame
+            The filtered DataFrame with rows that have empty coordinates removed.
         """
         return (
             df.assign(
@@ -52,14 +64,18 @@ class Filter:
     @staticmethod
     def filter_non_null_values(df: pd.DataFrame) -> pd.DataFrame:
         """
-        Filter out rows which are non null
+        Filters the DataFrame to remove rows with non-positive values.
 
         Parameters
         ----------
         df : pd.DataFrame
-            Dataframe with 0 values
-        """
+            The DataFrame containing air quality data.
 
+        Returns
+        -------
+        pd.DataFrame
+            The filtered DataFrame with rows containing non-positive values removed.
+        """
         return (
             df.assign(
                 non_null_values=(
@@ -73,14 +89,18 @@ class Filter:
     @staticmethod
     def filter_extreme_values(df: pd.DataFrame) -> pd.DataFrame:
         """
-        Filter out rows which contain extremely high pm25 values
+        Filters the DataFrame to remove rows with extreme PM2.5 values.
 
         Parameters
         ----------
         df : pd.DataFrame
-            Dataframe with extreme values removed
-        """
+            The DataFrame containing air quality data.
 
+        Returns
+        -------
+        pd.DataFrame
+            The filtered DataFrame with rows containing extreme PM2.5 values removed.
+        """
         return (
             df.assign(
                 non_extreme_values=(
@@ -96,14 +116,20 @@ class Filter:
         df: pd.DataFrame, countries: List[str]
     ) -> pd.DataFrame:
         """
-        Filter for countries
+        Filters the DataFrame for specific countries.
 
         Parameters
         ----------
         df : pd.DataFrame
-        countries: list with `countries`
-        """
+            The DataFrame containing location data.
+        countries : list of str
+            The list of countries to filter for.
 
+        Returns
+        -------
+        pd.DataFrame
+            The filtered DataFrame containing only rows from the specified countries.
+        """
         return (
             df.assign(
                 filtered_country=(
@@ -122,14 +148,20 @@ class Filter:
     @staticmethod
     def filter_cities(df: pd.DataFrame, cities: List[str]) -> pd.DataFrame:
         """
-        Filter for cities
+        Filters the DataFrame for specific cities.
 
         Parameters
         ----------
         df : pd.DataFrame
-        cities: list with `cities`
-        """
+            The DataFrame containing location data.
+        cities : list of str
+            The list of cities to filter for.
 
+        Returns
+        -------
+        pd.DataFrame
+            The filtered DataFrame containing only rows from the specified cities.
+        """
         return (
             df.assign(
                 filtered_cities=(
