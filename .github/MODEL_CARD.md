@@ -1,7 +1,12 @@
 ---
-# For reference on model card metadata, see the spec: https://github.com/huggingface/hub-docs/blob/main/modelcard.md?plain=1
-# Doc / guide: https://huggingface.co/docs/hub/model-cards
-{{ card_data }}
+language:
+- {en}
+license: {BSD 3}
+license_link: {https://github.com/AQ-AI/openaq-engine/blob/develop/license}
+library_name: {openaq-engine}
+metrics:
+- {mae}
+- {mape}
 ---
 
 # Model Card for Global PM2.5 Air Quality Prediction Model
@@ -19,20 +24,20 @@ This model predicts PM2.5 air quality at a 1km resolution globally using satelli
 This model leverages machine learning techniques to predict PM2.5 concentrations globally at a high resolution (1km). It uses a combination of satellite data, meteorological data, and ground sensor data to provide accurate air quality predictions. The model supports various input parameters such as latitude, longitude, and date to generate predictions. It is integrated with a CLI tool and can be deployed on AWS for scalable predictions.
 
 - **Developed by:** AQAI
-- **Funded by [optional]:** UNICEF Office for Innovation
-- **Shared by [optional]:** AQAI
+- **Funded by:** UNICEF Office for Innovation
+- **Shared by:** AQAI
 - **Model type:** Machine Learning Regression Model
 - **Language(s) (NLP):** Not Applicable
 - **License:** BSD 3-Clause License
-- **Finetuned from model [optional]:** Custom implementation
+- **Finetuned from model:** Custom implementation
 
-### Model Sources [optional]
+### Model Sources
 
 <!-- Provide the basic links for the model. -->
 
 - **Repository:** [AQAI GitHub Repository](https://github.com/AQ-AI/openaq-engine)
-- **Paper [optional]:** Not Available
-- **Demo [optional]:** [Model Deployment](https://github.com/AQ-AI/openaq-engine/releases/tag/v0.1.0)
+- **Paper:** Not Available
+- **Demo:** [Model Deployment](https://github.com/AQ-AI/openaq-engine/releases/tag/v0.1.0)
 
 ## Uses
 
@@ -43,10 +48,6 @@ This model leverages machine learning techniques to predict PM2.5 concentrations
 <!-- This section is for the model use without fine-tuning or plugging into a larger ecosystem/app. -->
 
 The model can be directly used to predict PM2.5 concentrations for specific locations and dates by using the provided CLI tool. It is designed for environmental researchers, policy makers, and public health officials to monitor and predict air quality.
-
-### Downstream Use [optional]
-
-<!-- This section is for the model use when fine-tuned for a task, or when plugged into a larger ecosystem/app -->
 
 The model can be integrated into larger environmental monitoring systems, urban planning tools, and public health advisory platforms to provide real-time air quality information and forecasts.
 
@@ -60,7 +61,15 @@ The model should not be used for predicting other pollutants without retraining 
 
 <!-- This section is meant to convey both technical and sociotechnical limitations. -->
 
-The model relies on the quality and coverage of the input data, which may vary by region and over time. There is a potential for bias in regions with sparse ground sensor coverage. The model's performance may degrade in areas with rapid changes in air quality due to local events like wildfires or industrial accidents.
+The model relies on the quality and coverage of the input data, which may vary by region and over time. There is a potential for bias in regions with sparse ground sensor coverage, leading to less accurate predictions in these areas. Additionally, the model's performance may degrade in areas with rapid changes in air quality due to local events like wildfires or industrial accidents, which can introduce sudden and significant deviations from typical pollution patterns.
+
+### Environmental Impact
+
+The development and deployment of machine learning models for predicting air pollution can have several environmental impacts. On the positive side, accurate predictions can help in mitigating adverse health effects by informing timely interventions and policy decisions. However, the computational resources required for training and running these models can contribute to energy consumption and carbon emissions.
+
+Reliance on satellite data involves the production, launch, and operation of satellites, all of which have environmental footprints. The manufacturing process of satellites includes the extraction and processing of raw materials, which can lead to habitat destruction and pollution. The launch process also releases greenhouse gases and other pollutants.
+
+While the model has the potential to significantly benefit public health and environmental monitoring, it is essential to consider and mitigate its environmental impact through measures such as optimizing algorithms for energy efficiency, using renewable energy sources for data centers, and supporting sustainable practices in satellite technology.
 
 ### Recommendations
 
@@ -80,25 +89,20 @@ Use the code below to get started with the model.
 
 <!-- This should link to a Dataset Card, perhaps with a short stub of information on what the training data is all about as well as documentation related to data pre-processing or additional filtering. -->
 
-The training data includes 169,101,933 PM2.5 measurements from OpenAQ's historic data hosted on AWS S3 and recent measurements are collected from OpenAQ's APIs. The data has been preprocessed to integrate satellite data (AOD, NO2, Night-light), ground sensor data, and meteorological variables.
+Training data for our global air pollution models are provided by [OpenAQ](https://openaq.org/), and collected global air quality data from air quality monitoring stations across the globe (sample size 𝑛=1601), measuring
+ground-level PM2.5 concentrations from January 2019 to September 2020. The training data includes 169,101,933 PM2.5 measurements from OpenAQ's historic data hosted on AWS S3 and recent measurements are collected from OpenAQ's APIs. The data has been preprocessed to integrate satellite data (AOD, NO2, Night-light), ground sensor data, and meteorological variables.
 
 ### Training Procedure
 
 <!-- This relates heavily to the Technical Specifications. Content here should link to that section when it is relevant to the training procedure. -->
 
-#### Preprocessing [optional]
+#### Preprocessing
 
 Data preprocessing involves cleaning and integrating data from multiple sources, extracting relevant features, and handling missing values.
 
 #### Training Hyperparameters
 
 - **Training regime:** fp32 precision
-
-#### Speeds, Sizes, Times [optional]
-
-<!-- This section provides information about throughput, start/end time, checkpoint size if relevant, etc. -->
-
-Training times and model sizes vary depending on the dataset and computational resources used.
 
 ## Evaluation
 
@@ -122,7 +126,10 @@ Evaluation factors include geographic regions, urban vs. rural areas, and differ
 
 <!-- These are the evaluation metrics being used, ideally with a description of why. -->
 
-Evaluation metrics include F1-Score, Mean Absolute Error (MAE), and Root Mean Squared Error (RMSE).
+Evaluation metrics include Root Mean Squared Error (RMSE), calculated as the square root of the average of the squared differences between the predicted and actual values. RMSE is a widely used metric for regression tasks as it provides a measure of how accurately the model predicts the target variable. It is particularly useful in this context because it penalizes larger errors more than smaller ones, giving a clear indication of the model's prediction accuracy.
+
+In this project, RMSE is used to evaluate the performance of the satellite-derived machine learning model in predicting air pollution levels compared to real measurements taken at a local sensor. By comparing these two sets of data, we can determine how well the model is able to generalize from satellite data to ground-level pollution measurements, which is crucial for assessing the model's practical applicability in real-world scenarios.
+
 
 ### Results
 
@@ -131,12 +138,6 @@ The model achieved F1-Scores of 0.66 and 0.71 for Gradient Boosting and Random F
 #### Summary
 
 The model demonstrates robust performance in predicting PM2.5 concentrations across diverse regions and conditions.
-
-## Model Examination [optional]
-
-<!-- Relevant interpretability work for the model goes here -->
-
-Further interpretability work can include feature importance analysis and visualizations of model predictions against actual observations.
 
 ## Environmental Impact
 
@@ -150,7 +151,7 @@ Carbon emissions can be estimated using the [Machine Learning Impact calculator]
 - **Compute Region:** US East (N. Virginia)
 - **Carbon Emitted:** Estimated using ML Impact calculator
 
-## Technical Specifications [optional]
+## Technical Specifications
 
 ### Model Architecture and Objective
 
@@ -162,15 +163,25 @@ The model can be deployed on any Linux service or cloud environment. Currently, 
 
 #### Hardware
 
-AWS EC2 Instances
 
+The model can be deployed on any Linux service or cloud environment. Currently, the model and infrastructure are trained and deployed on AWS using services including Lambda, S3, Athena, EC2, and EBS.
+
+#### Hardware
+
+AWS EC2 Instances:
+
+- **Instance Type:** m5.xlarge
+- **RAM:** 16 GB
+- **SSD:** 100 GB
+- **vCPUs:** 4
+
+These specifications provide a balance of computational power, memory, and storage to efficiently handle the training and deployment of the model. The use of AWS EC2 instances ensures scalability and flexibility, allowing for adjustments based on workload requirements.
 #### Software
 
 The model uses Python libraries such as scikit-learn, pandas, and numpy for data processing and model training.
 
-## Citation [optional]
+## Citation
 
-<!-- If there is a paper or blog post introducing the model, the APA and Bibtex information for that should go in this section. -->
 ```bibtex
 @INPROCEEDINGS{2022AGUFMIN42C0346L,
        author = {{Last}, Christina and {Pramanik}, Prithviraj},
