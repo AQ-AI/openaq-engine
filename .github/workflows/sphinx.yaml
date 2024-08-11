@@ -21,12 +21,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install setuptools wheel
-          pip install numpy --prefer-binary
           poetry install
 
       - name: Build HTML
-        run: poetry run sphinx-build -b html docs/source docs/build/html
+        run: |
+          poetry run sphinx-build -b html docs/source docs/build/html
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
