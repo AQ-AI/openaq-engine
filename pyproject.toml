@@ -5,7 +5,7 @@ description = ""
 authors = ["ChristinaLast <christina.last@outlook.com>"]
 
 [tool.poetry.dependencies]
-python = ">=3.10"
+python = ">=3.10,<4"
 boto3 = "^1.24.16"
 pydantic = "^1.9.1"
 black = "^22.3.0"
@@ -15,6 +15,12 @@ pandas = "^1.4.3"
 mlflow = "^2.15.1"
 setuptools = "^72.1.0"
 numpy = "<2.0.0"
+psutil = "^6.0.0"
+psycopg2 = "^2.9.9"
+shapely = "^2.0.5"
+earthengine-api = "^0.1.416"
+geetools = "^1.4.0"
+click-option-group = "^0.5.6"
 
 [tool.poetry.dev-dependencies]
 pytest = ">=6.2.5"
