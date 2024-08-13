@@ -19,6 +19,7 @@ def sample_data():
             '{"latitude": 34.0522, "longitude": -118.2437}',
         ],
         "value": [10, 20],
+        "parameter": ["pm25", "pm25"],
         "pnt": [Point(37.7749, -122.4194), Point(34.0522, -118.2437)],
     }
     return pd.DataFrame(data)
@@ -32,7 +33,6 @@ def test_extract_timestamp_from_api():
         ],
         "coordinates": ['{"latitude": 37.7749, "longitude": -122.4194}'],
         "value": [10],
-        "parameter": ["pm25"],
         "pnt": [Point(37.7749, -122.4194)],
     }
     df = pd.DataFrame(data)
