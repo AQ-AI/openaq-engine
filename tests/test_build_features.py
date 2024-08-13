@@ -2,12 +2,12 @@ from unittest.mock import MagicMock
 
 import pandas as pd
 import pytest
-from src.features.build_features import (
+
+from config.model_settings import BuildFeaturesConfig
+from openaq_engine.src.features.build_features import (
     BuildFeaturesRandomForest,
     get_feature_builder,
 )
-
-from config.model_settings import BuildFeaturesConfig
 
 
 @pytest.fixture
@@ -67,17 +67,25 @@ def test_build_features_random_forest_initialization():
 
 
 def test_add_ee_features(mocker, feature_df):
+    # Mock the Earth Engine initialization and authentication
+    mocker.patch("openaq_engine.src.features.satellite.ee.Authenticate")
+    mocker.patch("openaq_engine.src.features.satellite.ee.Initialize")
+
+    # Mock the from_dataclass_config method and the execute method of the EEFeatures class
     mock_ee_features = mocker.patch(
-        "src.features.satellite._ee_data.EEFeatures.from_dataclass_config"
+        "openaq_engine.src.features.satellite._ee_data.EEFeatures.from_dataclass_config"
     )
     mock_ee_instance = mock_ee_features.return_value
     mock_ee_instance.execute.return_value = feature_df
 
+    # Create an instance of BuildFeaturesRandomForest and call _add_ee_features
     builder = BuildFeaturesRandomForest(
         categorical_features=["col1", "col2"],
         all_model_features=["col1", "col2"],
     )
     result = builder._add_ee_features(feature_df)
+
+    # Assert that the resulting DataFrame equals the original feature_df
     assert result.equals(feature_df)
 
 
@@ -123,7 +131,9 @@ def test_execute(mocker, mock_engine, cohort_df, feature_df):
 
 
 def test_results_to_db(mocker, mock_engine, feature_df):
-    mock_write_to_db = mocker.patch("src.features.build_features.write_to_db")
+    mock_write_to_db = mocker.patch(
+        "openaq_engine.src.features.build_features.write_to_db"
+    )
     builder = BuildFeaturesRandomForest(
         categorical_features=["col1", "col2"],
         all_model_features=["col1", "col2"],
