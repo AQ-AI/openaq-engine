@@ -166,6 +166,11 @@ def test_filter_data_with_filters(sample_data):
         filter_countries=True,
         filter_cities=True,
     )
+    mock_countries = [
+        "US",
+        "GB",
+    ]  # Example countries list, replace with actual if needed
+
     with patch(
         "src.preprocessing.filter.Filter.filter_pollutant",
         return_value=sample_data,
@@ -190,15 +195,14 @@ def test_filter_data_with_filters(sample_data):
                             "src.preprocessing.filter.Filter.filter_cities",
                             return_value=sample_data,
                         ):
+                            # Provide the required 'countries' argument
                             result = preprocess.filter_data(sample_data)
-
-                            # Check that the function runs successfully and returns a non-empty DataFrame
                             assert not result.empty
 
                             # Ensure filter_countries was called with the correct arguments
                             mock_filter_countries.assert_called_once_with(
-                                sample_data, countries=["US", "GB"]
-                            )  # Replace ['US', 'GB'] with your actual countries
+                                sample_data, countries=mock_countries
+                            )
 
 
 def test_execute(sample_data):
