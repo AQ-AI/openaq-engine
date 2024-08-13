@@ -6,10 +6,10 @@ from typing import Any, List, Tuple
 import mlflow
 import scipy.sparse as sp
 from joblib import dump, load
-from src.features.build_features import BuildFeaturesRandomForest
-from src.utils.utils import get_data
 
 from config.model_settings import BuildFeaturesConfig, MatrixGeneratorConfig
+from openaq_engine.src.features.build_features import BuildFeaturesRandomForest
+from openaq_engine.src.utils.utils import get_data
 
 logging.basicConfig(level=logging.INFO)
 

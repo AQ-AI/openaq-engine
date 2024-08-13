@@ -12,9 +12,9 @@ from googleapiclient.errors import HttpError
 from haversine import haversine
 from joblib import Parallel, delayed
 from sklearn.preprocessing import MinMaxScaler
-from src.utils.utils import ee_array_to_df, get_data
 
 from config.model_settings import EEConfig
+from openaq_engine.src.utils.utils import ee_array_to_df, get_data
 
 
 class EEFeatures:

@@ -8,11 +8,6 @@ from mlflows.cli.cohort_builder import cohort_builder_options
 from mlflows.cli.features.build_features import feature_builder_options
 from mlflows.cli.time_splitter import time_splitter_options
 from setup_environment import get_dbengine
-from src.cohort_builder import CohortBuilder
-from src.features.build_features import BuildFeaturesRandomForest
-from src.matrix_generator import MatrixGenerator
-from src.time_splitter import TimeSplitter
-from src.train_model import ModelTrainer
 
 from config.model_settings import (
     BuildFeaturesConfig,
@@ -21,6 +16,11 @@ from config.model_settings import (
     ModelTrainerConfig,
     TimeSplitterConfig,
 )
+from openaq_engine.src.cohort_builder import CohortBuilder
+from openaq_engine.src.features.build_features import BuildFeaturesRandomForest
+from openaq_engine.src.matrix_generator import MatrixGenerator
+from openaq_engine.src.time_splitter import TimeSplitter
+from openaq_engine.src.train_model import ModelTrainer
 
 mlflow.set_tracking_uri(
     os.getenv("MLFLOW_TRACKING_URI"),

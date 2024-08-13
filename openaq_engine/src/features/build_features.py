@@ -2,10 +2,10 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Type
 
 import pandas as pd
-from src.features.satellite._ee_data import EEFeatures
-from src.utils.utils import write_to_db
 
 from config.model_settings import BuildFeaturesConfig, EEConfig
+from openaq_engine.src.features.satellite._ee_data import EEFeatures
+from openaq_engine.src.utils.utils import write_to_db
 
 
 class BuildFeatureBase(ABC):

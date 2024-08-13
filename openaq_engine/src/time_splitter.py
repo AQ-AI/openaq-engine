@@ -5,9 +5,12 @@ from typing import Any, Dict, List, Tuple
 
 import mlflow
 from dateutil.relativedelta import relativedelta
-from src.utils.utils import query_results_from_api, query_results_from_aws
 
 from config.model_settings import TimeSplitterConfig
+from openaq_engine.src.utils.utils import (
+    query_results_from_api,
+    query_results_from_aws,
+)
 
 logging.basicConfig(level=logging.INFO)
 

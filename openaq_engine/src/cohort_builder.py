@@ -8,15 +8,15 @@ from typing import Any, Dict, List
 import mlflow
 import pandas as pd
 from joblib import Parallel, delayed
-from src.preprocess import Preprocess
-from src.utils.utils import (
+
+from config.model_settings import CohortBuilderConfig
+from openaq_engine.src.preprocess import Preprocess
+from openaq_engine.src.utils.utils import (
     api_response_to_df,
     query_results_from_aws,
     write_csv,
     write_to_db,
 )
-
-from config.model_settings import CohortBuilderConfig
 
 
 class CohortBuilderBase(ABC):
