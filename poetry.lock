@@ -1385,6 +1385,18 @@ testing = ["coverage", "eventlet", "gevent", "pytest", "pytest-cov"]
 tornado = ["tornado (>=0.2)"]
 
 [[package]]
+name = "haversine"
+version = "2.8.1"
+description = "Calculate the distance between 2 points on Earth."
+category = "main"
+optional = false
+python-versions = ">=3.5"
+files = [
+    {file = "haversine-2.8.1-py2.py3-none-any.whl", hash = "sha256:1acdd7e35115e00346898984acd55b0827d289df434efef98376f0bed37c8fa7"},
+    {file = "haversine-2.8.1.tar.gz", hash = "sha256:ab750caa0c8f2168bd7b00a429757a83a8393be1aa30f91c2becf6b523189e2a"},
+]
+
+[[package]]
 name = "httplib2"
 version = "0.22.0"
 description = "A comprehensive HTTP client library."
@@ -3795,4 +3807,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<4"
-content-hash = "54f3aa1dce8b054d5efe9feb435d6bcecb8cc6f1a31197109f2a70918e9d3b69"
+content-hash = "5b6b0d024faae0907b8ec53dc6c6e51a9790953b93a43bbe50f04e4c328fdf20"
