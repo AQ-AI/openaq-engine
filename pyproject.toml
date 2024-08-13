@@ -5,11 +5,10 @@ description = ""
 authors = ["ChristinaLast <christina.last@outlook.com>"]
 
 [tool.poetry.dependencies]
-python = ">=3.8"
+python = ">=3.10"
 boto3 = "^1.24.16"
 pydantic = "^1.9.1"
 black = "^22.3.0"
-awscli = "^1.25.17"
 flake8 = "^4.0.1"
 isort = "^5.10.1"
 pandas = "^1.4.3"
@@ -17,7 +16,7 @@ pandas = "^1.4.3"
 [tool.poetry.dev-dependencies]
 pytest = ">=6.2.5"
 pytest-cov = "^4.0.0"
-sphinx = "^5.0.0"
+sphinx = "^8.0.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest-mock = "^3.14.0"
