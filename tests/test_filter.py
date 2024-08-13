@@ -1,6 +1,7 @@
 import pandas as pd
 import pytest
-from src.preprocessing.filter import Filter
+
+from openaq_engine.src.preprocessing.filter import Filter
 
 
 @pytest.fixture

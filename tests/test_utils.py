@@ -1,7 +1,8 @@
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
-from src.utils.utils import (
+
+from openaq_engine.src.utils.utils import (
     api_response_to_df,
     ee_array_to_df,
     get_categorical_feature_indices,

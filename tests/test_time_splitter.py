@@ -3,7 +3,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from sqlalchemy.engine import Engine
-from src.time_splitter import TimeSplitter, TimeSplitterBase
+
+from openaq_engine.src.time_splitter import TimeSplitter, TimeSplitterBase
 
 
 @pytest.fixture
@@ -51,7 +52,7 @@ def test_get_start_time_windows():
 
 
 def test_get_validation_window(mocker):
-    mocker.patch("src.time_splitter.mlflow")
+    mocker.patch("openaq_engine.src.time_splitter.mlflow")
     mocker.patch.object(
         TimeSplitter,
         "_get_start_time_windows",
@@ -218,7 +219,7 @@ def test_create_start_date_from_openaq_api(mocker):
     }
 
     mocker.patch(
-        "src.utils.utils.query_results_from_api",
+        "openaq_engine.src.utils.utils.query_results_from_api",
         return_value=mock_response,
     )
 

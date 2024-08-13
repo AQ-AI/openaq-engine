@@ -3,7 +3,8 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 from shapely.geometry import Point
-from src.preprocess import Preprocess
+
+from openaq_engine.src.preprocess import Preprocess
 
 
 @pytest.fixture
