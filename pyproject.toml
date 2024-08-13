@@ -12,6 +12,7 @@ black = "^22.3.0"
 flake8 = "^4.0.1"
 isort = "^5.10.1"
 pandas = "^1.4.3"
+mlflow = "^2.15.1"
 
 [tool.poetry.dev-dependencies]
 pytest = ">=6.2.5"
