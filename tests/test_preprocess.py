@@ -32,6 +32,7 @@ def test_extract_timestamp_from_api():
         ],
         "coordinates": ['{"latitude": 37.7749, "longitude": -122.4194}'],
         "value": [10],
+        "parameter": ["pm25"],
         "pnt": [Point(37.7749, -122.4194)],
     }
     df = pd.DataFrame(data)
