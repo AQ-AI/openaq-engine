@@ -3,6 +3,7 @@ import logging
 import re
 import warnings
 from datetime import datetime, timezone
+from typing import List
 
 import pandas as pd
 from shapely.errors import ShapelyDeprecationWarning
@@ -38,6 +39,8 @@ class Preprocess:
         filter_no_coordinates: bool = True,
         filter_countries: bool = False,
         filter_cities: bool = False,
+        countries: List[str] = None,
+        cities: List[str] = None,
     ):
         self.filter_pollutant = filter_pollutant
         self.filter_non_null_values = filter_non_null_values
@@ -45,6 +48,8 @@ class Preprocess:
         self.filter_no_coordinates = filter_no_coordinates
         self.filter_countries = filter_countries
         self.filter_cities = filter_cities
+        self.countries = countries
+        self.cities = cities
 
     @classmethod
     def from_options(cls, filters: list) -> "Preprocess":
@@ -126,14 +131,14 @@ class Preprocess:
                 f"""Total number of pollutant values left after
                 filtering non-null values: {len(df)}"""
             )
-        if self.filter_countries:
-            df = df.pipe(Filter.filter_countries)
+        if self.filter_countries and self.countries:
+            df = Filter.filter_countries(df, self.countries)
             logging.info(
                 f"""Total number of pollutant values left after
                 filtering countries: {len(df)}"""
             )
-        if self.filter_cities:
-            df = df.pipe(Filter.filter_cities)
+        if self.filter_cities and self.cities:
+            df = Filter.filter_cities(df, self.cities)
             logging.info(
                 f"""Total number of pollutant values left after
                 filtering cities: {len(df)}"""
