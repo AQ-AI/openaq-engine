@@ -185,13 +185,20 @@ def test_filter_data_with_filters(sample_data):
                     with patch(
                         "src.preprocessing.filter.Filter.filter_countries",
                         return_value=sample_data,
-                    ):
+                    ) as mock_filter_countries:
                         with patch(
                             "src.preprocessing.filter.Filter.filter_cities",
                             return_value=sample_data,
                         ):
                             result = preprocess.filter_data(sample_data)
+
+                            # Check that the function runs successfully and returns a non-empty DataFrame
                             assert not result.empty
+
+                            # Ensure filter_countries was called with the correct arguments
+                            mock_filter_countries.assert_called_once_with(
+                                sample_data, countries=["US", "GB"]
+                            )  # Replace ['US', 'GB'] with your actual countries
 
 
 def test_execute(sample_data):
