@@ -67,9 +67,9 @@ def test_build_features_random_forest_initialization():
 
 
 def test_add_ee_features(mocker, feature_df):
-    # Mock the Earth Engine initialization and authentication
-    mocker.patch("openaq_engine.src.features.satellite.ee.Authenticate")
-    mocker.patch("openaq_engine.src.features.satellite.ee.Initialize")
+    # Mock the Earth Engine API (ee) module
+    mocker.patch("ee.Authenticate")
+    mocker.patch("ee.Initialize")
 
     # Mock the from_dataclass_config method and the execute method of the EEFeatures class
     mock_ee_features = mocker.patch(
