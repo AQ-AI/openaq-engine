@@ -20,7 +20,8 @@ def sample_data():
         ],
         "value": [10, 20],
         "parameter": ["pm25", "pm25"],
-        "country": ["US", "US"],
+        "country": ["US", "US"],  # Corrected column name
+        "city": ["San Francisco", "Los Angeles"],  # Add city column
         "pnt": [Point(37.7749, -122.4194), Point(34.0522, -118.2437)],
     }
     return pd.DataFrame(data)
