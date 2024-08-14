@@ -171,16 +171,26 @@ class Filter:
         pd.DataFrame
             The filtered DataFrame containing only rows from the specified cities.
         """
-        return (
-            df.assign(
-                filtered_cities=(
-                    df.city.apply(
-                        lambda city: any(
-                            str_ in city[1:-1].split(",") for str_ in cities
-                        )
-                    )
-                )
-            )
-            .query("filtered_cities == True")
-            .drop(["filtered_cities"], axis=1)
+
+        def check_city(city_str):
+            # If the city_str looks like a list, parse it accordingly
+            if city_str.startswith("[") and city_str.endswith("]"):
+                city_list = city_str.strip("[]").split(", ")
+            else:
+                city_list = [city_str]
+
+            print(f"Parsed cities: {city_list}")
+            for str_ in cities:
+                print(f"Checking if '{str_}' is in {city_list}")
+                if str_ in city_list:
+                    return True
+            return False
+
+        df["filtered_cities"] = df.city.apply(check_city)
+        print(
+            f"After applying city filter:\n{df[['city', 'filtered_cities']]}"
+        )
+
+        return df.query("filtered_cities == True").drop(
+            ["filtered_cities"], axis=1
         )

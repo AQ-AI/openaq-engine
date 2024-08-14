@@ -21,7 +21,7 @@ def sample_data():
         "value": [10, 20],
         "parameter": ["pm25", "pm25"],
         "country": ["US", "US"],
-        "city": ["San Francisco", "Los Angeles"],
+        "city": ["[San Francisco, Los Angeles]", "Mexico City"],
         "pnt": [Point(37.7749, -122.4194), Point(34.0522, -118.2437)],
     }
     return pd.DataFrame(data)
