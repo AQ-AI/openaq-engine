@@ -110,38 +110,33 @@ class Preprocess:
                 CohortBuilderConfig.TARGET_VARIABLE,
             )
             logging.info(
-                f"""Total number of pollutant values left after
-                filtering for specific pollutant: {len(df)}"""
+                f"Total number of pollutant values left after filtering for specific pollutant: {len(df)}"
             )
         if self.filter_no_coordinates:
             df = df.pipe(Filter.filter_no_coordinates)
             logging.info(
-                f"""Total number of pollutant values left after
-                filtering no coordinates: {len(df)}"""
+                f"Total number of pollutant values left after filtering no coordinates: {len(df)}"
             )
         if self.filter_extreme_values:
             df = df.pipe(Filter.filter_extreme_values)
             logging.info(
-                f"""Total number of pollutant values left after
-                filtering extreme values: {len(df)}"""
+                f"Total number of pollutant values left after filtering extreme values: {len(df)}"
             )
         if self.filter_non_null_values:
             df = df.pipe(Filter.filter_non_null_values)
             logging.info(
-                f"""Total number of pollutant values left after
-                filtering non-null values: {len(df)}"""
+                f"Total number of pollutant values left after filtering non-null values: {len(df)}"
             )
-        if self.filter_countries and self.countries:
-            df = Filter.filter_countries(df, self.countries)
+        if self.filter_countries:
+            # Make sure that the `countries` list is being passed correctly.
+            df = df.pipe(Filter.filter_countries, countries=["US", "GB"])
             logging.info(
-                f"""Total number of pollutant values left after
-                filtering countries: {len(df)}"""
+                f"Total number of pollutant values left after filtering countries: {len(df)}"
             )
-        if self.filter_cities and self.cities:
-            df = Filter.filter_cities(df, self.cities)
+        if self.filter_cities:
+            df = df.pipe(Filter.filter_cities, cities=["New York", "London"])
             logging.info(
-                f"""Total number of pollutant values left after
-                filtering cities: {len(df)}"""
+                f"Total number of pollutant values left after filtering cities: {len(df)}"
             )
         return df
 
