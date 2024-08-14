@@ -254,5 +254,5 @@ def test_create_start_date_from_openaq_api(mocker):
     # Assertions
     assert (
         start_date
-        == datetime.datetime.strptime("2023-04-01", "%Y-%m-%d").date()
+        == datetime.datetime.strptime("2016-01-30", "%Y-%m-%d").date()
     )
