@@ -231,16 +231,19 @@ def test_create_start_date_from_openaq_api(mocker):
         country=country,
         source="openaq-api",
     )
-
-    # Mock the API response
     mock_response = MagicMock()
     mock_response.json.return_value = {
         "results": [{"firstUpdated": "2023-04-01T21:00:00+00:00"}]
     }
 
+    # Patch and add a side effect or a print to verify the mock is used
+    def mock_query_results_from_api(*args, **kwargs):
+        print("Mocked query_results_from_api called!")
+        return mock_response
+
     mocker.patch(
         "openaq_engine.src.utils.utils.query_results_from_api",
-        return_value=mock_response,
+        side_effect=mock_query_results_from_api,
     )
 
     # Call the method and get the start date
@@ -248,7 +251,6 @@ def test_create_start_date_from_openaq_api(mocker):
         country,
         pollutant,
     )
-
     # Assertions
     assert (
         start_date
