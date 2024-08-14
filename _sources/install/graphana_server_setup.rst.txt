@@ -1,4 +1,4 @@
-How To Install Grafana Server
+How To Install Grafana
 =======================
 
 Step 1: Create an IAM Role and Policy
