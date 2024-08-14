@@ -129,9 +129,9 @@ def test_filter_data_with_filters(sample_data):
         filter_no_coordinates=True,
         filter_countries=True,
         filter_cities=True,
+        countries=["US", "GB"],
+        cities=["San Francisco", "Los Angeles"],
     )
-    mock_countries = ["US", "GB"]  # Example countries list
-    mock_cities = ["San Francisco", "Los Angeles"]  # Example cities list
 
     with patch(
         "src.preprocessing.filter.Filter.filter_pollutant",
@@ -159,16 +159,29 @@ def test_filter_data_with_filters(sample_data):
                         ) as mock_filter_cities:
                             # Run the filter_data method
                             result = preprocess.filter_data(sample_data)
-                            assert not result.empty
+
+                            # Debug print to inspect the result
+                            print(f"Filtered Result:\n{result}")
+                            print(
+                                f"Mock Filter Countries Called: {mock_filter_countries.called}"
+                            )
+                            print(
+                                f"Mock Filter Cities Called: {mock_filter_cities.called}"
+                            )
+
+                            assert (
+                                not result.empty
+                            ), "Result should not be empty after filtering"
 
                             # Ensure filter_countries was called with the correct arguments
                             mock_filter_countries.assert_called_once_with(
-                                sample_data, countries=mock_countries
+                                sample_data, countries=["US", "GB"]
                             )
 
                             # Ensure filter_cities was called with the correct arguments
                             mock_filter_cities.assert_called_once_with(
-                                sample_data, cities=mock_cities
+                                sample_data,
+                                cities=["San Francisco", "Los Angeles"],
                             )
 
 
