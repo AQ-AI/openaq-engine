@@ -37,8 +37,8 @@ class Preprocess:
         filter_non_null_values: bool = True,
         filter_extreme_values: bool = True,
         filter_no_coordinates: bool = True,
-        filter_countries: bool = True,
-        filter_cities: bool = True,
+        filter_countries: bool = False,
+        filter_cities: bool = False,
         countries: List[str] = None,
         cities: List[str] = None,
     ):
@@ -72,6 +72,7 @@ class Preprocess:
         )
         for filter_ in filters:
             filter_default[filter_] = True
+        print(filter_default)
         return cls(**filter_default)
 
     def execute(
