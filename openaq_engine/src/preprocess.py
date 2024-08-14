@@ -130,14 +130,14 @@ class Preprocess:
             logging.info(
                 f"Total number of pollutant values left after filtering non-null values: {len(df)}"
             )
-
-        if self.filter_countries and self.countries:
+        if self.filter_countries:
+            print("Applying country filter")
             df = df.pipe(Filter.filter_countries, countries=self.countries)
             logging.info(
                 f"Total number of pollutant values left after filtering countries: {len(df)}"
             )
-
-        if self.filter_cities and self.cities:
+        if self.filter_cities:
+            print("Applying city filter")
             df = df.pipe(Filter.filter_cities, cities=self.cities)
             logging.info(
                 f"Total number of pollutant values left after filtering cities: {len(df)}"
