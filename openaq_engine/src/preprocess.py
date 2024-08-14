@@ -67,12 +67,13 @@ class Preprocess:
                 "filter_non_null_values",
                 "filter_extreme_values",
                 "filter_no_coordinates",
+                "filter_countries",
+                "filter_cities",
             ],
             False,
         )
         for filter_ in filters:
             filter_default[filter_] = True
-        print(filter_default)
         return cls(**filter_default)
 
     def execute(
