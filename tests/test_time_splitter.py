@@ -193,14 +193,18 @@ def test_create_end_date_from_openaq_api(mocker):
         "results": [
             {
                 "date": {
-                    "utc": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+                    "utc": datetime.datetime.utcnow().strftime(
+                        "%Y-%m-%dT%H:%M:%S.%fZ"
+                    )
                 }
             }
         ]
     }
 
-    # Mock the API call
-    mocker.patch("requests.get", return_value=mock_response)
+    mocker.patch(
+        "openaq_engine.src.utils.utils.query_results_from_api",
+        return_value=mock_response,
+    )
 
     # Call the method and get the end date
     end_date = time_splitter.create_end_date_from_openaq_api(
@@ -210,7 +214,7 @@ def test_create_end_date_from_openaq_api(mocker):
     )
 
     # Assertions
-    assert end_date == datetime.utcnow().date()
+    assert end_date == datetime.datetime.utcnow().date()
 
 
 def test_create_start_date_from_openaq_api(mocker):
@@ -246,4 +250,7 @@ def test_create_start_date_from_openaq_api(mocker):
     )
 
     # Assertions
-    assert start_date == datetime.date(2023, 4, 1)
+    assert (
+        start_date
+        == datetime.datetime.strptime("2023-04-01", "%Y-%m-%d").date()
+    )
