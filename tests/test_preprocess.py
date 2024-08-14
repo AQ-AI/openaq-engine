@@ -20,8 +20,8 @@ def sample_data():
         ],
         "value": [10, 20],
         "parameter": ["pm25", "pm25"],
-        "country": ["US", "US"],  # Corrected column name
-        "city": ["San Francisco", "Los Angeles"],  # Add city column
+        "country": ["US", "US"],
+        "city": ["San Francisco", "Los Angeles"],
         "pnt": [Point(37.7749, -122.4194), Point(34.0522, -118.2437)],
     }
     return pd.DataFrame(data)
@@ -157,7 +157,6 @@ def test_filter_data_with_filters(sample_data):
                             "src.preprocessing.filter.Filter.filter_cities",
                             return_value=sample_data,
                         ) as mock_filter_cities:
-                            # Run the filter_data method
                             result = preprocess.filter_data(sample_data)
 
                             # Debug print to inspect the result

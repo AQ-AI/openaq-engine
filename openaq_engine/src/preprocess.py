@@ -37,10 +37,10 @@ class Preprocess:
         filter_non_null_values: bool = True,
         filter_extreme_values: bool = True,
         filter_no_coordinates: bool = True,
-        filter_countries: bool = False,
-        filter_cities: bool = False,
-        countries: List[str] = ["US"],
-        cities: List[str] = ["San Francisco"],
+        filter_countries: bool = True,
+        filter_cities: bool = True,
+        countries: List[str] = None,
+        cities: List[str] = None,
     ):
         self.filter_pollutant = filter_pollutant
         self.filter_non_null_values = filter_non_null_values
