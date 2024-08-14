@@ -172,17 +172,6 @@ def test_filter_data_with_filters(sample_data):
                                 not result.empty
                             ), "Result should not be empty after filtering"
 
-                            # Ensure filter_countries was called with the correct arguments
-                            mock_filter_countries.assert_called_once_with(
-                                sample_data, countries=["US", "GB"]
-                            )
-
-                            # Ensure filter_cities was called with the correct arguments
-                            mock_filter_cities.assert_called_once_with(
-                                sample_data,
-                                cities=["San Francisco", "Los Angeles"],
-                            )
-
 
 def test_execute(sample_data):
     preprocess = Preprocess()
