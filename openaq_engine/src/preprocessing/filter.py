@@ -131,12 +131,17 @@ class Filter:
             The filtered DataFrame containing only rows from the specified countries.
         """
 
-        def check_country(country):
-            # Print the comparison for debugging
-            print(f"Country string: {country}")
+        def check_country(country_str):
+            # If the country_str looks like a list, parse it accordingly
+            if country_str.startswith("[") and country_str.endswith("]"):
+                country_list = country_str.strip("[]").split(", ")
+            else:
+                country_list = [country_str]
+
+            print(f"Parsed countries: {country_list}")
             for str_ in countries:
-                print(f"Checking if '{str_}' matches '{country}'")
-                if str_ == country:
+                print(f"Checking if '{str_}' is in {country_list}")
+                if str_ in country_list:
                     return True
             return False
 
