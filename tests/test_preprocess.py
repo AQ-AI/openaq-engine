@@ -168,6 +168,7 @@ def test_filter_data_with_filters(sample_data):
         filter_cities=True,
     )
     mock_countries = ["US", "GB"]  # Example countries list
+    mock_cities = ["San Francisco", "Los Angeles"]  # Example cities list
 
     with patch(
         "src.preprocessing.filter.Filter.filter_pollutant",
@@ -192,7 +193,7 @@ def test_filter_data_with_filters(sample_data):
                         with patch(
                             "src.preprocessing.filter.Filter.filter_cities",
                             return_value=sample_data,
-                        ):
+                        ) as mock_filter_cities:
                             # Run the filter_data method
                             result = preprocess.filter_data(sample_data)
                             assert not result.empty
@@ -200,6 +201,11 @@ def test_filter_data_with_filters(sample_data):
                             # Ensure filter_countries was called with the correct arguments
                             mock_filter_countries.assert_called_once_with(
                                 sample_data, countries=mock_countries
+                            )
+
+                            # Ensure filter_cities was called with the correct arguments
+                            mock_filter_cities.assert_called_once_with(
+                                sample_data, cities=mock_cities
                             )
 
 
