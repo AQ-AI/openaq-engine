@@ -233,7 +233,7 @@ def test_create_start_date_from_openaq_api(mocker):
     )
     mock_response = MagicMock()
     mock_response.json.return_value = {
-        "results": [{"firstUpdated": "2023-04-01T21:00:00+00:00"}]
+        "results": [{"firstUpdated": "2016-01-30T21:00:00+00:00"}]
     }
 
     # Patch and add a side effect or a print to verify the mock is used
