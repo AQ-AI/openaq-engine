@@ -39,8 +39,8 @@ class Preprocess:
         filter_no_coordinates: bool = True,
         filter_countries: bool = False,
         filter_cities: bool = False,
-        countries: List[str] = None,
-        cities: List[str] = None,
+        countries: List[str] = ["US"],
+        cities: List[str] = ["San Francisco"],
     ):
         self.filter_pollutant = filter_pollutant
         self.filter_non_null_values = filter_non_null_values
