@@ -130,11 +130,21 @@ class Filter:
         pd.DataFrame
             The filtered DataFrame containing only rows from the specified countries.
         """
-        df.country.apply(
-            lambda country: print(
-                str_ in country[1:-1].split(",") for str_ in countries
-            )
+
+        def check_country(country):
+            # Print the comparison for debugging
+            print(f"Country string: {country}")
+            for str_ in countries:
+                print(f"Checking if '{str_}' is in {country[1:-1].split(',')}")
+                if str_ in country[1:-1].split(","):
+                    return True
+            return False
+
+        df["filtered_country"] = df.country.apply(check_country)
+        print(
+            f"After applying country filter:\n{df[['country', 'filtered_country']]}"
         )
+
         return (
             df.assign(
                 filtered_country=(
