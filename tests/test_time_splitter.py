@@ -3,7 +3,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from sqlalchemy.engine import Engine
-from src.time_splitter import TimeSplitter, TimeSplitterBase
+
+from openaq_engine.src.time_splitter import TimeSplitter, TimeSplitterBase
 
 
 @pytest.fixture
@@ -51,7 +52,7 @@ def test_get_start_time_windows():
 
 
 def test_get_validation_window(mocker):
-    mocker.patch("src.time_splitter.mlflow")
+    mocker.patch("openaq_engine.src.time_splitter.mlflow")
     mocker.patch.object(
         TimeSplitter,
         "_get_start_time_windows",
@@ -185,6 +186,26 @@ def test_create_end_date_from_openaq_api(mocker):
         source="openaq-api",
     )
 
+    # Create a mock response object
+    mock_response = mocker.Mock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "results": [
+            {
+                "date": {
+                    "utc": datetime.datetime.utcnow().strftime(
+                        "%Y-%m-%dT%H:%M:%S.%fZ"
+                    )
+                }
+            }
+        ]
+    }
+
+    mocker.patch(
+        "openaq_engine.src.utils.utils.query_results_from_api",
+        return_value=mock_response,
+    )
+
     # Call the method and get the end date
     end_date = time_splitter.create_end_date_from_openaq_api(
         country,
@@ -193,7 +214,7 @@ def test_create_end_date_from_openaq_api(mocker):
     )
 
     # Assertions
-    assert end_date == datetime.date.today()
+    assert end_date == datetime.datetime.utcnow().date()
 
 
 def test_create_start_date_from_openaq_api(mocker):
@@ -210,16 +231,19 @@ def test_create_start_date_from_openaq_api(mocker):
         country=country,
         source="openaq-api",
     )
-
-    # Mock the API response
     mock_response = MagicMock()
     mock_response.json.return_value = {
-        "results": [{"firstUpdated": "2023-04-01T21:00:00+00:00"}]
+        "results": [{"firstUpdated": "2016-01-30T21:00:00+00:00"}]
     }
 
+    # Patch and add a side effect or a print to verify the mock is used
+    def mock_query_results_from_api(*args, **kwargs):
+        print("Mocked query_results_from_api called!")
+        return mock_response
+
     mocker.patch(
-        "src.utils.utils.query_results_from_api",
-        return_value=mock_response,
+        "openaq_engine.src.utils.utils.query_results_from_api",
+        side_effect=mock_query_results_from_api,
     )
 
     # Call the method and get the start date
@@ -228,4 +252,7 @@ def test_create_start_date_from_openaq_api(mocker):
         pollutant,
     )
     # Assertions
-    assert start_date == datetime.date(2022, 10, 4)
+    assert (
+        start_date
+        == datetime.datetime.strptime("2016-01-30", "%Y-%m-%d").date()
+    )

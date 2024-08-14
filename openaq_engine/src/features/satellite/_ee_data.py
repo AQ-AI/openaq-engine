@@ -12,23 +12,43 @@ from googleapiclient.errors import HttpError
 from haversine import haversine
 from joblib import Parallel, delayed
 from sklearn.preprocessing import MinMaxScaler
-from src.utils.utils import ee_array_to_df, get_data
 
 from config.model_settings import EEConfig
+from openaq_engine.src.utils.utils import ee_array_to_df, get_data
 
 
 class EEFeatures:
+    """
+    Class to handle the extraction and processing of Earth Engine (EE) features.
+
+    Parameters
+    ----------
+    date_col : int
+        The column index or name representing the date.
+    table_name : int
+        The name of the table from which data is being extracted.
+    all_satellites : List[Tuple[str, List[str], int, int]]
+        A list of tuples containing satellite collection names, image bands, period, and resolution.
+    bucket_name : str
+        The name of the Google Cloud Storage bucket where images will be saved.
+    path_to_private_key : str
+        The path to the private key for Google service account authentication.
+    service_account : str
+        The email of the Google service account.
+    lookback_n : int
+        The number of lookback periods for temporal data retrieval.
+    """
+
     def __init__(
         self,
         date_col: int,
         table_name: int,
-        all_satellites: zip(List[str]),
+        all_satellites: List[Tuple[str, List[str], int, int]],
         bucket_name: str,
         path_to_private_key: str,
         service_account: str,
         lookback_n: int,
     ):
-
         self.date_col = date_col
         self.table_name = table_name
         self.all_satellites = all_satellites
@@ -39,6 +59,19 @@ class EEFeatures:
 
     @classmethod
     def from_dataclass_config(cls, config: EEConfig) -> "EEFeatures":
+        """
+        Create an instance of EEFeatures from a configuration dataclass.
+
+        Parameters
+        ----------
+        config : EEConfig
+            The configuration dataclass.
+
+        Returns
+        -------
+        EEFeatures
+            An instance of EEFeatures.
+        """
         return cls(
             date_col=config.DATE_COL,
             table_name=config.TABLE_NAME,
@@ -49,9 +82,23 @@ class EEFeatures:
             lookback_n=config.LOOKBACK_N,
         )
 
-    def execute(self, df, save_images):
+    def execute(self, df: pd.DataFrame, save_images: bool) -> pd.DataFrame:
+        """
+        Execute the feature extraction process for all locations.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The DataFrame containing the location data.
+        save_images : bool
+            Whether to save the satellite images to Google Cloud Storage.
+
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrame containing the extracted satellite features.
+        """
         ee.Authenticate()
-        # end_date, start_date = self._generate_timerange()
         satellite_df = pd.concat(
             Parallel(n_jobs=-1, backend="multiprocessing", verbose=5)(
                 delayed(self.execute_for_location)(
@@ -67,38 +114,39 @@ class EEFeatures:
         return features_df
 
     def execute_for_location(
-        self, location_id, lon, lat, date_utc, save_images
-    ):
+        self,
+        location_id: str,
+        lon: float,
+        lat: float,
+        date_utc: str,
+        save_images: bool,
+    ) -> pd.DataFrame:
         """
-        Input
-        ----
-        Takes the name of a satellite image collection and the bands
-        (fields) to extract data for, and for a given date range writes the
-        extracted satellite `.tiff` files to a google file structure.
+        Execute the feature extraction process for a specific location.
 
-        Arguments:
-        ----
-        collection:
-            A str of satellite to query
-        location_id:
-            location id of sensor
-        lon:
-            the longitude of a  sensor location
-        lat:
-            the latitude of a sensor location
-        datetime:
-            the date the sensor reading was taken
+        Parameters
+        ----------
+        location_id : str
+            The ID of the location.
+        lon : float
+            The longitude of the location.
+        lat : float
+            The latitude of the location.
+        date_utc : str
+            The UTC date and time of the observation.
+        save_images : bool
+            Whether to save the satellite images to Google Cloud Storage.
+
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrame containing the extracted satellite features for the location.
         """
         ee.Initialize()
 
         df_list = []
 
-        for (
-            collection,
-            image_bands,
-            period,
-            resolution,
-        ) in self.all_satellites:
+        for collection, image_bands, period, resolution in self.all_satellites:
             image_collection = self.execute_for_collection(
                 collection,
                 image_bands,
@@ -123,32 +171,29 @@ class EEFeatures:
 
     def execute_for_collection(
         self,
-        collection,
-        image_bands,
-        save_images,
-    ):
+        collection: str,
+        image_bands: List[str],
+        save_images: bool,
+    ) -> ee.ImageCollection:
         """
-        Input
-        ----
-        Takes the name of a satellite image collection and the bands
-        (fields) to extract data for, and for a given date range.
+        Retrieve satellite image collection and optionally save it to Google Cloud Storage.
 
-        Arguments:
-        ----
-        collection:
-            A str of satellite to query
-        image_bands:
-            A list of bands captured for each satellite
-        save_images:
-            a boolean flag whether to write satellite data to google storage
+        Parameters
+        ----------
+        collection : str
+            The name of the satellite image collection.
+        image_bands : List[str]
+            The list of bands to extract from the satellite images.
+        save_images : bool
+            Whether to save the satellite images to Google Cloud Storage.
+
+        Returns
+        -------
+        ee.ImageCollection
+            The Earth Engine image collection.
         """
         ee.Initialize()
 
-        # logging.info(
-        #     "please sigup to Google Earth Engine here:"
-        #     " https://signup.earthengine.google.com/"
-        # )
-        # if bucket.blob(f"{collection}_{s_datetime}_{e_datetime}"):
         try:
             logging.info(f"Downloading: {collection}")
 
@@ -170,12 +215,24 @@ class EEFeatures:
                 return image_collection
         except (EEException, HttpError):
             logging.warning(
-                f"""Image collection {image_collection.getInfo()}
-                does not match any existing location."""
+                f"Image collection {image_collection.getInfo()} does not match any existing location."
             )
             pass
 
-    def generate_features(self, satellite_df):
+    def generate_features(self, satellite_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Generate features from the satellite data.
+
+        Parameters
+        ----------
+        satellite_df : pd.DataFrame
+            The DataFrame containing satellite data.
+
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrame containing the generated features.
+        """
         groupby_cols = [
             "sensor_datetime",
             "sensor_longitude",
@@ -205,7 +262,15 @@ class EEFeatures:
         )
         return features_df
 
-    def _generate_timerange(self) -> Tuple[str]:
+    def _generate_timerange(self) -> Tuple[str, str]:
+        """
+        Generate the start and end date for satellite data extraction.
+
+        Returns
+        -------
+        Tuple[str, str]
+            A tuple containing the start and end dates as strings.
+        """
         start_date_query = """SELECT {date_col} AS datetime
         FROM {table} ORDER BY {date_col} ASC limit 1;""".format(
             table=self.table_name,
@@ -222,19 +287,41 @@ class EEFeatures:
 
     def get_satellite_data(
         self,
-        image_collection,
-        image_bands,
-        location_id,
-        date_utc,
-        lon,
-        lat,
-        period,
-        resolution,
-    ):
+        image_collection: ee.ImageCollection,
+        image_bands: List[str],
+        location_id: str,
+        date_utc: str,
+        lon: float,
+        lat: float,
+        period: int,
+        resolution: int,
+    ) -> pd.DataFrame:
         """
-        This function builds an algorithm to compute
-        the representative satellite value for a sensor location,
-        considering only the exact location and time of flyover (within the hour).
+        Get satellite data for a specific location and time.
+
+        Parameters
+        ----------
+        image_collection : ee.ImageCollection
+            The Earth Engine image collection.
+        image_bands : List[str]
+            The list of bands to extract from the satellite images.
+        location_id : str
+            The ID of the location.
+        date_utc : str
+            The UTC date and time of the observation.
+        lon : float
+            The longitude of the location.
+        lat : float
+            The latitude of the location.
+        period : int
+            The time period to look back for satellite data.
+        resolution : int
+            The spatial resolution of the satellite images.
+
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrame containing the satellite data for the location.
         """
         try:
             ee_df = self.get_satellite_data_within_hour(
@@ -250,10 +337,9 @@ class EEFeatures:
                 logging.info(
                     "Getting satellite data within the hour of interest"
                 )
-                print("Hourly image: ", ee_df)
                 return ee_df
             else:
-                logging.warn(
+                logging.warning(
                     f"No matching satellite data within the hour for {lon}, {lat} at {date_utc}"
                 )
                 return pd.DataFrame()
@@ -263,18 +349,38 @@ class EEFeatures:
 
     def get_satellite_data_within_hour(
         self,
-        image_collection,
-        image_bands,
-        location_id,
-        lon,
-        lat,
-        cohort,
-        resolution,
-        date_utc,
-    ):
+        image_collection: ee.ImageCollection,
+        image_bands: List[str],
+        location_id: str,
+        lon: float,
+        lat: float,
+        resolution: int,
+        date_utc: str,
+    ) -> pd.DataFrame:
         """
-        This function takes in an image collection and a set of spatial and temporal parameters
-        to calculate the satellite value for a sensor location within the hour of the sensor reading.
+        Get satellite data for a location within the hour of the sensor reading.
+
+        Parameters
+        ----------
+        image_collection : ee.ImageCollection
+            The Earth Engine image collection.
+        image_bands : List[str]
+            The list of bands to extract from the satellite images.
+        location_id : str
+            The ID of the location.
+        lon : float
+            The longitude of the location.
+        lat : float
+            The latitude of the location.
+        resolution : int
+            The spatial resolution of the satellite images.
+        date_utc : str
+            The UTC date and time of the observation.
+
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrame containing the satellite data for the location within the hour.
         """
         centroid_point = ee.Geometry.Point(lon, lat)
         sensor_datetime = datetime.datetime.strptime(
@@ -295,44 +401,46 @@ class EEFeatures:
         ).getInfo()
 
         return self._create_satellite_dataframe(
-            info, image_bands, location_id, date_utc, lon, lat, cohort
+            info, image_bands, location_id, date_utc, lon, lat
         )
 
     def get_most_recent_satellite_data(
         self,
-        image_collection,
-        image_bands,
-        location_id,
-        lon,
-        lat,
-        resolution,
-        date_utc,
-        period,
-    ):
+        image_collection: ee.ImageCollection,
+        image_bands: List[str],
+        location_id: str,
+        lon: float,
+        lat: float,
+        resolution: int,
+        date_utc: str,
+        period: int,
+    ) -> pd.DataFrame:
         """
-        This function takes in an image collection
-        and a set of spatial and temporal parameters
-        to calculate the weighted temporal average
-        value for each satellite query given a time period.
+        Get the most recent satellite data for a location within a specified time period.
 
-        Arguments
+        Parameters
+        ----------
+        image_collection : ee.ImageCollection
+            The Earth Engine image collection.
+        image_bands : List[str]
+            The list of bands to extract from the satellite images.
+        location_id : str
+            The ID of the location.
+        lon : float
+            The longitude of the location.
+        lat : float
+            The latitude of the location.
+        resolution : int
+            The spatial resolution of the satellite images.
+        date_utc : str
+            The UTC date and time of the observation.
+        period : int
+            The time period to look back for satellite data.
+
+        Returns
         -------
-        image_collection: str
-            the string of an image collection
-        image_bands: List[str]
-            the list of image bands used (satellite model features)
-        location_id: str
-            the location_id of the sensor
-        lon: float
-            Longitude of sensor
-        lat: float
-            Latitude of sensor
-        resolution: float
-            resolution of image and used as satellite search radius
-        date_utc: datetime
-            datetime in utc of sensor reading
-        period: int
-            the number of days between satellite passovers
+        pd.DataFrame
+            The DataFrame containing the most recent satellite data for the location.
         """
         centroid_point = ee.Geometry.Point(lon, lat)
         day_of_interest = ee.Date(date_utc)
@@ -350,22 +458,42 @@ class EEFeatures:
 
     def get_satellite_data_within_lookback(
         self,
-        image_collection,
-        image_bands,
-        location_id,
-        lon,
-        lat,
-        resolution,
-        date_utc,
-        period,
-    ):
+        image_collection: ee.ImageCollection,
+        image_bands: List[str],
+        location_id: str,
+        lon: float,
+        lat: float,
+        resolution: int,
+        date_utc: str,
+        period: int,
+    ) -> pd.DataFrame:
         """
-        This function takes in an image collection
-        and a set of spatial and temporal parameters
-        to calculate the weighted temporal average
-        value for each satellite within a lookback.
-        """
+        Get satellite data within a specified lookback period.
 
+        Parameters
+        ----------
+        image_collection : ee.ImageCollection
+            The Earth Engine image collection.
+        image_bands : List[str]
+            The list of bands to extract from the satellite images.
+        location_id : str
+            The ID of the location.
+        lon : float
+            The longitude of the location.
+        lat : float
+            The latitude of the location.
+        resolution : int
+            The spatial resolution of the satellite images.
+        date_utc : str
+            The UTC date and time of the observation.
+        period : int
+            The time period to look back for satellite data.
+
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrame containing the satellite data for the location within the lookback period.
+        """
         centroid_point = ee.Geometry.Point(lon, lat)
         day_of_interest = ee.Date(date_utc)
 
@@ -382,25 +510,44 @@ class EEFeatures:
 
     def get_any_recent_satellite_data(
         self,
-        image_collection,
-        image_bands,
-        location_id,
-        lon,
-        lat,
-        resolution,
-        date_utc,
-    ):
-        """This function collects all satellite imagery from
-        between the specified date and the first date for a specific
-        geolocation with no time windor specified"""
+        image_collection: ee.ImageCollection,
+        image_bands: List[str],
+        location_id: str,
+        lon: float,
+        lat: float,
+        resolution: int,
+        date_utc: str,
+    ) -> pd.DataFrame:
+        """
+        Get any recent satellite data for a location from 2015-01-01 to the specified date.
+
+        Parameters
+        ----------
+        image_collection : ee.ImageCollection
+            The Earth Engine image collection.
+        image_bands : List[str]
+            The list of bands to extract from the satellite images.
+        location_id : str
+            The ID of the location.
+        lon : float
+            The longitude of the location.
+        lat : float
+            The latitude of the location.
+        resolution : int
+            The spatial resolution of the satellite images.
+        date_utc : str
+            The UTC date and time of the observation.
+
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrame containing the recent satellite data for the location.
+        """
         centroid_point = ee.Geometry.Point(lon, lat)
         day_of_interest = ee.Date(date_utc)
-        start_date = ee.Date(
-            "2015-01-01",
-        )
+        start_date = ee.Date("2015-01-01")
         filtered_image_collection = image_collection.filterDate(
-            start_date,
-            day_of_interest,
+            start_date, day_of_interest
         )
         filtered_image_collection = image_collection.limit(10)
         info = filtered_image_collection.getRegion(
@@ -411,10 +558,37 @@ class EEFeatures:
         )
 
     def _create_satellite_dataframe(
-        self, info, image_bands, location_id, date_utc, lon, lat
-    ):
-        """Creates a dataframe from returned satellite information and
-        builds required fields for weighted average calculation"""
+        self,
+        info: List,
+        image_bands: List[str],
+        location_id: str,
+        date_utc: str,
+        lon: float,
+        lat: float,
+    ) -> pd.DataFrame:
+        """
+        Create a DataFrame from satellite data and calculate temporal and spatial weighted averages.
+
+        Parameters
+        ----------
+        info : List
+            The list of information returned from Earth Engine.
+        image_bands : List[str]
+            The list of bands to extract from the satellite images.
+        location_id : str
+            The ID of the location.
+        date_utc : str
+            The UTC date and time of the observation.
+        lon : float
+            The longitude of the location.
+        lat : float
+            The latitude of the location.
+
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrame containing the satellite data with weighted averages.
+        """
         ee_df = ee_array_to_df(info, image_bands)
         ee_df = self._calculate_temporal_weighted_average(date_utc, ee_df)
         ee_df = self._calculate_spatial_weighted_average(
@@ -422,9 +596,24 @@ class EEFeatures:
         )
         return ee_df
 
-    def _calculate_temporal_weighted_average(self, date_utc, ee_df):
-        """Calculate the difference between the sensor timestamp and the
-        satellite timestamp for all returned values"""
+    def _calculate_temporal_weighted_average(
+        self, date_utc: str, ee_df: pd.DataFrame
+    ) -> pd.DataFrame:
+        """
+        Calculate the temporal weighted average for the satellite data.
+
+        Parameters
+        ----------
+        date_utc : str
+            The UTC date and time of the observation.
+        ee_df : pd.DataFrame
+            The DataFrame containing the satellite data.
+
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrame with the temporal weighted average calculated.
+        """
         ee_df["sensor_datetime"] = datetime.datetime.strptime(
             date_utc, "%Y-%m-%dT%H:%M:%S.%fZ"
         )
@@ -437,9 +626,27 @@ class EEFeatures:
         return ee_df
 
     def _calculate_spatial_weighted_average(
-        self, ee_df, lon, lat, location_id
-    ):
-        """Calculate the spatially-weighted distance"""
+        self, ee_df: pd.DataFrame, lon: float, lat: float, location_id: str
+    ) -> pd.DataFrame:
+        """
+        Calculate the spatially-weighted average for the satellite data.
+
+        Parameters
+        ----------
+        ee_df : pd.DataFrame
+            The DataFrame containing the satellite data.
+        lon : float
+            The longitude of the location.
+        lat : float
+            The latitude of the location.
+        location_id : str
+            The ID of the location.
+
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrame with the spatial weighted average calculated.
+        """
         ee_df["sensor_longitude"] = lon
         ee_df["sensor_latitude"] = lat
         ee_df["location_id"] = location_id
@@ -459,29 +666,51 @@ class EEFeatures:
             pass
 
     def _weighted_mean_by_lambda(
-        self, df, avg_cols, weight_cols, groupby_cols
-    ):
+        self,
+        df: pd.DataFrame,
+        avg_cols: List[str],
+        weight_cols: List[str],
+        groupby_cols: List[str],
+    ) -> pd.DataFrame:
+        """
+        Calculate the weighted mean for the satellite data by grouping and averaging.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The DataFrame containing the satellite data.
+        avg_cols : List[str]
+            The columns to average.
+        weight_cols : List[str]
+            The columns to use for weighting.
+        groupby_cols : List[str]
+            The columns to group by.
+
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrame with the weighted mean calculated.
+        """
+
         def _scale_weight_cols(df, weight_cols):
-            """This takes in a DataFrame and columns used to construct
-            a weight column using the MinMaxScalar() function"""
+            """Scale the weight columns using MinMaxScaler."""
             scaler = MinMaxScaler()
             df[weight_cols] = scaler.fit_transform(df[weight_cols])
             df["weight"] = df.loc[:, weight_cols].prod(axis=1)
             return df
 
-        def _weighted_means_by_column_ignoring_NaNs(x, cols, w="weights"):
-            """This takes a DataFrame and averages each data column (cols),
-            weighting observations by column w, but ignoring individual NaN
-            observations within each column.
-            """
+        def _weighted_means_by_column_ignoring_NaNs(x, cols, w="weight"):
+            """Calculate weighted mean for each column, ignoring NaNs."""
             try:
                 return pd.Series(
                     [
-                        np.nan
-                        if x.dropna(subset=[c]).empty
-                        else np.average(
-                            x.dropna(subset=[c])[c],
-                            weights=x.dropna(subset=[c])[w],
+                        (
+                            np.nan
+                            if x.dropna(subset=[c]).empty
+                            else np.average(
+                                x.dropna(subset=[c])[c],
+                                weights=x.dropna(subset=[c])[w],
+                            )
                         )
                         for c in cols
                     ],
@@ -490,10 +719,12 @@ class EEFeatures:
             except ZeroDivisionError:
                 pd.Series(
                     [
-                        np.nan
-                        if x.dropna(subset=[c]).empty
-                        else np.average(
-                            x.dropna(subset=[c])[c],
+                        (
+                            np.nan
+                            if x.dropna(subset=[c]).empty
+                            else np.average(
+                                x.dropna(subset=[c])[c],
+                            )
                         )
                         for c in cols
                     ],
