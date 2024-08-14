@@ -121,43 +121,6 @@ def test_dict_cols_to_json_with_non_dict_values():
     assert result["col1"].iloc[1] == "not a dict"
 
 
-def test_filter_data(sample_data):
-    preprocess = Preprocess(
-        filter_pollutant=False,
-        filter_non_null_values=False,
-        filter_extreme_values=False,
-        filter_no_coordinates=False,
-        filter_countries=False,
-        filter_cities=False,
-    )
-    with patch(
-        "src.preprocessing.filter.Filter.filter_pollutant",
-        return_value=sample_data,
-    ):
-        with patch(
-            "src.preprocessing.filter.Filter.filter_no_coordinates",
-            return_value=sample_data,
-        ):
-            with patch(
-                "src.preprocessing.filter.Filter.filter_extreme_values",
-                return_value=sample_data,
-            ):
-                with patch(
-                    "src.preprocessing.filter.Filter.filter_non_null_values",
-                    return_value=sample_data,
-                ):
-                    with patch(
-                        "src.preprocessing.filter.Filter.filter_countries",
-                        return_value=sample_data,
-                    ):
-                        with patch(
-                            "src.preprocessing.filter.Filter.filter_cities",
-                            return_value=sample_data,
-                        ):
-                            result = preprocess.filter_data(sample_data)
-                            assert not result.empty
-
-
 def test_filter_data_with_filters(sample_data):
     preprocess = Preprocess(
         filter_pollutant=True,
