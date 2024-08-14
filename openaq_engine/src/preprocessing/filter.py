@@ -135,8 +135,8 @@ class Filter:
             # Print the comparison for debugging
             print(f"Country string: {country}")
             for str_ in countries:
-                print(f"Checking if '{str_}' is in {country[1:-1].split(',')}")
-                if str_ in country[1:-1].split(","):
+                print(f"Checking if '{str_}' matches '{country}'")
+                if str_ == country:
                     return True
             return False
 
@@ -145,19 +145,8 @@ class Filter:
             f"After applying country filter:\n{df[['country', 'filtered_country']]}"
         )
 
-        return (
-            df.assign(
-                filtered_country=(
-                    df.country.apply(
-                        lambda country: any(
-                            str_ in country[1:-1].split(",")
-                            for str_ in countries
-                        )
-                    )
-                )
-            )
-            .query("filtered_country == True")
-            .drop(["filtered_country"], axis=1)
+        return df.query("filtered_country == True").drop(
+            ["filtered_country"], axis=1
         )
 
     @staticmethod
