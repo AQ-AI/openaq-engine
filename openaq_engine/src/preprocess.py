@@ -112,32 +112,37 @@ class Preprocess:
             logging.info(
                 f"Total number of pollutant values left after filtering for specific pollutant: {len(df)}"
             )
+
         if self.filter_no_coordinates:
             df = df.pipe(Filter.filter_no_coordinates)
             logging.info(
                 f"Total number of pollutant values left after filtering no coordinates: {len(df)}"
             )
+
         if self.filter_extreme_values:
             df = df.pipe(Filter.filter_extreme_values)
             logging.info(
                 f"Total number of pollutant values left after filtering extreme values: {len(df)}"
             )
+
         if self.filter_non_null_values:
             df = df.pipe(Filter.filter_non_null_values)
             logging.info(
                 f"Total number of pollutant values left after filtering non-null values: {len(df)}"
             )
-        if self.filter_countries:
-            # Make sure that the `countries` list is being passed correctly.
-            df = df.pipe(Filter.filter_countries, countries=["US", "GB"])
+
+        if self.filter_countries and self.countries:
+            df = df.pipe(Filter.filter_countries, countries=self.countries)
             logging.info(
                 f"Total number of pollutant values left after filtering countries: {len(df)}"
             )
-        if self.filter_cities:
-            df = df.pipe(Filter.filter_cities, cities=["New York", "London"])
+
+        if self.filter_cities and self.cities:
+            df = df.pipe(Filter.filter_cities, cities=self.cities)
             logging.info(
                 f"Total number of pollutant values left after filtering cities: {len(df)}"
             )
+
         return df
 
     def get_timestamps(self, df: pd.DataFrame, source: str) -> pd.DataFrame:
