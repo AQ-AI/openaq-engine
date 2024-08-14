@@ -105,44 +105,32 @@ class Preprocess:
         :rtype: pd.DataFrame
         """
         if self.filter_pollutant:
+            print(f"Before pollutant filter:\n{df}")
             df = Filter.filter_pollutant(
                 df,
                 CohortBuilderConfig.TARGET_VARIABLE,
             )
-            logging.info(
-                f"Total number of pollutant values left after filtering for specific pollutant: {len(df)}"
-            )
-
+            print(f"After pollutant filter:\n{df}")
         if self.filter_no_coordinates:
+            print(f"Before no_coordinates filter:\n{df}")
             df = df.pipe(Filter.filter_no_coordinates)
-            logging.info(
-                f"Total number of pollutant values left after filtering no coordinates: {len(df)}"
-            )
-
+            print(f"After no_coordinates filter:\n{df}")
         if self.filter_extreme_values:
+            print(f"Before extreme_values filter:\n{df}")
             df = df.pipe(Filter.filter_extreme_values)
-            logging.info(
-                f"Total number of pollutant values left after filtering extreme values: {len(df)}"
-            )
-
+            print(f"After extreme_values filter:\n{df}")
         if self.filter_non_null_values:
+            print(f"Before non_null_values filter:\n{df}")
             df = df.pipe(Filter.filter_non_null_values)
-            logging.info(
-                f"Total number of pollutant values left after filtering non-null values: {len(df)}"
-            )
+            print(f"After non_null_values filter:\n{df}")
         if self.filter_countries:
-            print("Applying country filter")
+            print(f"Before countries filter:\n{df}")
             df = df.pipe(Filter.filter_countries, countries=self.countries)
-            logging.info(
-                f"Total number of pollutant values left after filtering countries: {len(df)}"
-            )
+            print(f"After countries filter:\n{df}")
         if self.filter_cities:
-            print("Applying city filter")
+            print(f"Before cities filter:\n{df}")
             df = df.pipe(Filter.filter_cities, cities=self.cities)
-            logging.info(
-                f"Total number of pollutant values left after filtering cities: {len(df)}"
-            )
-
+            print(f"After cities filter:\n{df}")
         return df
 
     def get_timestamps(self, df: pd.DataFrame, source: str) -> pd.DataFrame:
