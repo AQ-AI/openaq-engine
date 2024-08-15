@@ -37,43 +37,43 @@
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="../src.utils.html#src.utils.utils.api_response_to_df" title="src.utils.utils.api_response_to_df"><code class="xref py py-obj docutils literal notranslate"><span class="pre">api_response_to_df</span></code></a>(url)</p></td>
-<td><p>Query an API and convert the response to a DataFrame.</p></td>
+<td><p></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../src.utils.html#src.utils.utils.ee_array_to_df" title="src.utils.utils.ee_array_to_df"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ee_array_to_df</span></code></a>(arr, list_of_bands)</p></td>
-<td><p>Transform an Earth Engine array to a DataFrame.</p></td>
+<td><p>Transforms client-side ee.Image.getRegion array to pandas.DataFrame.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../src.utils.html#src.utils.utils.get_categorical_feature_indices" title="src.utils.utils.get_categorical_feature_indices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_categorical_feature_indices</span></code></a>(df)</p></td>
-<td><p>Get the indices of categorical features in a DataFrame.</p></td>
+<td><p></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../src.utils.html#src.utils.utils.get_data" title="src.utils.utils.get_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_data</span></code></a>(query)</p></td>
-<td><p>Execute a SQL query and return the results as a DataFrame.</p></td>
+<td><p>Pulls data from the db based on the query Input ----- query: str    SQL query from the database Output ------ data: DataFrame    Dump of Query into a DataFrame</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../src.utils.html#src.utils.utils.get_s3_file_path_list" title="src.utils.utils.get_s3_file_path_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_s3_file_path_list</span></code></a>(resource, bucket, folder)</p></td>
-<td><p>Get a list of file paths from an S3 bucket.</p></td>
+<td><p></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../src.utils.html#src.utils.utils.json_provider" title="src.utils.utils.json_provider"><code class="xref py py-obj docutils literal notranslate"><span class="pre">json_provider</span></code></a>(file_path, cmd_name)</p></td>
-<td><p>Load a JSON file.</p></td>
+<td><p></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../src.utils.html#src.utils.utils.parametrized" title="src.utils.utils.parametrized"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parametrized</span></code></a>(dec)</p></td>
-<td><p>Decorator for parameterizing functions.</p></td>
+<td><p></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../src.utils.html#src.utils.utils.query_results_from_api" title="src.utils.utils.query_results_from_api"><code class="xref py py-obj docutils literal notranslate"><span class="pre">query_results_from_api</span></code></a>(headers, url)</p></td>
-<td><p>Query an API and return the response.</p></td>
+<td><p></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../src.utils.html#src.utils.utils.query_results_from_aws" title="src.utils.utils.query_results_from_aws"><code class="xref py py-obj docutils literal notranslate"><span class="pre">query_results_from_aws</span></code></a>(params, query[, wait])</p></td>
-<td><p>Query AWS Athena and return the results.</p></td>
+<td><p></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../src.utils.html#src.utils.utils.read_csv" title="src.utils.utils.read_csv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_csv</span></code></a>(path, **kwargs)</p></td>
-<td><p>Read a CSV file into a DataFrame ensuring that NaNs are not parsed.</p></td>
+<td><p>Read csv ensuring that nan's are not parsed</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../src.utils.html#src.utils.utils.write_csv" title="src.utils.utils.write_csv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_csv</span></code></a>(df, path, **kwargs)</p></td>
-<td><p>Write a DataFrame to a CSV file with specified encoding and escape characters.</p></td>
+<td><p>Write csv to provided path ensuring that the correct encoding and escape characters are applied.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="../src.utils.html#src.utils.utils.write_dataclass" title="src.utils.utils.write_dataclass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_dataclass</span></code></a>(dclass, path)</p></td>
-<td><p>Write a dataclass object to a JSON file.</p></td>
+<td><p>Write a dataclass to the provided path as a json</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="../src.utils.html#src.utils.utils.write_to_db" title="src.utils.utils.write_to_db"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_to_db</span></code></a>(df, engine, table_name, ...[, index])</p></td>
-<td><p>Write a DataFrame to a database table.</p></td>
+<td><p></p></td>
 </tr>
 </tbody>
 </table>
@@ -105,6 +105,21 @@
     </div>
 </search>
 <script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../open_source/license.html">BSD 3-Clause License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../open_source/contribution.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../open_source/code_of_conduct.html">Code of Conduct</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../open_source/community_statement.html">Community Statement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/aws_prerequisites.html">AWS Prerequisites</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/aws_setup.html">Connecting to EC2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/terraform_setup_ec2.html">Terraform Setup for AWS EC2 Instance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/postgres_setup.html">Local Postgres setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/docker_setup.html">Docker setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/environment_variables.html">Environment Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/local_env_setup.html">Local Environment Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/graphana_server_setup.html">How To Install Grafana</a></li>
+</ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="openaq_engine.html">openaq_engine</a></li>
 </ul>
