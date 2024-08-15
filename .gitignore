@@ -132,4 +132,4 @@ google-cloud-sdk/*
 EarthEngineImages/*
 UnzippedImages/*
 
-openaq_engine/mlruns/
+mlruns/*
