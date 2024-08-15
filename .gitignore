@@ -130,3 +130,6 @@ EarthEngineImages/*
 UnzippedImages/*
 
 mlruns/*
+
+docs/.doctrees/*
+docs/build/*
