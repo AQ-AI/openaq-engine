@@ -67,9 +67,6 @@ instance/
 # Scrapy stuff:
 .scrapy
 
-# Sphinx documentation
-docs/_build/
-
 # PyBuilder
 target/
 
@@ -132,4 +129,7 @@ google-cloud-sdk/*
 EarthEngineImages/*
 UnzippedImages/*
 
-openaq_engine/mlruns/
+mlruns/*
+
+docs/.doctrees/*
+docs/build/*

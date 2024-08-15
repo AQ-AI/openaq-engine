@@ -12,9 +12,20 @@ from setup_environment import connect_to_db
 
 def read_csv(path: str, **kwargs: Any) -> pd.DataFrame:
     """
-    Read csv ensuring that nan's are not parsed
-    """
+    Read a CSV file into a DataFrame ensuring that NaNs are not parsed.
 
+    Parameters
+    ----------
+    path : str
+        Path to the CSV file.
+    **kwargs : Any
+        Additional arguments to pass to `pd.read_csv`.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame containing the data from the CSV file.
+    """
     return pd.read_csv(
         path,
         sep=",",
@@ -27,10 +38,20 @@ def read_csv(path: str, **kwargs: Any) -> pd.DataFrame:
 
 def write_csv(df: pd.DataFrame, path: str, **kwargs: Any) -> None:
     """
-    Write csv to provided path ensuring that the correct encoding and escape
-    characters are applied.
+    Write a DataFrame to a CSV file with specified encoding and escape characters.
 
-    Needed when csv's have text with html tags in it and lists inside cells.
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame to write to CSV.
+    path : str
+        Path to the output CSV file.
+    **kwargs : Any
+        Additional arguments to pass to `pd.DataFrame.to_csv`.
+
+    Returns
+    -------
+    None
     """
     df.to_csv(
         path,
@@ -44,24 +65,67 @@ def write_csv(df: pd.DataFrame, path: str, **kwargs: Any) -> None:
     )
 
 
-def query_results_from_api(headers, url):
+def query_results_from_api(headers: dict, url: str) -> requests.Response:
+    """
+    Query an API and return the response.
+
+    Parameters
+    ----------
+    headers : dict
+        Headers to include in the API request.
+    url : str
+        URL to query.
+
+    Returns
+    -------
+    requests.Response
+        Response object from the API.
+    """
     response = requests.get(url, headers=headers)
     return response
 
 
-def api_response_to_df(url):
+def api_response_to_df(url: str) -> pd.DataFrame:
+    """
+    Query an API and convert the response to a DataFrame.
+
+    Parameters
+    ----------
+    url : str
+        URL to query.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame containing the API response data.
+    """
     headers = {"accept": "application/json"}
     response = query_results_from_api(headers, url)
     try:
-        # Directly use response.json() without json.loads
         return pd.DataFrame(response.json()["results"])
     except KeyError:
         pass
 
 
-def query_results_from_aws(params, query, wait=True):
-    session = boto3.Session()
+def query_results_from_aws(params: dict, query: str, wait: bool = True) -> Any:
+    """
+    Query AWS Athena and return the results.
 
+    Parameters
+    ----------
+    params : dict
+        Dictionary containing AWS parameters.
+    query : str
+        SQL query to execute on AWS Athena.
+    wait : bool, optional
+        Whether to wait for the query to complete, by default True.
+
+    Returns
+    -------
+    Any
+        Query execution ID or query results, depending on the wait parameter.
+    """
+    session = boto3.Session()
     client = session.client("athena", params["region"])
 
     response_query_execution_id = client.start_query_execution(
@@ -75,14 +139,11 @@ def query_results_from_aws(params, query, wait=True):
     if not wait:
         return response_query_execution_id["QueryExecutionId"]
     else:
-        response_get_query_details = client.get_query_execution(
-            QueryExecutionId=response_query_execution_id["QueryExecutionId"]
-        )
         status = "RUNNING"
         iterations = 360000  # 30 mins
 
         while iterations > 0:
-            iterations = iterations - 1
+            iterations -= 1
             response_get_query_details = client.get_query_execution(
                 QueryExecutionId=response_query_execution_id[
                     "QueryExecutionId"
@@ -92,7 +153,7 @@ def query_results_from_aws(params, query, wait=True):
                 "State"
             ]
 
-            if (status == "FAILED") or (status == "CANCELLED"):
+            if status in ["FAILED", "CANCELLED"]:
                 failure_reason = response_get_query_details["QueryExecution"][
                     "Status"
                 ]["StateChangeReason"]
@@ -100,7 +161,6 @@ def query_results_from_aws(params, query, wait=True):
                 return False, False
 
             elif status == "SUCCEEDED":
-                # Function to get output results
                 response_query_result = client.get_query_results(
                     QueryExecutionId=response_query_execution_id[
                         "QueryExecutionId"
@@ -108,13 +168,31 @@ def query_results_from_aws(params, query, wait=True):
                 )
                 return response_query_result
 
-        else:
             time.sleep(0.001)
 
         return False
 
 
-def get_s3_file_path_list(resource, bucket, folder):
+def get_s3_file_path_list(
+    resource: Any, bucket: str, folder: str
+) -> List[str]:
+    """
+    Get a list of file paths from an S3 bucket.
+
+    Parameters
+    ----------
+    resource : Any
+        Boto3 resource object.
+    bucket : str
+        Name of the S3 bucket.
+    folder : str
+        Folder path within the S3 bucket.
+
+    Returns
+    -------
+    List[str]
+        List of file paths in the specified S3 bucket folder.
+    """
     csv_filetype = ".csv"
     my_bucket = resource.Bucket(bucket)
     csv_list = []
@@ -127,8 +205,18 @@ def get_s3_file_path_list(resource, bucket, folder):
 
 def write_dataclass(dclass: object, path: str) -> None:
     """
-    Write a dataclass to the provided path as a json
+    Write a dataclass object to a JSON file.
 
+    Parameters
+    ----------
+    dclass : object
+        Dataclass object to write.
+    path : str
+        Path to the output JSON file.
+
+    Returns
+    -------
+    None
     """
     with open(path, "w+") as f:
         f.write(
@@ -139,15 +227,57 @@ def write_dataclass(dclass: object, path: str) -> None:
 
 
 def get_categorical_feature_indices(df: pd.DataFrame) -> List[int]:
+    """
+    Get the indices of categorical features in a DataFrame.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame to analyze.
+
+    Returns
+    -------
+    List[int]
+        List of indices of categorical features.
+    """
     return list(np.where(df.dtypes == "category")[0])
 
 
-def json_provider(file_path, cmd_name):
+def json_provider(file_path: str, cmd_name: str) -> dict:
+    """
+    Load a JSON file.
+
+    Parameters
+    ----------
+    file_path : str
+        Path to the JSON file.
+    cmd_name : str
+        Command name for logging purposes (optional).
+
+    Returns
+    -------
+    dict
+        Dictionary containing the JSON data.
+    """
     with open(file_path) as config_data:
         return json.load(config_data)
 
 
 def parametrized(dec):
+    """
+    Decorator for parameterizing functions.
+
+    Parameters
+    ----------
+    dec : callable
+        Decorator function.
+
+    Returns
+    -------
+    callable
+        Decorated function.
+    """
+
     def layer(*args, **kwargs):
         def repl(f):
             return dec(f, *args, **kwargs)
@@ -157,35 +287,58 @@ def parametrized(dec):
     return layer
 
 
-def get_data(query):
+def get_data(query: str) -> pd.DataFrame:
     """
-    Pulls data from the db based on the query
-    Input
-    -----
-    query: str
-       SQL query from the database
-    Output
-    ------
-    data: DataFrame
-       Dump of Query into a DataFrame
-    """
+    Execute a SQL query and return the results as a DataFrame.
 
+    Parameters
+    ----------
+    query : str
+        SQL query to execute.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame containing the query results.
+    """
     with connect_to_db() as conn:
         df = pd.read_sql_query(query, conn)
     return df
 
 
 def write_to_db(
-    df,
-    engine,
-    table_name,
-    schema_name,
-    table_behaviour,
-    index=False,
-    **kwargs,
-):
-    #     with engine.begin() as connection:
-    #         connection.execute(text("""SET ROLE "pakistan-ihhn-role" """))
+    df: pd.DataFrame,
+    engine: Any,
+    table_name: str,
+    schema_name: str,
+    table_behaviour: str,
+    index: bool = False,
+    **kwargs: Any,
+) -> None:
+    """
+    Write a DataFrame to a database table.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame to write.
+    engine : Any
+        SQLAlchemy engine object.
+    table_name : str
+        Name of the table.
+    schema_name : str
+        Schema name.
+    table_behaviour : str
+        'replace', 'append', or 'fail'.
+    index : bool, optional
+        Whether to write row indices, by default False.
+    **kwargs : Any
+        Additional arguments to pass to `pd.to_sql`.
+
+    Returns
+    -------
+    None
+    """
     df.to_sql(
         name=table_name,
         schema=schema_name,
@@ -196,13 +349,31 @@ def write_to_db(
     )
 
 
-def ee_array_to_df(arr, list_of_bands):
-    """Transforms client-side ee.Image.getRegion array to pandas.DataFrame."""
+def ee_array_to_df(arr: List[Any], list_of_bands: List[str]) -> pd.DataFrame:
+    """
+    Transform an Earth Engine array to a DataFrame.
+
+    Parameters
+    ----------
+    arr : List[Any]
+        Array from Earth Engine.
+    list_of_bands : List[str]
+        List of bands to include.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame containing the transformed data.
+    """
     df = pd.DataFrame(arr)
 
     # Rearrange the header.
-    headers = df.iloc[0].tolist()  # Ensure headers are in list format
-    df = pd.DataFrame(df.values[1:], columns=headers)
+    headers = df.iloc[
+        0
+    ].tolist()  # Access the first row and convert it to a list
+    df = pd.DataFrame(
+        df.values[1:], columns=headers
+    )  # Skip the first row for the data
 
     # Remove rows without data inside.
     df = df[["longitude", "latitude", "time", *list_of_bands]].dropna()
