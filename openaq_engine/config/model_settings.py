@@ -216,8 +216,8 @@ class CohortBuilderConfig:
             filter_non_null_values=["value"],
             filter_extreme_values=["value"],
             filter_no_coordinates=["coordinates"],
-            # filter_countries=["country"],
-            # filter_cities=["city"],
+            filter_countries=["country"],
+            filter_cities=["city"],
         ),
     )
     TARGET_VARIABLE = ""
