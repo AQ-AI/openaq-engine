@@ -52,8 +52,11 @@ If at any point the documentation does not suffice, you can always get help by m
    install/environment_variables  
    install/local_env_setup
    install/graphana_server_setup
+   install/architecture
+   install/database_schema
+   install/mlflow_setup
+   install/modules
    :ref:`modindex`
-
 
 
 ------------
