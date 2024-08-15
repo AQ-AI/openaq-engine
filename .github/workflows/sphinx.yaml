@@ -1,6 +1,9 @@
-name: Sphinx build
+name: Sphinx build and deploy
 
-on: push
+on:
+  push:
+    branches:
+      - develop
 
 jobs:
   build:
@@ -12,7 +15,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
-          python-version: '3.11'  # Align with the project
+          python-version: '3.11'
 
       - name: Install Poetry
         run: |
@@ -27,14 +30,9 @@ jobs:
         run: |
           poetry run sphinx-build -b html docs/source docs/build/html
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: html-docs
-          path: docs/build/html/
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
-        if: github.ref == 'refs/heads/74-documentation-for-submodules-error'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
           publish_dir: docs/build/html
