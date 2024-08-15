@@ -368,8 +368,12 @@ def ee_array_to_df(arr: List[Any], list_of_bands: List[str]) -> pd.DataFrame:
     df = pd.DataFrame(arr)
 
     # Rearrange the header.
-    headers = df.iloc(0).tolist()  # Ensure headers are in list format
-    df = pd.DataFrame(df.values[1:], columns=headers)
+    headers = df.iloc[
+        0
+    ].tolist()  # Access the first row and convert it to a list
+    df = pd.DataFrame(
+        df.values[1:], columns=headers
+    )  # Skip the first row for the data
 
     # Remove rows without data inside.
     df = df[["longitude", "latitude", "time", *list_of_bands]].dropna()
