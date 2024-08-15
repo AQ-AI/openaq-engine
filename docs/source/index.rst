@@ -35,6 +35,7 @@ We keep more detailed installation instructions (including dependencies)
 up-to-date below
 
 If at any point the documentation does not suffice, you can always get help by mailing at info@aqai.xyz
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
