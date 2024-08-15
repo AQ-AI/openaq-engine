@@ -67,6 +67,8 @@ class Preprocess:
                 "filter_non_null_values",
                 "filter_extreme_values",
                 "filter_no_coordinates",
+                "filter_countries",
+                "filter_cities",
             ],
             False,
         )
@@ -125,7 +127,6 @@ class Preprocess:
             print(f"After non_null_values filter:\n{df}")
         if self.filter_countries:
             print(f"Before countries filter:\n{df}")
-            print(self.countries)
             df = df.pipe(Filter.filter_countries, countries=self.countries)
             print(f"After countries filter:\n{df}")
         if self.filter_cities:
