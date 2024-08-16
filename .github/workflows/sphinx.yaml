@@ -12,7 +12,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
-          python-version: '3.12'  # Align with the project
+          python-version: '3.11'  # Align with the project
 
       - name: Install Poetry
         run: |
