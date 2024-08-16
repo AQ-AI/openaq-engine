@@ -47,20 +47,9 @@
 <a class="viewcode-back" href="../../../../openaq_engine.src.utils.html#openaq_engine.src.utils.utils.read_csv">[docs]</a>
 <span class="k">def</span> <span class="nf">read_csv</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Read a CSV file into a DataFrame ensuring that NaNs are not parsed.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    path : str</span>
-<span class="sd">        Path to the CSV file.</span>
-<span class="sd">    **kwargs : Any</span>
-<span class="sd">        Additional arguments to pass to `pd.read_csv`.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    pd.DataFrame</span>
-<span class="sd">        DataFrame containing the data from the CSV file.</span>
+<span class="sd">    Read csv ensuring that nan&#39;s are not parsed</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
         <span class="n">path</span><span class="p">,</span>
         <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;,&quot;</span><span class="p">,</span>
@@ -76,20 +65,10 @@
 <a class="viewcode-back" href="../../../../openaq_engine.src.utils.html#openaq_engine.src.utils.utils.write_csv">[docs]</a>
 <span class="k">def</span> <span class="nf">write_csv</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Write a DataFrame to a CSV file with specified encoding and escape characters.</span>
+<span class="sd">    Write csv to provided path ensuring that the correct encoding and escape</span>
+<span class="sd">    characters are applied.</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    df : pd.DataFrame</span>
-<span class="sd">        DataFrame to write to CSV.</span>
-<span class="sd">    path : str</span>
-<span class="sd">        Path to the output CSV file.</span>
-<span class="sd">    **kwargs : Any</span>
-<span class="sd">        Additional arguments to pass to `pd.DataFrame.to_csv`.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    None</span>
+<span class="sd">    Needed when csv&#39;s have text with html tags in it and lists inside cells.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span>
         <span class="n">path</span><span class="p">,</span>
@@ -106,22 +85,7 @@
 
 <div class="viewcode-block" id="query_results_from_api">
 <a class="viewcode-back" href="../../../../openaq_engine.src.utils.html#openaq_engine.src.utils.utils.query_results_from_api">[docs]</a>
-<span class="k">def</span> <span class="nf">query_results_from_api</span><span class="p">(</span><span class="n">headers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">requests</span><span class="o">.</span><span class="n">Response</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Query an API and return the response.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    headers : dict</span>
-<span class="sd">        Headers to include in the API request.</span>
-<span class="sd">    url : str</span>
-<span class="sd">        URL to query.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    requests.Response</span>
-<span class="sd">        Response object from the API.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="k">def</span> <span class="nf">query_results_from_api</span><span class="p">(</span><span class="n">headers</span><span class="p">,</span> <span class="n">url</span><span class="p">):</span>
     <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">response</span></div>
 
@@ -129,23 +93,11 @@
 
 <div class="viewcode-block" id="api_response_to_df">
 <a class="viewcode-back" href="../../../../openaq_engine.src.utils.html#openaq_engine.src.utils.utils.api_response_to_df">[docs]</a>
-<span class="k">def</span> <span class="nf">api_response_to_df</span><span class="p">(</span><span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Query an API and convert the response to a DataFrame.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    url : str</span>
-<span class="sd">        URL to query.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    pd.DataFrame</span>
-<span class="sd">        DataFrame containing the API response data.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="k">def</span> <span class="nf">api_response_to_df</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
     <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;accept&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">}</span>
     <span class="n">response</span> <span class="o">=</span> <span class="n">query_results_from_api</span><span class="p">(</span><span class="n">headers</span><span class="p">,</span> <span class="n">url</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Directly use response.json() without json.loads</span>
         <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;results&quot;</span><span class="p">])</span>
     <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
         <span class="k">pass</span></div>
@@ -154,25 +106,9 @@
 
 <div class="viewcode-block" id="query_results_from_aws">
 <a class="viewcode-back" href="../../../../openaq_engine.src.utils.html#openaq_engine.src.utils.utils.query_results_from_aws">[docs]</a>
-<span class="k">def</span> <span class="nf">query_results_from_aws</span><span class="p">(</span><span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">wait</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Query AWS Athena and return the results.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    params : dict</span>
-<span class="sd">        Dictionary containing AWS parameters.</span>
-<span class="sd">    query : str</span>
-<span class="sd">        SQL query to execute on AWS Athena.</span>
-<span class="sd">    wait : bool, optional</span>
-<span class="sd">        Whether to wait for the query to complete, by default True.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    Any</span>
-<span class="sd">        Query execution ID or query results, depending on the wait parameter.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="k">def</span> <span class="nf">query_results_from_aws</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
     <span class="n">session</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
+
     <span class="n">client</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;athena&quot;</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;region&quot;</span><span class="p">])</span>
 
     <span class="n">response_query_execution_id</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">start_query_execution</span><span class="p">(</span>
@@ -186,11 +122,14 @@
     <span class="k">if</span> <span class="ow">not</span> <span class="n">wait</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">response_query_execution_id</span><span class="p">[</span><span class="s2">&quot;QueryExecutionId&quot;</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
+        <span class="n">response_get_query_details</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_query_execution</span><span class="p">(</span>
+            <span class="n">QueryExecutionId</span><span class="o">=</span><span class="n">response_query_execution_id</span><span class="p">[</span><span class="s2">&quot;QueryExecutionId&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
         <span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;RUNNING&quot;</span>
         <span class="n">iterations</span> <span class="o">=</span> <span class="mi">360000</span>  <span class="c1"># 30 mins</span>
 
         <span class="k">while</span> <span class="n">iterations</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">iterations</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="n">iterations</span> <span class="o">=</span> <span class="n">iterations</span> <span class="o">-</span> <span class="mi">1</span>
             <span class="n">response_get_query_details</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_query_execution</span><span class="p">(</span>
                 <span class="n">QueryExecutionId</span><span class="o">=</span><span class="n">response_query_execution_id</span><span class="p">[</span>
                     <span class="s2">&quot;QueryExecutionId&quot;</span>
@@ -200,7 +139,7 @@
                 <span class="s2">&quot;State&quot;</span>
             <span class="p">]</span>
 
-            <span class="k">if</span> <span class="n">status</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;FAILED&quot;</span><span class="p">,</span> <span class="s2">&quot;CANCELLED&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;FAILED&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;CANCELLED&quot;</span><span class="p">):</span>
                 <span class="n">failure_reason</span> <span class="o">=</span> <span class="n">response_get_query_details</span><span class="p">[</span><span class="s2">&quot;QueryExecution&quot;</span><span class="p">][</span>
                     <span class="s2">&quot;Status&quot;</span>
                 <span class="p">][</span><span class="s2">&quot;StateChangeReason&quot;</span><span class="p">]</span>
@@ -208,6 +147,7 @@
                 <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span>
 
             <span class="k">elif</span> <span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;SUCCEEDED&quot;</span><span class="p">:</span>
+                <span class="c1"># Function to get output results</span>
                 <span class="n">response_query_result</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_query_results</span><span class="p">(</span>
                     <span class="n">QueryExecutionId</span><span class="o">=</span><span class="n">response_query_execution_id</span><span class="p">[</span>
                         <span class="s2">&quot;QueryExecutionId&quot;</span>
@@ -215,6 +155,7 @@
                 <span class="p">)</span>
                 <span class="k">return</span> <span class="n">response_query_result</span>
 
+        <span class="k">else</span><span class="p">:</span>
             <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.001</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="kc">False</span></div>
@@ -223,26 +164,7 @@
 
 <div class="viewcode-block" id="get_s3_file_path_list">
 <a class="viewcode-back" href="../../../../openaq_engine.src.utils.html#openaq_engine.src.utils.utils.get_s3_file_path_list">[docs]</a>
-<span class="k">def</span> <span class="nf">get_s3_file_path_list</span><span class="p">(</span>
-    <span class="n">resource</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">folder</span><span class="p">:</span> <span class="nb">str</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Get a list of file paths from an S3 bucket.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    resource : Any</span>
-<span class="sd">        Boto3 resource object.</span>
-<span class="sd">    bucket : str</span>
-<span class="sd">        Name of the S3 bucket.</span>
-<span class="sd">    folder : str</span>
-<span class="sd">        Folder path within the S3 bucket.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    List[str]</span>
-<span class="sd">        List of file paths in the specified S3 bucket folder.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="k">def</span> <span class="nf">get_s3_file_path_list</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">bucket</span><span class="p">,</span> <span class="n">folder</span><span class="p">):</span>
     <span class="n">csv_filetype</span> <span class="o">=</span> <span class="s2">&quot;.csv&quot;</span>
     <span class="n">my_bucket</span> <span class="o">=</span> <span class="n">resource</span><span class="o">.</span><span class="n">Bucket</span><span class="p">(</span><span class="n">bucket</span><span class="p">)</span>
     <span class="n">csv_list</span> <span class="o">=</span> <span class="p">[]</span>
@@ -258,18 +180,8 @@
 <a class="viewcode-back" href="../../../../openaq_engine.src.utils.html#openaq_engine.src.utils.utils.write_dataclass">[docs]</a>
 <span class="k">def</span> <span class="nf">write_dataclass</span><span class="p">(</span><span class="n">dclass</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Write a dataclass object to a JSON file.</span>
+<span class="sd">    Write a dataclass to the provided path as a json</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    dclass : object</span>
-<span class="sd">        Dataclass object to write.</span>
-<span class="sd">    path : str</span>
-<span class="sd">        Path to the output JSON file.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    None</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;w+&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
@@ -283,41 +195,13 @@
 <div class="viewcode-block" id="get_categorical_feature_indices">
 <a class="viewcode-back" href="../../../../openaq_engine.src.utils.html#openaq_engine.src.utils.utils.get_categorical_feature_indices">[docs]</a>
 <span class="k">def</span> <span class="nf">get_categorical_feature_indices</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Get the indices of categorical features in a DataFrame.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    df : pd.DataFrame</span>
-<span class="sd">        DataFrame to analyze.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    List[int]</span>
-<span class="sd">        List of indices of categorical features.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">dtypes</span> <span class="o">==</span> <span class="s2">&quot;category&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span></div>
 
 
 
 <div class="viewcode-block" id="json_provider">
 <a class="viewcode-back" href="../../../../openaq_engine.src.utils.html#openaq_engine.src.utils.utils.json_provider">[docs]</a>
-<span class="k">def</span> <span class="nf">json_provider</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cmd_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Load a JSON file.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    file_path : str</span>
-<span class="sd">        Path to the JSON file.</span>
-<span class="sd">    cmd_name : str</span>
-<span class="sd">        Command name for logging purposes (optional).</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    dict</span>
-<span class="sd">        Dictionary containing the JSON data.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="k">def</span> <span class="nf">json_provider</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">cmd_name</span><span class="p">):</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">config_data</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">config_data</span><span class="p">)</span></div>
 
@@ -326,20 +210,6 @@
 <div class="viewcode-block" id="parametrized">
 <a class="viewcode-back" href="../../../../openaq_engine.src.utils.html#openaq_engine.src.utils.utils.parametrized">[docs]</a>
 <span class="k">def</span> <span class="nf">parametrized</span><span class="p">(</span><span class="n">dec</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Decorator for parameterizing functions.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    dec : callable</span>
-<span class="sd">        Decorator function.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    callable</span>
-<span class="sd">        Decorated function.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
     <span class="k">def</span> <span class="nf">layer</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">def</span> <span class="nf">repl</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">dec</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -352,20 +222,19 @@
 
 <div class="viewcode-block" id="get_data">
 <a class="viewcode-back" href="../../../../openaq_engine.src.utils.html#openaq_engine.src.utils.utils.get_data">[docs]</a>
-<span class="k">def</span> <span class="nf">get_data</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">get_data</span><span class="p">(</span><span class="n">query</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Execute a SQL query and return the results as a DataFrame.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    query : str</span>
-<span class="sd">        SQL query to execute.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    pd.DataFrame</span>
-<span class="sd">        DataFrame containing the query results.</span>
+<span class="sd">    Pulls data from the db based on the query</span>
+<span class="sd">    Input</span>
+<span class="sd">    -----</span>
+<span class="sd">    query: str</span>
+<span class="sd">       SQL query from the database</span>
+<span class="sd">    Output</span>
+<span class="sd">    ------</span>
+<span class="sd">    data: DataFrame</span>
+<span class="sd">       Dump of Query into a DataFrame</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">with</span> <span class="n">connect_to_db</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql_query</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">conn</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">df</span></div>
@@ -375,38 +244,16 @@
 <div class="viewcode-block" id="write_to_db">
 <a class="viewcode-back" href="../../../../openaq_engine.src.utils.html#openaq_engine.src.utils.utils.write_to_db">[docs]</a>
 <span class="k">def</span> <span class="nf">write_to_db</span><span class="p">(</span>
-    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
-    <span class="n">engine</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">table_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">schema_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">table_behaviour</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">index</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Write a DataFrame to a database table.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    df : pd.DataFrame</span>
-<span class="sd">        DataFrame to write.</span>
-<span class="sd">    engine : Any</span>
-<span class="sd">        SQLAlchemy engine object.</span>
-<span class="sd">    table_name : str</span>
-<span class="sd">        Name of the table.</span>
-<span class="sd">    schema_name : str</span>
-<span class="sd">        Schema name.</span>
-<span class="sd">    table_behaviour : str</span>
-<span class="sd">        &#39;replace&#39;, &#39;append&#39;, or &#39;fail&#39;.</span>
-<span class="sd">    index : bool, optional</span>
-<span class="sd">        Whether to write row indices, by default False.</span>
-<span class="sd">    **kwargs : Any</span>
-<span class="sd">        Additional arguments to pass to `pd.to_sql`.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    None</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">df</span><span class="p">,</span>
+    <span class="n">engine</span><span class="p">,</span>
+    <span class="n">table_name</span><span class="p">,</span>
+    <span class="n">schema_name</span><span class="p">,</span>
+    <span class="n">table_behaviour</span><span class="p">,</span>
+    <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="c1">#     with engine.begin() as connection:</span>
+    <span class="c1">#         connection.execute(text(&quot;&quot;&quot;SET ROLE &quot;pakistan-ihhn-role&quot; &quot;&quot;&quot;))</span>
     <span class="n">df</span><span class="o">.</span><span class="n">to_sql</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="n">table_name</span><span class="p">,</span>
         <span class="n">schema</span><span class="o">=</span><span class="n">schema_name</span><span class="p">,</span>
@@ -420,31 +267,13 @@
 
 <div class="viewcode-block" id="ee_array_to_df">
 <a class="viewcode-back" href="../../../../openaq_engine.src.utils.html#openaq_engine.src.utils.utils.ee_array_to_df">[docs]</a>
-<span class="k">def</span> <span class="nf">ee_array_to_df</span><span class="p">(</span><span class="n">arr</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">list_of_bands</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Transform an Earth Engine array to a DataFrame.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    arr : List[Any]</span>
-<span class="sd">        Array from Earth Engine.</span>
-<span class="sd">    list_of_bands : List[str]</span>
-<span class="sd">        List of bands to include.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    pd.DataFrame</span>
-<span class="sd">        DataFrame containing the transformed data.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="k">def</span> <span class="nf">ee_array_to_df</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">list_of_bands</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Transforms client-side ee.Image.getRegion array to pandas.DataFrame.&quot;&quot;&quot;</span>
     <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span>
 
     <span class="c1"># Rearrange the header.</span>
-    <span class="n">headers</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span>
-        <span class="mi">0</span>
-    <span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>  <span class="c1"># Access the first row and convert it to a list</span>
-    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">columns</span><span class="o">=</span><span class="n">headers</span>
-    <span class="p">)</span>  <span class="c1"># Skip the first row for the data</span>
+    <span class="n">headers</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>  <span class="c1"># Ensure headers are in list format</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">columns</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
 
     <span class="c1"># Remove rows without data inside.</span>
     <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[[</span><span class="s2">&quot;longitude&quot;</span><span class="p">,</span> <span class="s2">&quot;latitude&quot;</span><span class="p">,</span> <span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="o">*</span><span class="n">list_of_bands</span><span class="p">]]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>

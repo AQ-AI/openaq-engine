@@ -3,9 +3,9 @@
 .. currentmodule:: {{ module }}
 
 .. autoclass:: {{ objname }}
-   :members:
-   :show-inheritance:
-   :inherited-members:
+   :members:                                    <-- add at least this line
+   :show-inheritance:                           <-- plus I want to show inheritance...
+   :inherited-members:                          <-- ...and inherited members too
 
    {% block methods %}
    .. automethod:: __init__

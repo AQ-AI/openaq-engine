@@ -7,7 +7,7 @@
    .. rubric:: Module Attributes
 
    .. autosummary::
-      :toctree: _autosummary
+      :toctree:                                          <-- add this line
    {% for item in attributes %}
       {{ item }}
    {%- endfor %}
@@ -19,7 +19,7 @@
    .. rubric:: {{ _('Functions') }}
 
    .. autosummary::
-      :toctree: _autosummary
+      :toctree:                                          <-- add this line
    {% for item in functions %}
       {{ item }}
    {%- endfor %}
@@ -31,8 +31,8 @@
    .. rubric:: {{ _('Classes') }}
 
    .. autosummary::
-      :toctree: _autosummary
-      :template: custom-class-template.rst
+      :toctree:                                          <-- add this line
+      :template: custom-class-template.rst               <-- add this line
    {% for item in classes %}
       {{ item }}
    {%- endfor %}
@@ -44,7 +44,7 @@
    .. rubric:: {{ _('Exceptions') }}
 
    .. autosummary::
-      :toctree: _autosummary
+      :toctree:                                          <-- add this line
    {% for item in exceptions %}
       {{ item }}
    {%- endfor %}
@@ -56,8 +56,8 @@
 .. rubric:: Modules
 
 .. autosummary::
-   :toctree: _autosummary
-   :template: custom-module-template.rst
+   :toctree:
+   :template: custom-module-template.rst                 <-- add this line
    :recursive:
 {% for item in modules %}
    {{ item }}

@@ -104,6 +104,8 @@
                 <span class="s2">&quot;filter_non_null_values&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;filter_extreme_values&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;filter_no_coordinates&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;filter_countries&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;filter_cities&quot;</span><span class="p">,</span>
             <span class="p">],</span>
             <span class="kc">False</span><span class="p">,</span>
         <span class="p">)</span>
@@ -168,7 +170,6 @@
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;After non_null_values filter:</span><span class="se">\n</span><span class="si">{</span><span class="n">df</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_countries</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Before countries filter:</span><span class="se">\n</span><span class="si">{</span><span class="n">df</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">countries</span><span class="p">)</span>
             <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">pipe</span><span class="p">(</span><span class="n">Filter</span><span class="o">.</span><span class="n">filter_countries</span><span class="p">,</span> <span class="n">countries</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">countries</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;After countries filter:</span><span class="se">\n</span><span class="si">{</span><span class="n">df</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_cities</span><span class="p">:</span>
