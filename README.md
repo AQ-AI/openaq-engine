@@ -32,5 +32,5 @@ If at any point the documentation does not suffice, you can always get help by e
 
 ---
 
-[![CI Status](https://github.com/AQ-AI/openaq-engine/workflows/CI/badge.svg)](https://github.com/AQ-AI/openaq-engine/actions)
-[![Coverage Status](https://coveralls.io/repos/github/AQ-AI/openaq-engine/badge.svg?branch=develop)](https://coveralls.io/github/AQ-AI/openaq-engine?branch=develop)
+![CI](https://img.shields.io/github/actions/workflow/status/AQ-AI/openaq-engine/.github/workflows/workflow.yaml?branch=develop)
+![Coverage](https://img.shields.io/badge/coverage-80%25-brightgreen)
