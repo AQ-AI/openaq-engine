@@ -42,29 +42,6 @@ def get_athena_engine():
 def get_dbengine(
     database=None, host=None, port=None, user=None, password=None
 ):
-    """
-    Creates and returns a SQLAlchemy engine for connecting to a PostgreSQL database.
-
-    Parameters
-    ----------
-    PGDATABASE : str
-        The name of the database to connect to.
-    PGHOST : str
-        The hostname of the database server.
-    PGPORT : int, optional
-        The port number to connect to (default is 5432).
-    PGPASSWORD : str
-        The password for the database user.
-    PGUSER : str
-        The username for the database.
-    DBTYPE : str, optional
-        The type of database, default is "postgresql".
-
-    Returns
-    -------
-    engine : SQLAlchemy Engine
-        A SQLAlchemy engine connected to the specified database.
-    """
     database = database or os.getenv("TEST_PGDATABASE")
     user = user or os.getenv("TEST_PGUSER")
     password = password or os.getenv("TEST_PGPASSWORD")
@@ -78,13 +55,6 @@ def get_dbengine(
 
 @contextmanager
 def connect_to_db(use_test_db=False):
-    """
-    Connects to database
-    Output
-    ------
-    conn: object
-       Database connection.
-    """
     if use_test_db:
         database = os.getenv("TEST_PGDATABASE")
         user = os.getenv("TEST_PGUSER")

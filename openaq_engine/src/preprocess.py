@@ -172,9 +172,6 @@ class Preprocess:
         local_time_str = re.search(
             r"(?<=local=)(.*?)(?=})", row["date"]
         ).group(0)
-        local_time_str = re.search(
-            r"(?<=local=)(.*?)(?=})", row["date"]
-        ).group(0)
 
         utc_time = datetime.fromisoformat(utc_time_str).replace(
             tzinfo=timezone.utc

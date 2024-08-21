@@ -11,8 +11,8 @@ from pydantic.dataclasses import dataclass
 class ModelVisualizerConfig:
     PLOT: bool = True
     PLOT_METRICS: Sequence[str] = field(default_factory=lambda: ["mean"])
-    PLOTS_TABLE_NAME: str = ""
-    PLOTS_SCHEMA_NAME: str = ""
+    PLOTS_TABLE_NAME: str = "plots"
+    PLOTS_SCHEMA_NAME: str = "model_output"
     RESULTS_TABLE_NAME: str = "results"
 
 
@@ -22,6 +22,45 @@ class MatrixGeneratorConfig:
     ID_COLUMN_LIST: Sequence[str] = field(
         default_factory=lambda: ["locationId", "cohort", "cohort_type"]
     )
+    # Satellite configurations
+    SATELLITE_CONFIG = {
+        "MODIS/061/MCD19A2_GRANULES": {
+            "bands": ["Optical_Depth_047"],
+            "resolution": 1000,
+            "time_ranges": [("00:00:00", "08:00:00")],
+            "frequency": "daily",
+        },
+        "LANDSAT/LC08/C02/T1_L2": {
+            "bands": ["SR_B4", "SR_B3", "SR_B2"],
+            "resolution": 30,
+            "time_ranges": [("03:30:00", "04:00:00")],
+            "frequency": "weekly",
+        },
+        "NOAA/VIIRS/DNB/MONTHLY_V1/VCMCFG": {
+            "bands": ["avg_rad"],
+            "resolution": 463.83,
+            "time_ranges": [("00:00:00", "00:59:59")],
+            "frequency": "monthly",
+        },
+        "NOAA/GFS0P25": {
+            "bands": [
+                "temperature_2m_above_ground",
+                "relative_humidity_2m_above_ground",
+                "precipitable_water_entire_atmosphere",
+                "total_cloud_cover_entire_atmosphere",
+                "u_component_of_wind_10m_above_ground",
+                "v_component_of_wind_10m_above_ground",
+            ],
+            "resolution": 27830,
+            "time_ranges": [
+                ("00:00:00", "00:59:59"),
+                ("06:00:00", "06:59:59"),
+                ("12:00:00", "12:59:59"),
+                ("18:00:00", "18:59:59"),
+            ],
+            "frequency": "daily",
+        },
+    }
 
 
 @dataclass
@@ -97,8 +136,11 @@ class BuildFeaturesConfig:
     TARGET_VARIABLE = "pm25"
     COUNTRY = ""
     CITY = ""
-    CATEGORICAL_FEATURES: List[StrictStr] = field(default_factory=lambda: [])
-    CORE_FEATURES: List[StrictStr] = field(
+    CATEGORICAL_FEATURES: List[str] = field(
+        default_factory=lambda: ["locationId"]
+    )
+    CORE_FEATURES: List[str] = field(default_factory=list)
+    SATELLITE_FEATURES: List[StrictStr] = field(
         default_factory=lambda: [
             "city",
             "country",
@@ -113,7 +155,13 @@ class BuildFeaturesConfig:
     @property
     def ALL_MODEL_FEATURES(self) -> List[str]:
         """Return all features to be fed into the model"""
-        return list(set(self.CORE_FEATURES + self.CATEGORICAL_FEATURES))
+        return list(
+            set(
+                self.CORE_FEATURES
+                + self.CATEGORICAL_FEATURES
+                + self.SATELLITE_FEATURES
+            )
+        )
 
 
 @dataclass
@@ -139,9 +187,9 @@ class CohortBuilderConfig:
             filter_cities=["city"],
         ),
     )
-    TARGET_VARIABLE = ""
+    TARGET_VARIABLE = "pm25"
     COUNTRY = ""
-    SOURCE = ""
+    SOURCE = "openaq-aws"
     LOCAL_DATA = ""
 
 
