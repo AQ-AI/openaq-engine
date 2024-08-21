@@ -12,16 +12,19 @@ Methodology
 The team used MLFlow to run each pipeline to gather, process, analyze, and validate the results of the registered machine learning model.
 
 1. **Module Options**: Each module has a set of options to parameterize the CLI command using the specified arguments.
+   
    .. code-block:: python
 
       from mlflows.cli.cohort_builder import cohort_builder_options
 
 2. **Module Configuration**: Each module has a configuration file where default configs can be stored, as these vary less frequently.
+   
    .. code-block:: python
 
       from config.model_settings import CohortBuilderConfig
 
 3. **Flow Classes**: Each module has its own "flow class," which initializes the module with the configuration in a standard way.
+   
    .. code-block:: python
 
       class CohortBuilderFlow:
@@ -32,6 +35,7 @@ The team used MLFlow to run each pipeline to gather, process, analyze, and valid
               return CohortBuilder.from_dataclass_config(self.config)
 
 4. **Command Execution**: Commands execute the modules and any dependent modules. Experiment IDs are the name of the module and the datetime of execution. Storage can be a hosted solution or a local path.
+   
    .. code-block:: python
 
       @cohort_builder_options()
@@ -54,6 +58,7 @@ The team used MLFlow to run each pipeline to gather, process, analyze, and valid
               )
 
 5. **CLI Grouping**: Commands are added to the CLI group `openaq-engine`, grouping the modules into the package.
+   
    .. code-block:: python
 
       @click.group("openaq-engine", help="Library to query openaq data")
@@ -70,6 +75,7 @@ The team used MLFlow to run each pipeline to gather, process, analyze, and valid
           cli()
 
 6. **MLFlow Tracking URI**: MLFlow initiates the tracking URI through environment variables. This should be set to your specified server or "localhost".
+   
    .. code-block:: python
 
       mlflow.set_tracking_uri(
@@ -81,6 +87,7 @@ Example: Extending the Library
 If a user wants to extend the library and write their own class, they can follow these steps:
 
 1. **Create a Configuration Class**: Define the configuration for the new module in `config.model_settings`.
+   
    .. code-block:: python
 
       class CustomModuleConfig:
@@ -88,6 +95,7 @@ If a user wants to extend the library and write their own class, they can follow
           PARAM2 = 10
 
 2. **Create a Flow Class**: Define the flow class for the new module.
+   
    .. code-block:: python
 
       class CustomModuleFlow:
@@ -99,6 +107,7 @@ If a user wants to extend the library and write their own class, they can follow
               pass
 
 3. **Define CLI Command**: Create a CLI command for the new module.
+   
    .. code-block:: python
 
       import click
@@ -117,11 +126,13 @@ If a user wants to extend the library and write their own class, they can follow
               custom_module.execute(param1, param2)
 
 4. **Add Command to CLI Group**: Add the new command to the CLI group.
+   
    .. code-block:: python
 
       cli.add_command(custom_module)
 
 5. **Run the CLI**: Execute the CLI with the new command.
+   
    .. code-block:: sh
 
       python main.py custom-module --param1 value1 --param2 value2
