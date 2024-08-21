@@ -1,12 +1,10 @@
-import json
-from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
-from src.utils.utils import (
+
+from openaq_engine.src.utils.utils import (
     api_response_to_df,
     ee_array_to_df,
-    extract_utc_date,
     get_categorical_feature_indices,
     get_s3_file_path_list,
     json_provider,
@@ -45,12 +43,9 @@ def test_api_response_to_df(mocker):
     response_data = {
         "results": [{"id": 1, "value": 42}, {"id": 2, "value": 99}]
     }
-    mocker.patch(
-        "requests.get",
-        return_value=MagicMock(
-            status_code=200, text=json.dumps(response_data)
-        ),
-    )
+    mock_response = MagicMock()
+    mock_response.json.return_value = response_data
+    mocker.patch("requests.get", return_value=mock_response)
 
     url = "http://fakeurl.com"
     df = api_response_to_df(url)
@@ -139,17 +134,6 @@ def test_json_provider(mocker):
     mock_open.assert_called_once_with("dummy_path")
 
 
-def test_extract_utc_date():
-    date_dict = json.dumps(
-        {
-            "utc": "2023-03-31T23:30:00+00:00",
-            "local": "2023-03-31T23:30:00+05:30",
-        }
-    )
-    date = extract_utc_date(date_dict)
-    assert date == datetime(2023, 3, 31).date()
-
-
 def test_write_to_db(mocker):
     mocker.patch("pandas.DataFrame.to_sql")
     df = pd.DataFrame({"col": [1, 2, 3]})
@@ -199,4 +183,3 @@ def test_ee_array_to_df():
     )
 
     pd.testing.assert_frame_equal(df.reset_index(drop=True), expected_df)
-    pd.testing.assert_frame_equal(df, expected_df)

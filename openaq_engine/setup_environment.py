@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 """
-Setup Enviroment
+Setup Environment
 
-Tools for connecting to the
-database.
-
+Tools for connecting to the database.
 """
 
 import os
@@ -16,11 +14,12 @@ from sqlalchemy.engine import create_engine
 
 def get_athena_engine():
     """
-    Returns a sql engine
+    Creates and returns a SQLAlchemy engine for connecting to AWS Athena.
 
-    Output
-    ------
-    engine: SQLalchemy engine
+    Returns
+    -------
+    engine : SQLAlchemy Engine
+        A SQLAlchemy engine connected to AWS Athena.
     """
     conn_str = (
         "awsathena+rest://{aws_access_key_id}:{aws_secret_access_key}"
@@ -43,6 +42,29 @@ def get_athena_engine():
 def get_dbengine(
     database=None, host=None, port=None, user=None, password=None
 ):
+    """
+    Creates and returns a SQLAlchemy engine for connecting to a PostgreSQL database.
+
+    Parameters
+    ----------
+    PGDATABASE : str
+        The name of the database to connect to.
+    PGHOST : str
+        The hostname of the database server.
+    PGPORT : int, optional
+        The port number to connect to (default is 5432).
+    PGPASSWORD : str
+        The password for the database user.
+    PGUSER : str
+        The username for the database.
+    DBTYPE : str, optional
+        The type of database, default is "postgresql".
+
+    Returns
+    -------
+    engine : SQLAlchemy Engine
+        A SQLAlchemy engine connected to the specified database.
+    """
     database = database or os.getenv("TEST_PGDATABASE")
     user = user or os.getenv("TEST_PGUSER")
     password = password or os.getenv("TEST_PGPASSWORD")
@@ -56,6 +78,13 @@ def get_dbengine(
 
 @contextmanager
 def connect_to_db(use_test_db=False):
+    """
+    Connects to database
+    Output
+    ------
+    conn: object
+       Database connection.
+    """
     if use_test_db:
         database = os.getenv("TEST_PGDATABASE")
         user = os.getenv("TEST_PGUSER")
@@ -79,8 +108,17 @@ def connect_to_db(use_test_db=False):
 
 def run_query(query):
     """
-    Runs a query on the database and returns
-    the result in a dataframe.
+    Executes a SQL query on the database and returns the result as a pandas DataFrame.
+
+    Parameters
+    ----------
+    query : str
+        The SQL query to execute.
+
+    Returns
+    -------
+    data : pandas DataFrame
+        A DataFrame containing the results of the query.
     """
     with connect_to_db() as conn:
         data = pd.read_sql(query, conn)
@@ -89,9 +127,14 @@ def run_query(query):
 
 def test_database_connect():
     """
-    test database connection
+    Tests the database connection by running a simple query.
+
+    Raises
+    ------
+    AssertionError
+        If the query returns fewer than 1 row.
     """
     with connect_to_db() as conn:
-        query = "select * from raw.codes limit 10"
+        query = "SELECT * FROM raw.codes LIMIT 10"
         data = pd.read_sql_query(query, conn)
         assert len(data) > 1

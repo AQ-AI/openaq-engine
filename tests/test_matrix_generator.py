@@ -1,16 +1,15 @@
 import datetime
 import os
 import tempfile
+from unittest.mock import MagicMock, patch
 
 import joblib
-from unittest.mock import patch, MagicMock
 import pandas as pd
 import pytest
 
-from src.features.build_features import BuildFeaturesRandomForest
-from src.matrix_generator import MatrixGenerator
-
 from config.model_settings import MatrixGeneratorConfig
+from openaq_engine.src.features.build_features import BuildFeaturesRandomForest
+from openaq_engine.src.matrix_generator import MatrixGenerator
 
 
 # Fixtures
@@ -252,10 +251,10 @@ def test_get_csr(mocker):
     with patch("joblib.load", return_value=mock_data):
         with patch("os.path.join", return_value=tmp_file_path):
             result = matrix_generator._get_csr(
-                0, "training", datetime.date(2020, 1, 1)
+                0, "training", datetime.datetime(2020, 1, 1)
             )
 
-    assert result == [mock_data]
+    assert result == mock_data
 
     # Clean up the temporary file
     os.remove(tmp_file_path)

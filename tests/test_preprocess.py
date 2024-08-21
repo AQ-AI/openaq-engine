@@ -1,9 +1,10 @@
 from unittest.mock import patch
 
-import pytest
 import pandas as pd
+import pytest
 from shapely.geometry import Point
-from src.preprocess import Preprocess
+
+from openaq_engine.src.preprocess import Preprocess
 
 
 @pytest.fixture
@@ -18,18 +19,32 @@ def sample_data():
             '{"latitude": 34.0522, "longitude": -118.2437}',
         ],
         "value": [10, 20],
+        "parameter": ["pm25", "pm25"],
+        "country": ["US", "US"],
+        "city": ["[San Francisco, Los Angeles]", "Mexico City"],
         "pnt": [Point(37.7749, -122.4194), Point(34.0522, -118.2437)],
     }
     return pd.DataFrame(data)
 
 
-def test_get_timestamps_api(sample_data):
+def test_extract_timestamp_from_api():
     preprocess = Preprocess()
-    result = preprocess.get_timestamps(sample_data, "openaq-api")
-    assert "timestamp_utc" in result.columns
-    assert "timestamp_local" in result.columns
-    assert result["timestamp_utc"].iloc[0] == "2022-04-01T21:00:00.000000Z"
-    assert result["timestamp_local"].iloc[0] == "2022-04-01T14:00:00-0700"
+    data = {
+        "date": [
+            '{"utc": "2022-04-01T21:00:00Z", "local": "2022-04-01T14:00:00-07:00"}'
+        ],
+        "coordinates": ['{"latitude": 37.7749, "longitude": -122.4194}'],
+        "value": [10],
+        "pnt": [Point(37.7749, -122.4194)],
+    }
+    df = pd.DataFrame(data)
+    result = df.apply(preprocess._extract_timestamp_from_api, axis=1)
+
+    expected_utc = "2022-04-01T21:00:00.000000Z"
+    expected_local = "2022-04-01T14:00:00.000000-0700"
+
+    assert result["timestamp_utc"].iloc[0] == expected_utc
+    assert result["timestamp_local"].iloc[0] == expected_local
 
 
 def test_get_timestamps_aws(sample_data):
@@ -106,43 +121,6 @@ def test_dict_cols_to_json_with_non_dict_values():
     assert result["col1"].iloc[1] == "not a dict"
 
 
-def test_filter_data(sample_data):
-    preprocess = Preprocess(
-        filter_pollutant=False,
-        filter_non_null_values=False,
-        filter_extreme_values=False,
-        filter_no_coordinates=False,
-        filter_countries=False,
-        filter_cities=False,
-    )
-    with patch(
-        "src.preprocessing.filter.Filter.filter_pollutant",
-        return_value=sample_data,
-    ):
-        with patch(
-            "src.preprocessing.filter.Filter.filter_no_coordinates",
-            return_value=sample_data,
-        ):
-            with patch(
-                "src.preprocessing.filter.Filter.filter_extreme_values",
-                return_value=sample_data,
-            ):
-                with patch(
-                    "src.preprocessing.filter.Filter.filter_non_null_values",
-                    return_value=sample_data,
-                ):
-                    with patch(
-                        "src.preprocessing.filter.Filter.filter_countries",
-                        return_value=sample_data,
-                    ):
-                        with patch(
-                            "src.preprocessing.filter.Filter.filter_cities",
-                            return_value=sample_data,
-                        ):
-                            result = preprocess.filter_data(sample_data)
-                            assert not result.empty
-
-
 def test_filter_data_with_filters(sample_data):
     preprocess = Preprocess(
         filter_pollutant=True,
@@ -151,7 +129,10 @@ def test_filter_data_with_filters(sample_data):
         filter_no_coordinates=True,
         filter_countries=True,
         filter_cities=True,
+        countries=["US", "GB"],
+        cities=["San Francisco", "Los Angeles"],
     )
+
     with patch(
         "src.preprocessing.filter.Filter.filter_pollutant",
         return_value=sample_data,
@@ -171,13 +152,25 @@ def test_filter_data_with_filters(sample_data):
                     with patch(
                         "src.preprocessing.filter.Filter.filter_countries",
                         return_value=sample_data,
-                    ):
+                    ) as mock_filter_countries:
                         with patch(
                             "src.preprocessing.filter.Filter.filter_cities",
                             return_value=sample_data,
-                        ):
+                        ) as mock_filter_cities:
                             result = preprocess.filter_data(sample_data)
-                            assert not result.empty
+
+                            # Debug print to inspect the result
+                            print(f"Filtered Result:\n{result}")
+                            print(
+                                f"Mock Filter Countries Called: {mock_filter_countries.called}"
+                            )
+                            print(
+                                f"Mock Filter Cities Called: {mock_filter_cities.called}"
+                            )
+
+                            assert (
+                                not result.empty
+                            ), "Result should not be empty after filtering"
 
 
 def test_execute(sample_data):

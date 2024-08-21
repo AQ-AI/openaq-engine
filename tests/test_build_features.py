@@ -3,12 +3,11 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
-from src.features.build_features import (
+from config.model_settings import BuildFeaturesConfig
+from openaq_engine.src.features.build_features import (
     BuildFeaturesRandomForest,
     get_feature_builder,
 )
-
-from config.model_settings import BuildFeaturesConfig
 
 
 @pytest.fixture

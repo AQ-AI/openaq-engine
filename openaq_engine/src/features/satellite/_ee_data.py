@@ -20,6 +20,27 @@ from config.model_settings import EEConfig
 
 
 class EEFeatures:
+    """
+    Class to handle the extraction and processing of Earth Engine (EE) features.
+
+    Parameters
+    ----------
+    date_col : int
+        The column index or name representing the date.
+    table_name : int
+        The name of the table from which data is being extracted.
+    all_satellites : List[Tuple[str, List[str], int, int]]
+        A list of tuples containing satellite collection names, image bands, period, and resolution.
+    bucket_name : str
+        The name of the Google Cloud Storage bucket where images will be saved.
+    path_to_private_key : str
+        The path to the private key for Google service account authentication.
+    service_account : str
+        The email of the Google service account.
+    lookback_n : int
+        The number of lookback periods for temporal data retrieval.
+    """
+
     def __init__(
         self,
         date_col: str,
@@ -36,6 +57,19 @@ class EEFeatures:
 
     @classmethod
     def from_dataclass_config(cls, config: EEConfig) -> "EEFeatures":
+        """
+        Create an instance of EEFeatures from a configuration dataclass.
+
+        Parameters
+        ----------
+        config : EEConfig
+            The configuration dataclass.
+
+        Returns
+        -------
+        EEFeatures
+            An instance of EEFeatures.
+        """
         return cls(
             date_col=config.DATE_COL,
             bucket_name=config.BUCKET_NAME,
@@ -45,6 +79,19 @@ class EEFeatures:
         )
 
     def execute(self, satellite_config, x, y, table_name, save_images):
+        """
+        Create an instance of EEFeatures from a configuration dataclass.
+
+        Parameters
+        ----------
+        config : EEConfig
+            The configuration dataclass.
+
+        Returns
+        -------
+        EEFeatures
+            An instance of EEFeatures.
+        """
         credentials = ee.ServiceAccountCredentials(
             self.service_account,
             self.path_to_private_key,
@@ -145,6 +192,23 @@ class EEFeatures:
         resolution,
         save_images,
     ):
+        """
+        Retrieve satellite image collection and optionally save it to Google Cloud Storage.
+
+        Parameters
+        ----------
+        collection : str
+            The name of the satellite image collection.
+        image_bands : List[str]
+            The list of bands to extract from the satellite images.
+        save_images : bool
+            Whether to save the satellite images to Google Cloud Storage.
+
+        Returns
+        -------
+        ee.ImageCollection
+            The Earth Engine image collection.
+        """
         image_collection = self.execute_for_collection(
             satellite, bands, save_images
         )
@@ -281,7 +345,33 @@ class EEFeatures:
         end_datetime,
         resolution,
     ):
-        """This function builds an algorithm to compute the representative satellite value for a sensor location."""
+        """
+        Get satellite data for a specific location and time.
+
+        Parameters
+        ----------
+        image_collection : ee.ImageCollection
+            The Earth Engine image collection.
+        image_bands : List[str]
+            The list of bands to extract from the satellite images.
+        location_id : str
+            The ID of the location.
+        date_utc : str
+            The UTC date and time of the observation.
+        lon : float
+            The longitude of the location.
+        lat : float
+            The latitude of the location.
+        period : int
+            The time period to look back for satellite data.
+        resolution : int
+            The spatial resolution of the satellite images.
+
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrame containing the satellite data for the location.
+        """
         try:
             ee_df = self.get_satellite_data_within_hour(
                 image_collection,
@@ -316,8 +406,29 @@ class EEFeatures:
         resolution,
     ):
         """
-        This function takes in an image collection and a set of spatial and temporal parameters
-        to calculate the satellite value for a sensor location within the hour of the sensor reading.
+        Get satellite data for a location within the hour of the sensor reading.
+
+        Parameters
+        ----------
+        image_collection : ee.ImageCollection
+            The Earth Engine image collection.
+        image_bands : List[str]
+            The list of bands to extract from the satellite images.
+        location_id : str
+            The ID of the location.
+        lon : float
+            The longitude of the location.
+        lat : float
+            The latitude of the location.
+        resolution : int
+            The spatial resolution of the satellite images.
+        date_utc : str
+            The UTC date and time of the observation.
+
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrame containing the satellite data for the location within the hour.
         """
         centroid_point = ee.Geometry.Point(lon, lat)
 
@@ -374,11 +485,13 @@ class EEFeatures:
             try:
                 return pd.Series(
                     [
-                        np.nan
-                        if x.dropna(subset=[c]).empty
-                        else np.average(
-                            x.dropna(subset=[c])[c],
-                            weights=x.dropna(subset=[c])[w],
+                        (
+                            np.nan
+                            if x.dropna(subset=[c]).empty
+                            else np.average(
+                                x.dropna(subset=[c])[c],
+                                weights=x.dropna(subset=[c])[w],
+                            )
                         )
                         for c in cols
                     ],
@@ -387,10 +500,12 @@ class EEFeatures:
             except ZeroDivisionError:
                 pd.Series(
                     [
-                        np.nan
-                        if x.dropna(subset=[c]).empty
-                        else np.average(
-                            x.dropna(subset=[c])[c],
+                        (
+                            np.nan
+                            if x.dropna(subset=[c]).empty
+                            else np.average(
+                                x.dropna(subset=[c])[c],
+                            )
                         )
                         for c in cols
                     ],

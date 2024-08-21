@@ -7,8 +7,8 @@ import mlflow
 import pandas as pd
 import scipy.sparse as sp
 from joblib import dump, load
-from sklearn.ensemble import RandomForestRegressor
 from setup_environment import get_dbengine
+from sklearn.ensemble import RandomForestRegressor
 from src.features.build_features import BuildFeaturesRandomForest
 from src.utils.utils import get_data, write_to_db
 
@@ -37,6 +37,14 @@ class MatrixGenerator:
         )
 
     def execute(self, engine, x, y, table_name):
+        """
+        Execute a query to get unique train/validation sets for a specific location.
+
+        :param place: The location for which the train/validation sets are to be retrieved.
+        :type place: str
+        :return: A list of unique train/validation sets.
+        :rtype: list
+        """
         logging.info(f"Generating features for location ({x}, {y})")
         df = self.matrix_generator(engine, x, y, table_name)
         return df
@@ -253,6 +261,20 @@ class MatrixGenerator:
         return cohort_df
 
     def _add_csr(self, df, train_validation_set, cohort_type, run_date):
+        """
+        Add a CSR (Compressed Sparse Row) matrix for the given dataframe.
+
+        :param df: The dataframe to be converted to CSR.
+        :type df: Any
+        :param train_validation_set: The ID of the train/validation set.
+        :type train_validation_set: str
+        :param cohort_type: The type of cohort (e.g., 'training', 'validation').
+        :type cohort_type: str
+        :param run_date: The date of the run, used for file naming.
+        :type run_date: Any
+        :return: The CSR matrix.
+        :rtype: sp.csr_matrix
+        """
         csr_list = self._get_csr(train_validation_set, cohort_type, run_date)
         csr = self._concat_csr(df, csr_list)
         filename = "_".join(
@@ -290,11 +312,29 @@ class MatrixGenerator:
         ]
 
     def _concat_csr(self, X, csr_list):
+        """
+        Concatenate multiple CSR matrices.
+
+        :param X: The dataframe to be converted to CSR.
+        :type X: Any
+        :param csr_list: A list of CSR matrices to be concatenated.
+        :type csr_list: list
+        :return: The concatenated CSR matrix.
+        :rtype: sp.csr_matrix
+        """
         structured_csr = sp.csr_matrix(X.drop(self.id_column_list, axis=1))
         csr_list += [structured_csr]
         return sp.hstack(csr_list)
 
     def _load_all_labels(self, cohort_df):
+        """
+        Load all labels for the given cohort dataframe.
+
+        :param cohort_df: The dataframe containing cohort information.
+        :type cohort_df: Any
+        :return: A dataframe containing the labels.
+        :rtype: Any
+        """
         labels_df = cohort_df[
             [
                 "locationId",
@@ -309,6 +349,18 @@ class MatrixGenerator:
     def _write_labels_as_csv(
         self, y, run_date, training_validation_id, cohort_type
     ):
+        """
+        Write labels to a CSV file and log the artifact with MLflow.
+
+        :param y: The dataframe containing labels.
+        :type y: Any
+        :param run_date: The date of the run, used for file naming.
+        :type run_date: Any
+        :param training_validation_id: The ID of the train/validation set.
+        :type training_validation_id: str
+        :param cohort_type: The type of cohort (e.g., 'training', 'validation').
+        :type cohort_type: str
+        """
         filename = "_".join(
             [
                 "labels",

@@ -6,9 +6,27 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Check out the repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.11'  # Align with the project
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          poetry --version
+
+      - name: Install dependencies
+        run: |
+          poetry install
+
       - name: Build HTML
-        uses: ammaraskar/sphinx-action@master
+        run: |
+          poetry run sphinx-build -b html docs/source docs/build/html
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:

@@ -1,11 +1,6 @@
-.. openaq-engine documentation master file, created by
-   sphinx-quickstart on Wed Dec 14 22:12:15 2022.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-
 Welcome to openaq-engine's documentation!
 =========================================================
+
 
 The documentation is build up in the following parts: first, there is the
 quickstart tutorial which aims at getting you started with openaq-engine as quickly as
@@ -16,19 +11,13 @@ library or if you never used openaq-engine before.
 In case this does not suffice, we also have an API reference, the
 :ref:`modindex`. 
 
-If you want to develop for openaq-engine and contribute, check out our guidelines in: https://github.com/AQ-AI/openaq-engine/blob/master/.github/CONTRIBUTING.md
+If you want to develop for openaq-engine and contribute, check out our guidelines in: :ref:`contribution`
 
-Our license is in: https://github.com/AQ-AI/openaq-engine/blob/master/license
+Our license is in: :ref:`license`
 
-Our code of conduct is in: https://github.com/AQ-AI/openaq-engine/blob/master/.github/CODE_OF_CONDUCT.md
+Our code of conduct is in: :ref:`code_of_conduct`
 
-Our community statement is in: https://github.com/AQ-AI/openaq-engine/blob/master/community-statement.md
-
-
-If at any point the documentation does not suffice, you can always get help by tweeting at tweeting https://twitter.com/airqualityai (@airqualityai)
-
-Installation
-------------
+Our community statement is in: :ref:`community-statement`
 
 Quick answer:
 ::
@@ -38,22 +27,50 @@ Quick answer:
 
 Remember to define your psql environment variables and export them using:
 ::
-	$ source .env 
-
+	
+   $ source .env 
 
 Long answer:
 We keep more detailed installation instructions (including dependencies)
 up-to-date below
 
+If at any point the documentation does not suffice, you can always get help by mailing at info@aqai.xyz
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
-   
+
+   open_source/license
+   open_source/contribution
+   open_source/code_of_conduct
+   open_source/community_statement
+   install/aws_prerequisites
    install/aws_setup
+   install/terraform_setup_ec2
    install/postgres_setup
    install/docker_setup
+   install/environment_variables  
    install/local_env_setup
+   install/graphana_server_setup
+   install/architecture
+   install/database_schema
+   install/mlflow_setup
+   install/modules
+   :ref:`modindex`
 
+
+------------
+
+
+we also have an API reference, the :ref:`modindex`. 
+
+
+.. autosummary::
+   :toctree: _autosummary
+   :template: custom-module-template.rst
+   :recursive:
+
+   openaq_engine
 
 
 

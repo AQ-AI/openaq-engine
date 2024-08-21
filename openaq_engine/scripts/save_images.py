@@ -8,8 +8,8 @@ import pandas as pd
 import requests
 
 # Initialize the Earth Engine module.
-path_to_private_key = "unicef-367711-a4ac0921e063.json"
-service_account = "earth-engine@unicef-367711.iam.gserviceaccount.com"
+path_to_private_key = ""
+service_account = ""
 credentials = ee.ServiceAccountCredentials(
     service_account, path_to_private_key
 )
@@ -224,9 +224,9 @@ def fetch_pixel_values_from_dict(
 
                         if value is not None:  # Check if value is not None
                             closest_pixel_values[band] = value
-                            closest_pixel_values[
-                                f"{band}_time_diff"
-                            ] = time_diff_hours
+                            closest_pixel_values[f"{band}_time_diff"] = (
+                                time_diff_hours
+                            )
 
     return closest_pixel_values
 
