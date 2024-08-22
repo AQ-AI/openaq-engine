@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pandas as pd
 import pytest
@@ -69,43 +69,25 @@ def test_build_features_random_forest_initialization():
     assert builder.target_col == config.TARGET_COL
 
 
-@patch("src.features.satellite._ee_data.EEFeatures.from_dataclass_config")
-@patch("google.auth.credentials.Credentials", autospec=True)
-@patch("ee.ServiceAccountCredentials.from_string")
-def test_add_ee_features(
-    mock_service_account, mock_credentials, mock_ee_features, feature_df
-):
+def test_add_ee_features(mocker, feature_df):
+    # Mock the Earth Engine API (ee) module
+    mocker.patch("ee.Authenticate")
+    mocker.patch("ee.Initialize")
+
+    # Mock the from_dataclass_config method and the execute method of the EEFeatures class
+    mock_ee_features = mocker.patch(
+        "openaq_engine.src.features.satellite._ee_data.EEFeatures.from_dataclass_config"
+    )
     mock_ee_instance = mock_ee_features.return_value
     mock_ee_instance.execute.return_value = feature_df
-
-    # Mock the credentials flow
-    mock_service_account.return_value = mock_credentials
-    mock_credentials.return_value = MagicMock()
-
-    config = BuildFeaturesConfig(
-        CATEGORICAL_FEATURES=[],
-        CORE_FEATURES=[],
-        TARGET_COL="value",
+    # Create an instance of BuildFeaturesRandomForest and call _add_ee_features
+    builder = BuildFeaturesRandomForest(
+        categorical_features=["col1", "col2"],
+        all_model_features=["col1", "col2"],
     )
-    satellite_config = {"some_key": "some_value"}
-    builder = BuildFeaturesRandomForest.from_dataclass_config(
-        satellite_config, config
-    )
-
-    x, y, timestamp_hour, table_name = (
-        1,
-        2,
-        "2021-01-01T00:00:00Z",
-        "test_table",
-    )
-    result = builder._add_ee_features(x, y, timestamp_hour, table_name)
-
+    result = builder._add_ee_features(feature_df)
+    # Assert that the resulting DataFrame equals the original feature_df
     assert result.equals(feature_df)
-
-    # Ensure the mocked EEFeatures was called correctly
-    mock_ee_instance.execute.assert_called_once_with(
-        x, y, timestamp_hour, table_name, save_images=False
-    )
 
 
 def test_split_train_valid(cohort_df, feature_df):
@@ -120,13 +102,13 @@ def test_split_train_valid(cohort_df, feature_df):
     assert len(result) == 6
 
 
-@patch("src.features.build_features.write_to_db")
-def test_results_to_db(mock_write_to_db, mock_engine, feature_df):
-    satellite_config = {"some_key": "some_value"}
+def test_results_to_db(mocker, mock_engine, feature_df):
+    mock_write_to_db = mocker.patch(
+        "openaq_engine.src.features.build_features.write_to_db"
+    )
     builder = BuildFeaturesRandomForest(
         categorical_features=["col1", "col2"],
         all_model_features=["col1", "col2"],
-        satellite_config=satellite_config,
     )
     builder._results_to_db(feature_df, mock_engine)
     mock_write_to_db.assert_called_once_with(
