@@ -150,7 +150,7 @@ class BuildFeaturesConfig:
             "mobile",
         ]
     )
-    SATELLITE_FEATURES = []
+    SATELLITE_FEATURES: List[str] = field(default_factory=list)
 
     @property
     def ALL_MODEL_FEATURES(self) -> List[str]:
