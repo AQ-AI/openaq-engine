@@ -70,9 +70,17 @@ def test_build_features_random_forest_initialization():
 
 
 @patch("src.features.satellite._ee_data.EEFeatures.from_dataclass_config")
-def test_add_ee_features(mock_ee_features, feature_df):
+@patch("google.auth.credentials.Credentials", autospec=True)
+@patch("ee.ServiceAccountCredentials.from_string")
+def test_add_ee_features(
+    mock_service_account, mock_credentials, mock_ee_features, feature_df
+):
     mock_ee_instance = mock_ee_features.return_value
     mock_ee_instance.execute.return_value = feature_df
+
+    # Mock the credentials flow
+    mock_service_account.return_value = mock_credentials
+    mock_credentials.return_value = MagicMock()
 
     config = BuildFeaturesConfig(
         CATEGORICAL_FEATURES=[],
