@@ -1,5 +1,6 @@
 import json
 import time
+from datetime import datetime
 from typing import Any, List
 
 import boto3
@@ -44,19 +45,40 @@ def write_csv(df: pd.DataFrame, path: str, **kwargs: Any) -> None:
     )
 
 
-def query_results_from_api(headers, url):
-    response = requests.get(url, headers=headers)
+def query_results_from_api(params, query):
+    url = query
+    headers = params
+    response = requests.get(url, headers=headers, timeout=None)
     return response
 
 
 def api_response_to_df(url):
+    """
+    Fetch data from the provided URL and return a DataFrame and the full response.
+    Implements retry with exponential backoff on rate limiting.
+    """
     headers = {"accept": "application/json"}
-    response = query_results_from_api(headers, url)
-    try:
-        # Directly use response.json() without json.loads
-        return pd.DataFrame(response.json()["results"])
-    except KeyError:
-        pass
+    max_retries = 5
+    retry_count = 0
+    base_wait_time = 10  # Base wait time in seconds
+
+    while retry_count < max_retries:
+        response = query_results_from_api(headers, url)
+
+        if response.status_code == 200:
+            return pd.DataFrame(json.loads(response.text)["results"])
+        elif response.status_code == 429:
+            wait_time = base_wait_time * (2**retry_count)
+            print(f"Rate limit exceeded. Retrying in {wait_time} seconds...")
+            time.sleep(wait_time)
+            retry_count += 1
+        else:
+            print(
+                f"API Error: {response.json().get('detail', 'No details provided.')}"
+            )
+            return pd.DataFrame()
+    print("Max retries exceeded. Unable to fetch data.")
+    return pd.DataFrame()
 
 
 def query_results_from_aws(params, query, wait=True):
@@ -71,7 +93,6 @@ def query_results_from_aws(params, query, wait=True):
             "OutputLocation": f"s3://{params['bucket']}/{params['path']}/"
         },
     )
-
     if not wait:
         return response_query_execution_id["QueryExecutionId"]
     else:
@@ -106,6 +127,7 @@ def query_results_from_aws(params, query, wait=True):
                         "QueryExecutionId"
                     ]
                 )
+                print("response_query_result", response_query_result)
                 return response_query_result
 
         else:
@@ -175,6 +197,23 @@ def get_data(query, use_test_db=False):
     return df
 
 
+def extract_utc_date(date_dict):
+    """
+    Extracts the UTC date from the date dictionary and converts it to a datetime.date object.
+
+    Parameters:
+    date_dict (dict): The dictionary containing date information with 'utc' and 'local' keys.
+
+    Returns:
+    datetime.date: The date part of the 'utc' datetime.
+    """
+    utc_datetime_str = json.loads(date_dict)["utc"]
+    utc_datetime = datetime.fromisoformat(
+        utc_datetime_str.replace("Z", "+00:00")
+    )
+    return utc_datetime.date()
+
+
 def write_to_db(
     df,
     engine,
@@ -184,8 +223,6 @@ def write_to_db(
     index=False,
     **kwargs,
 ):
-    #     with engine.begin() as connection:
-    #         connection.execute(text("""SET ROLE "pakistan-ihhn-role" """))
     df.to_sql(
         name=table_name,
         schema=schema_name,
@@ -198,19 +235,12 @@ def write_to_db(
 
 def ee_array_to_df(arr, list_of_bands):
     """Transforms client-side ee.Image.getRegion array to pandas.DataFrame."""
-    df = pd.DataFrame(arr)
-
-    # Rearrange the header.
-    headers = df.iloc[0].tolist()  # Ensure headers are in list format
-    df = pd.DataFrame(df.values[1:], columns=headers)
+    df = pd.DataFrame(arr[1:], columns=arr[0])
 
     # Remove rows without data inside.
     df = df[["longitude", "latitude", "time", *list_of_bands]].dropna()
 
     # Convert the data to numeric values.
-    df["longitude"] = pd.to_numeric(df["longitude"], errors="coerce")
-    df["latitude"] = pd.to_numeric(df["latitude"], errors="coerce")
-    df["time"] = pd.to_numeric(df["time"], errors="coerce")
     for band in list_of_bands:
         df[band] = pd.to_numeric(df[band], errors="coerce")
 
@@ -220,4 +250,4 @@ def ee_array_to_df(arr, list_of_bands):
     # Keep the columns of interest.
     df = df[["longitude", "latitude", "time", "datetime", *list_of_bands]]
 
-    return df.reset_index(drop=True)
+    return df
