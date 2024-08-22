@@ -69,23 +69,14 @@ def test_build_features_random_forest_initialization():
     assert builder.target_col == config.TARGET_COL
 
 
-def test_add_ee_features(mocker, feature_df):
-    # Mock the Earth Engine API (ee) module
-    mocker.patch("ee.Authenticate")
-    mocker.patch("ee.Initialize")
-
-    # Mock the from_dataclass_config method and the execute method of the EEFeatures class
-    mock_ee_features = mocker.patch(
-        "openaq_engine.src.features.satellite._ee_data.EEFeatures.from_dataclass_config"
-    )
-    mock_ee_instance = mock_ee_features.return_value
-    mock_ee_instance.execute.return_value = feature_df
+def test_add_ee_features(feature_df):
     # Create an instance of BuildFeaturesRandomForest and call _add_ee_features
     builder = BuildFeaturesRandomForest(
         categorical_features=["col1", "col2"],
         all_model_features=["col1", "col2"],
     )
     result = builder._add_ee_features(feature_df)
+
     # Assert that the resulting DataFrame equals the original feature_df
     assert result.equals(feature_df)
 
