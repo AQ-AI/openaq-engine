@@ -46,7 +46,7 @@ def get_dbengine(
     user = user or os.getenv("TEST_PGUSER")
     password = password or os.getenv("TEST_PGPASSWORD")
     host = host or os.getenv("TEST_PGHOST")
-    port = port or os.getenv("PGPORT")
+    port = port or os.getenv("TEST_PGPORT")
 
     url = f"postgresql://{user}:{password}@{host}:{port}/{database}"
     engine = create_engine(url)
@@ -54,13 +54,13 @@ def get_dbengine(
 
 
 @contextmanager
-def connect_to_db(use_test_db=False):
+def connect_to_db(use_test_db=True):
     if use_test_db:
         database = os.getenv("TEST_PGDATABASE")
         user = os.getenv("TEST_PGUSER")
         password = os.getenv("TEST_PGPASSWORD")
         host = os.getenv("TEST_PGHOST")
-        port = os.getenv("PGPORT")
+        port = os.getenv("TEST_PGPORT")
     else:
         database = os.getenv("PGDATABASE")
         user = os.getenv("PGUSER")
