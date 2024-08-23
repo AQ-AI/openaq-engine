@@ -1,15 +1,21 @@
-import psycopg2
 import os
 
+import psycopg2
 from sqlalchemy import create_engine, text
 
 
 def setup_test_database():
-    # Retrieve superuser connection details from environment variables
-    superuser = os.getenv("PGUSER")
-    superuser_password = os.getenv("PGPASSWORD")
-    pg_host = os.getenv("PGHOST", "localhost")
-    pg_port = os.getenv("PGPORT", "5432")
+    # Retrieve superuser connection details from test-specific environment variables
+    superuser = os.getenv(
+        "PGUSER",
+    )
+    superuser_password = os.getenv(
+        "PGPASSWORD",
+    )
+    pg_host = os.getenv("TEST_PGHOST", "localhost")
+    pg_port = os.getenv("TEST_PGPORT", "5432")
+    test_db_name = os.getenv("TEST_PGDATABASE", "test_db")
+    test_user = os.getenv("TEST_PGUSER", "test_user")
 
     # Connect to the default postgres database to create the test_db
     try:
@@ -22,14 +28,14 @@ def setup_test_database():
         )
         con.autocommit = True
         cur = con.cursor()
-        cur.execute("CREATE DATABASE test_db")
+        cur.execute(f"CREATE DATABASE {test_db_name}")
         cur.close()
         con.close()
     except psycopg2.errors.DuplicateDatabase:
-        print("Database 'test_db' already exists. Continuing...")
+        print(f"Database '{test_db_name}' already exists. Continuing...")
 
     # Connect to the test_db as superuser
-    test_db_url = f"postgresql://{superuser}:{superuser_password}@{pg_host}:{pg_port}/test_db"
+    test_db_url = f"postgresql://{superuser}:{superuser_password}@{pg_host}:{pg_port}/{test_db_name}"
     test_engine = create_engine(test_db_url, isolation_level="AUTOCOMMIT")
 
     with test_engine.connect() as connection:
@@ -78,17 +84,29 @@ def setup_test_database():
         connection.execute(
             text(
                 """
-            CREATE TABLE IF NOT EXISTS cohorts_mumbai (
-                id SERIAL PRIMARY KEY,
-                train_validation_set INT,
-                cohort VARCHAR(50),
-                cohort_type VARCHAR(50),
-                x FLOAT,
-                y FLOAT,
-                value FLOAT,
-                timestamp_utc TIMESTAMP
-            )
-        """
+                CREATE TABLE IF NOT EXISTS cohorts_mumbai (
+                    id SERIAL PRIMARY KEY,
+                    train_validation_set INT,
+                    cohort VARCHAR(50),
+                    cohort_type VARCHAR(50),
+                    x FLOAT,
+                    y FLOAT,
+                    value INT,
+                    timestamp_utc TIMESTAMP,
+                    date JSON,
+                    locationId INT8,
+                    location TEXT,
+                    parameter TEXT,
+                    unit TEXT,
+                    coordinates JSON,
+                    country TEXT,
+                    city TEXT,
+                    isMobile BOOL,
+                    isAnalysis BOOL,
+                    entity TEXT,
+                    sensorType TEXT
+                )
+            """
             )
         )
         print("Table cohorts_mumbai created successfully.")
@@ -113,12 +131,14 @@ def setup_test_database():
         connection.execute(
             text(
                 """
-            INSERT INTO cohorts_mumbai (train_validation_set, cohort, cohort_type, x, y, value, timestamp_utc) VALUES
-            (0, '0_2023-04-01T21:00:00_2022-04-01T21:00:00', 'training', -70.214134, 44.089355, 10, '2022-04-01 21:00:00.000000Z'),
-            (0, '0_2023-04-01T21:00:00_2022-04-01T21:00:00', 'training', -70.214134, 44.089355, 20, '2022-05-01 21:00:00.000000Z'),
-            (1, '1_2023-04-01T21:00:00_2022-06-01T21:00:00', 'validation', -70.214134, 44.089355, 30, '2022-06-01 21:00:00.000000Z'),
-            (1, '1_2023-04-01T21:00:00_2022-06-01T21:00:00', 'validation', -70.214134, 44.089355, 40, '2022-07-01 21:00:00.000000Z')
-        """
+                INSERT INTO cohorts_mumbai (
+                    train_validation_set, cohort, cohort_type, x, y, value, timestamp_utc, date,
+                    locationId, location, parameter, unit, coordinates, country, city, isMobile, isAnalysis, entity, sensorType
+                ) VALUES
+                (0, '0_2023-04-01T21:00:00_2022-04-01T21:00:00', 'training', -70.214134, 44.089355, 10,
+                    '2022-04-01 21:00:00.000000Z', '{"utc": "2022-04-01T21:00:00.000Z", "local": "2022-04-01T17:00:00-04:00"}',
+                    1, 'Location1', 'pm25', 'µg/m³', '{"latitude": 44.089355, "longitude": -70.214134}', 'IN', 'City1', 'False', 'False', 'government', 'reference grade'
+                )            """
             )
         )
         print("Data inserted into cohorts_mumbai table successfully.")
@@ -158,9 +178,11 @@ def setup_test_database():
 
         # Grant all privileges on the test_db to test_user
         connection.execute(
-            text("GRANT ALL PRIVILEGES ON DATABASE test_db TO test_user")
+            text(
+                f"GRANT ALL PRIVILEGES ON DATABASE {test_db_name} TO {test_user}"
+            )
         )
-        print("Granted all privileges on test_db to test_user.")
+        print(f"Granted all privileges on {test_db_name} to {test_user}.")
 
         # Grant all privileges on all tables in test_db to test_user
         connection.execute(
@@ -168,7 +190,9 @@ def setup_test_database():
                 "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO test_user"
             )
         )
-        print("Granted all privileges on all tables in test_db to test_user.")
+        print(
+            f"Granted all privileges on all tables in {test_db_name} to {test_user}."
+        )
 
         # Verify that the cohorts_mumbai table exists and is populated
         result = connection.execute(

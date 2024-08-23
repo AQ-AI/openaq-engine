@@ -6,13 +6,13 @@ from unittest.mock import MagicMock, patch
 import joblib
 import pandas as pd
 import pytest
+from sqlalchemy import create_engine, text
 
 from config.model_settings import MatrixGeneratorConfig
 from openaq_engine.src.features.build_features import BuildFeaturesRandomForest
 from openaq_engine.src.matrix_generator import MatrixGenerator
 
 
-# Fixtures
 @pytest.fixture
 def config():
     # Create a custom configuration with a single satellite for testing
@@ -71,27 +71,23 @@ def cohort_df():
 def test_get_feature_generator():
     config = MatrixGeneratorConfig()
     matrix_generator = MatrixGenerator(
+        satellite_config=config.SATELLITE_CONFIG,
         algorithm="RFR",
         id_column_list=config.ID_COLUMN_LIST,
-        satellite_config=config.SATELLITE_CONFIG,
     )
-    feature_generator = matrix_generator._get_feature_generator(
-        matrix_generator.satellite_config
-    )
+    feature_generator = matrix_generator._get_feature_generator()
     assert isinstance(feature_generator, BuildFeaturesRandomForest)
 
 
 def test_get_feature_generator_invalid():
     config = MatrixGeneratorConfig()
     matrix_generator = MatrixGenerator(
+        satellite_config=config.SATELLITE_CONFIG,
         algorithm="INVALID",  # Set an invalid algorithm here
         id_column_list=config.ID_COLUMN_LIST,
-        satellite_config=config.SATELLITE_CONFIG,
     )
     with pytest.raises(ValueError):
-        matrix_generator._get_feature_generator(
-            matrix_generator.satellite_config
-        )  # No arguments needed
+        matrix_generator._get_feature_generator()
 
 
 def test_execute(matrix_generator, mock_engine):
@@ -149,13 +145,6 @@ def test_combine_tv_sets(matrix_generator):
 
 
 def test_extract_time_ranges(matrix_generator):
-    # Ensure the correct environment variables are used
-    os.environ["TEST_PGDATABASE"] = "test_db"
-    os.environ["TEST_PGUSER"] = "test_user"
-    os.environ["TEST_PGPASSWORD"] = "test_password"
-    os.environ["TEST_PGHOST"] = "localhost"
-    os.environ["PGPORT"] = "5432"
-
     data = [
         pd.DataFrame(
             {
@@ -190,7 +179,33 @@ def test_extract_time_ranges(matrix_generator):
     assert time_ranges is not None
 
 
+def get_test_engine():
+    db_url = f"postgresql://{os.getenv('TEST_PGUSER')}:{os.getenv('TEST_PGPASSWORD')}@{os.getenv('TEST_PGHOST')}:{os.getenv('TEST_PGPORT')}/{os.getenv('TEST_PGDATABASE')}"
+    print(f"Connecting to: {db_url}")
+    return create_engine(db_url)
+
+
+def check_table_exists(engine, table_name):
+    with engine.connect() as connection:
+        result = connection.execute(
+            text(
+                f"SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = '{table_name}');"
+            )
+        )
+        exists = result.scalar()
+        print(f"Table '{table_name}' exists: {exists}")
+        return exists
+
+
 def test_query_satellite_data(matrix_generator):
+    # Debug: Check database connection and table existence
+    engine = get_test_engine()
+    table_exists = check_table_exists(engine, "cohorts_mumbai")
+    assert (
+        table_exists
+    ), "Table 'cohorts_mumbai' does not exist in the test database."
+
+    # Mocking the get_data function to return predefined DataFrame for testing
     cohort_data = pd.DataFrame(
         {
             "x": [-70.214134],
@@ -224,7 +239,11 @@ def test_query_satellite_data(matrix_generator):
             cohort_table="cohorts_mumbai",
         )
 
-        assert not result_df.empty
+        # Debug: Check the contents of result_df
+        print("Result DataFrame:")
+        print(result_df)
+
+        assert not result_df.empty, "Result DataFrame is empty."
         assert "value" in result_df.columns
         assert "optical_depth_047" in result_df.columns
         assert "sr_b2" in result_df.columns
@@ -239,7 +258,9 @@ def test_get_csr(mocker):
         id_column_list=config.ID_COLUMN_LIST,
         satellite_config=config.SATELLITE_CONFIG,
     )
-    mock_data = {"mock": "data"}
+    mock_data = [
+        {"mock": "data"}
+    ]  # Adjusted to match the expected result format
 
     # Create a temporary file to store the joblib data
     with tempfile.NamedTemporaryFile(
@@ -255,6 +276,5 @@ def test_get_csr(mocker):
             )
 
     assert result == mock_data
-
     # Clean up the temporary file
     os.remove(tmp_file_path)

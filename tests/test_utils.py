@@ -1,3 +1,4 @@
+import json
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
@@ -44,12 +45,19 @@ def test_api_response_to_df(mocker):
         "results": [{"id": 1, "value": 42}, {"id": 2, "value": 99}]
     }
     mock_response = MagicMock()
-    mock_response.json.return_value = response_data
-    mocker.patch("requests.get", return_value=mock_response)
+    mock_response.status_code = 200
+    mock_response.text = json.dumps(response_data)
+
+    # Patch query_results_from_api to return the mock response
+    mocker.patch(
+        "openaq_engine.src.utils.utils.query_results_from_api",
+        return_value=mock_response,
+    )
 
     url = "http://fakeurl.com"
     df = api_response_to_df(url)
     expected_df = pd.DataFrame(response_data["results"])
+
     assert df.equals(expected_df)
 
 
