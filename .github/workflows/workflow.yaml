@@ -79,10 +79,10 @@ jobs:
           DB_NAME_OPENAQ: test_db
           S3_BUCKET_OPENAQ: openaq-pm25-historic
           S3_OUTPUT_OPENAQ: pm25-month
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USER: test_user
-          DB_PASSWORD: test_password
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_password
           TEST_PGDATABASE: test_db
           TEST_PGUSER: test_user
           TEST_PGPASSWORD: test_password
