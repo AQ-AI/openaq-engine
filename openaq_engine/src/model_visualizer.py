@@ -5,6 +5,7 @@ import os
 from typing import List, Optional
 
 import matplotlib.pyplot as plt
+from sqlalchemy import text
 from src.utils.utils import get_data, write_to_db
 
 from config.model_settings import (
@@ -140,14 +141,12 @@ class ModelVisualizer:
             filter_query = f"""WHERE date_trunc('seconds', run_date) =
             TO_TIMESTAMP('{run_date}', 'YYYY-MM-DD HH24:MI:SS')"""
 
-        df = get_data(
-            """SELECT * FROM {table}
-                        {filter_query}""".format(
-                table=self.results_table_name,
-                filter_query=filter_query,
-            ),
-            use_test_db=use_test_db,
+        # Wrap the SQL query in a text object
+        query = text(
+            f"""SELECT * FROM {self.results_table_name} {filter_query}"""
         )
+
+        df = get_data(query, use_test_db=use_test_db)
 
         if df.shape[0] == 0:
             logging.warning(

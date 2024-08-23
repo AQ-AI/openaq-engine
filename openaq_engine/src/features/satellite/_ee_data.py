@@ -16,7 +16,7 @@ from setup_environment import get_dbengine
 from sklearn.preprocessing import MinMaxScaler
 from src.utils.utils import ee_array_to_df, get_data, write_to_db
 
-from config.model_settings import EEConfig
+from config.model_settings import EEConfig, MatrixGeneratorConfig
 
 
 class EEFeatures:
@@ -43,12 +43,14 @@ class EEFeatures:
 
     def __init__(
         self,
+        satellite_config: dict,
         date_col: str,
         bucket_name: str,
         path_to_private_key: str,
         service_account: str,
         lookback_n: int,
     ):
+        self.satellite_config = satellite_config
         self.date_col = date_col
         self.bucket_name = bucket_name
         self.path_to_private_key = path_to_private_key
@@ -71,6 +73,7 @@ class EEFeatures:
             An instance of EEFeatures.
         """
         return cls(
+            satellite_config=MatrixGeneratorConfig.SATELLITE_CONFIG,
             date_col=config.DATE_COL,
             bucket_name=config.BUCKET_NAME,
             path_to_private_key=config.PATH_TO_PRIVATE_KEY,
@@ -78,7 +81,7 @@ class EEFeatures:
             lookback_n=config.LOOKBACK_N,
         )
 
-    def execute(self, satellite_config, x, y, table_name, save_images):
+    def execute(self, x, y, table_name, save_images):
         """
         Create an instance of EEFeatures from a configuration dataclass.
 
@@ -102,7 +105,7 @@ class EEFeatures:
             delayed(self.query_satellite_for_time_range)(
                 satellite, config, x, y, table_name, save_images
             )
-            for satellite, config in satellite_config.items()
+            for satellite, config in self.satellite_config.items()
         )
 
         # Flatten the list of DataFrames

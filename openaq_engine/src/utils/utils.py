@@ -179,7 +179,7 @@ def parametrized(dec):
     return layer
 
 
-def get_data(query, use_test_db=False):
+def get_data(query, use_test_db=True):
     """
     Pulls data from the db based on the query
     Input
@@ -207,7 +207,11 @@ def extract_utc_date(date_dict):
     Returns:
     datetime.date: The date part of the 'utc' datetime.
     """
-    utc_datetime_str = json.loads(date_dict)["utc"]
+    # If the input is a string, parse it as JSON
+    if isinstance(date_dict, str):
+        date_dict = json.loads(date_dict)
+
+    utc_datetime_str = date_dict["utc"]
     utc_datetime = datetime.fromisoformat(
         utc_datetime_str.replace("Z", "+00:00")
     )

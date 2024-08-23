@@ -197,11 +197,17 @@ class Preprocess:
         if isinstance(date_info, str):
             date_info = json.loads(date_info)
 
+        # Extract UTC timestamp
         row["timestamp_utc"] = (
             datetime.fromisoformat(date_info["utc"].replace("Z", "+00:00"))
             .astimezone(timezone.utc)
             .strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         )
+
+        # Extract local timestamp
+        row["timestamp_local"] = datetime.fromisoformat(
+            date_info["local"]
+        ).strftime("%Y-%m-%dT%H:%M:%S.%f%z")
 
         return row
 

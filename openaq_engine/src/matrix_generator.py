@@ -1,7 +1,7 @@
 import csv
 import logging
 import os
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import mlflow
 import pandas as pd
@@ -9,6 +9,7 @@ import scipy.sparse as sp
 from joblib import dump, load
 from setup_environment import get_dbengine
 from sklearn.ensemble import RandomForestRegressor
+from sqlalchemy import text
 
 from config.model_settings import BuildFeaturesConfig, MatrixGeneratorConfig
 from openaq_engine.src.features.build_features import BuildFeaturesRandomForest
@@ -19,11 +20,14 @@ logging.basicConfig(level=logging.INFO)
 
 class MatrixGenerator:
     def __init__(
-        self, algorithm: str, id_column_list: List[str], satellite_config: dict
+        self,
+        satellite_config: Dict[str, Any],
+        algorithm: str,
+        id_column_list: List[str],
     ) -> None:
+        self.satellite_config = satellite_config
         self.algorithm = algorithm
         self.id_column_list = id_column_list
-        self.satellite_config = satellite_config
 
     @classmethod
     def from_dataclass_config(
@@ -31,9 +35,9 @@ class MatrixGenerator:
         config: MatrixGeneratorConfig,
     ) -> "MatrixGenerator":
         return cls(
+            satellite_config=config.SATELLITE_CONFIG,
             algorithm=config.ALGORITHM,
             id_column_list=config.ID_COLUMN_LIST,
-            satellite_config=config.SATELLITE_CONFIG,
         )
 
     def execute(self, engine, x, y, table_name):
@@ -52,20 +56,18 @@ class MatrixGenerator:
     def matrix_generator(self, engine, x, y, table_name):
         if self.algorithm == "RFR":
 
-            df = self._get_feature_generator(self.satellite_config).execute(
+            df = self._get_feature_generator().execute(
                 engine, x, y, table_name
             )
 
             return df
 
     def _get_feature_generator(
-        self, satellite_config: dict
+        self,
     ) -> RandomForestRegressor:
         if self.algorithm == "RFR":
             config = BuildFeaturesConfig()
-            return BuildFeaturesRandomForest.from_dataclass_config(
-                satellite_config, config
-            )
+            return BuildFeaturesRandomForest.from_dataclass_config(config)
         else:
             raise ValueError(
                 "The algorithm provided has no registered feature builder!"
@@ -162,9 +164,12 @@ class MatrixGenerator:
     def extract_time_ranges(
         self, cohort_table: str
     ) -> Dict[int, Dict[str, List]]:
-        query = f"""
-            SELECT DISTINCT train_validation_set, cohort, cohort_type FROM "{cohort_table}"
+        query = text(
+            f"""
+            SELECT DISTINCT train_validation_set, cohort, cohort_type
+            FROM "{cohort_table}"
         """
+        )
         cohort_data = get_data(query)
         cohort_time_ranges = {}
 
@@ -186,13 +191,15 @@ class MatrixGenerator:
     def query_satellite_data(
         self, tv_id, x, y, start_date, end_date, cohort_table
     ):
-        cohort_query = f"""
+        cohort_query = text(
+            f"""
             SELECT x, y, value, date_trunc('hour', "timestamp_utc"::timestamp) AS "datetime_hour"
             FROM "{cohort_table}"
             WHERE x = {x} AND y = {y}
             AND "timestamp_utc"::timestamp BETWEEN '{start_date}' AND '{end_date}'
             AND train_validation_set = {tv_id}
         """
+        )
         cohort_df = get_data(cohort_query)
         if cohort_df.empty:
             print(
@@ -212,12 +219,14 @@ class MatrixGenerator:
         for satellite, config in self.satellite_config.items():
             table_name = satellite.replace("/", "_")
             columns = ", ".join([f'"{band}"' for band in config["bands"]])
-            query = f"""
+            query = text(
+                f"""
                 SELECT sensor_longitude, sensor_latitude, date_trunc('hour', "datetime"::timestamp) AS "datetime_hour", {columns}
                 FROM "{table_name}"
                 WHERE sensor_longitude = {x} AND sensor_latitude = {y}
                 AND "datetime"::timestamp BETWEEN '{start_date}' AND '{end_date}'
             """
+            )
             sat_df = get_data(query)
             frequency = config["frequency"]
             if not sat_df.empty:
@@ -303,13 +312,11 @@ class MatrixGenerator:
                 run_date.strftime("%Y%m%d_%H%M%S%f"),
             ]
         )
-        return [
-            load(
-                os.path.join(
-                    filename + ".joblib",
-                )
+        return load(
+            os.path.join(
+                filename + ".joblib",
             )
-        ]
+        )
 
     def _concat_csr(self, X, csr_list):
         """

@@ -53,18 +53,16 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
 
     def __init__(
         self,
-        satellite_config: dict,
         categorical_features: List[str],
         all_model_features: Optional[List[str]],
     ) -> None:
-        self.satellite_config = satellite_config
         self.categorical_features = categorical_features
         self._all_model_features = all_model_features
         super().__init__(BuildFeaturesConfig.TARGET_COL)
 
     @classmethod
     def from_dataclass_config(
-        cls, satellite_config, config: BuildFeaturesConfig
+        cls, config: BuildFeaturesConfig
     ) -> "BuildFeaturesRandomForest":
         """
         Create an instance of BuildFeaturesRandomForest from a configuration dataclass.
@@ -80,7 +78,6 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
             An instance of BuildFeaturesRandomForest.
         """
         return cls(
-            satellite_config=satellite_config,
             categorical_features=config.CATEGORICAL_FEATURES,
             all_model_features=config.ALL_MODEL_FEATURES,
         )
@@ -101,7 +98,7 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
         pd.DataFrame
             A tuple containing the training and validation features and labels.
         """
-        df = self._add_ee_features(self.satellite_config, x, y, table_name)
+        df = self._add_ee_features(x, y, table_name)
         df = self._change_to_categorical_type(df)
         return df
 
@@ -136,9 +133,9 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
             raise ValueError("All the feature names should be strings!")
         self._all_model_features = features
 
-    def _add_ee_features(self, satellite_config, x, y, table_name):
+    def _add_ee_features(self, x, y, table_name):
         return EEFeatures.from_dataclass_config(EEConfig()).execute(
-            satellite_config, x, y, table_name, save_images=False
+            x, y, table_name, save_images=False
         )
 
     def _add_year(self, df: pd.DataFrame) -> pd.DataFrame:

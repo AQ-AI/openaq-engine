@@ -9,6 +9,7 @@ import mlflow
 import pandas as pd
 from joblib import Parallel, delayed
 from setup_environment import get_dbengine
+from sqlalchemy import text
 
 from config.model_settings import CohortBuilderConfig
 from openaq_engine.src.preprocess import Preprocess
@@ -315,7 +316,7 @@ class CohortBuilder(CohortBuilderBase):
             query = """SELECT DISTINCT *
                 FROM {table}
                 WHERE parameter='{target_variable}' AND country='{country}'
-                AND {date_col} BETWEEN '{start_date}' AND '{end_date}' LIMIT 1000;""".format(
+                AND {date_col} BETWEEN '{start_date}' AND '{end_date}';""".format(
                 table=self.table_name,
                 target_variable=self.target_variable,
                 date_col=self.date_col,
@@ -375,7 +376,7 @@ class CohortBuilder(CohortBuilderBase):
         return df
 
     def _get_local_data(self, date_tuple, local_data, df):
-        local_df = get_data(f"""SELECT * FROM "{local_data}" """)
+        local_df = get_data(text(f"""SELECT * FROM "{local_data}" """))
         if not local_df.empty:
             local_df = self.create_cohort_from_local_data(local_df, date_tuple)
             df = pd.concat([df, local_df], axis=0).reset_index(drop=True)
@@ -400,7 +401,7 @@ class CohortBuilder(CohortBuilderBase):
         ]
         return filtered_df[
             [
-                "locationId",
+                "locationid",
                 "location",
                 "city",
                 "parameter",
@@ -409,14 +410,14 @@ class CohortBuilder(CohortBuilderBase):
                 "unit",
                 "coordinates",
                 "country",
-                "isMobile",
-                "isAnalysis",
+                "ismobile",
+                "isanalysis",
                 "entity",
-                "sensorType",
+                "sensortype",
             ]
         ]
 
-    def _results_to_db(self, filtered_cohorts_df, engine, city):
+    def _results_to_db(self, filtered_cohorts_df, engine, *args):
         """
         Write the filtered cohort results to the database.
 
@@ -424,7 +425,9 @@ class CohortBuilder(CohortBuilderBase):
         :type filtered_cohorts_df: pd.DataFrame
         :param engine: The database engine to use for saving results.
         :type engine: Any
+        :param args: Additional arguments, expecting city as the first argument.
         """
+        city = args[0] if len(args) > 0 else None
         if city:
             location = city
         else:
