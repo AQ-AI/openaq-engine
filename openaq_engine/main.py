@@ -9,20 +9,24 @@ from mlflows.cli.features.build_features import feature_builder_options
 from mlflows.cli.time_splitter import time_splitter_options
 from mlflows.cli.train_model import train_model_options
 from setup_environment import get_dbengine
+from src.cohort_builder import CohortBuilder
+from src.features.build_features import BuildFeaturesRandomForest
+from src.matrix_generator import MatrixGenerator
+from src.model_evaluator import ModelEvaluator
+from src.model_visualizer import ModelVisualizer
+from src.time_splitter import TimeSplitter
+from src.train_model import ModelTrainer
+from src.utils.utils import get_data
 
 from config.model_settings import (
     BuildFeaturesConfig,
     CohortBuilderConfig,
     MatrixGeneratorConfig,
+    ModelEvaluatorConfig,
     ModelTrainerConfig,
+    ModelVisualizerConfig,
     TimeSplitterConfig,
 )
-from openaq_engine.src.cohort_builder import CohortBuilder
-from openaq_engine.src.features.build_features import BuildFeaturesRandomForest
-from openaq_engine.src.matrix_generator import MatrixGenerator
-from openaq_engine.src.time_splitter import TimeSplitter
-from openaq_engine.src.train_model import ModelTrainer
-from openaq_engine.src.utils.utils import get_data
 
 mlflow.set_tracking_uri(
     os.getenv("MLFLOW_TRACKING_URI"),
@@ -77,6 +81,22 @@ class ModelTrainerFlow:
 
     def execute(self):
         return ModelTrainer.from_dataclass_config(self.config)
+
+
+class ModelEvaluatorFlow:
+    def __init__(self):
+        self.config = ModelEvaluatorConfig()
+
+    def execute(self):
+        return ModelEvaluator.from_dataclass_config(self.config)
+
+
+class ModelVisualizerFlow:
+    def __init__(self):
+        self.config = ModelVisualizerConfig()
+
+    def execute(self):
+        return ModelVisualizer.from_dataclass_config(self.config)
 
 
 @time_splitter_options()
@@ -135,76 +155,79 @@ def feature_builder(models_directory, plots_directory, cohort_table):
 
         matrix_generator = MatrixGeneratorFlow().execute()
 
-        # locations_query = (
-        #     f"""SELECT DISTINCT "x", "y" FROM "{cohort_table}";"""
-        # )
-        non_processed_locations_query = f"""SELECT c.x, c.y
-            FROM (
-                SELECT DISTINCT x, y FROM "{cohort_table}"
-            ) c
-            LEFT JOIN (
-                SELECT DISTINCT longitude, latitude FROM "MODIS_061_MCD19A2_GRANULES_local_MN_new"
-            ) s
-            ON c.x = s.longitude AND c.y = s.latitude
-            WHERE s.longitude IS NULL AND s.latitude IS NULL;"""
+        locations_query = (
+            f"""SELECT DISTINCT "x", "y" FROM "{cohort_table}";"""
+        )
+        # non_processed_locations_query = f"""SELECT c.x, c.y
+        #     FROM (
+        #         SELECT DISTINCT x, y FROM "{cohort_table}"
+        #     ) c
+        #     LEFT JOIN (
+        #         SELECT DISTINCT longitude, latitude FROM "MODIS_061_MCD19A2_GRANULES_local_MN_new"
+        #     ) s
+        #     ON c.x = s.longitude AND c.y = s.latitude
+        #     WHERE s.longitude IS NULL AND s.latitude IS NULL;"""
 
-        locations_df = get_data(non_processed_locations_query)
+        locations_df = get_data(locations_query)
 
         for _, row in locations_df.iterrows():
             x = row["x"]
             y = row["y"]
 
-            matrix_generator.execute(engine, x, y, cohort_table)
+            satellite_df = matrix_generator.execute(engine, x, y, cohort_table)
 
-        #     if not satellite_df.empty:
-        #         validation_features_df, full_features_df, valid_labels, train_labels = satellite_df
+            if not satellite_df.empty:
+                (
+                    validation_features_df,
+                    full_features_df,
+                    valid_labels,
+                    train_labels,
+                ) = satellite_df
 
-        #         model_trainer = ModelTrainerFlow().execute()
-        #         model_output = model_trainer.train_all_models(
-        #             x,
-        #             full_features_df,
-        #             train_labels,
-        #             models_directory,
-        #             start_datetime,
-        #             engine,
-        #             validation_features_df,
-        #         )
+                model_trainer = ModelTrainerFlow().execute()
+                model_output = model_trainer.train_all_models(
+                    x,
+                    full_features_df,
+                    train_labels,
+                    models_directory,
+                    start_datetime,
+                    engine,
+                    validation_features_df,
+                )
 
-        #         for (
-        #             model_id,
-        #             model_name,
-        #             x,
-        #             train_model,
-        #             validation_df,
-        #         ) in model_output:
-        #             logging.info(
-        #                 f"Training and evaluating model {model_output[x][0]}"
-        #             )
-        #             model_evaluator = ModelEvaluatorFlow().execute()
-        #             valid_pred, results_metrics_df = model_evaluator.execute(
-        #                 x,
-        #                 train_model,
-        #                 model_name,
-        #                 model_id,
-        #                 validation_df,
-        #                 valid_labels,
-        #                 start_datetime,
-        #                 engine,
-        #             )
-        #             ModelVisualizerFlow(plots_directory).execute(
-        #                 validation_df,
-        #                 valid_pred,
-        #                 valid_labels,
-        #                 start_datetime,
-        #                 model_name,
-        #                 results_metrics_df,
-        #             )
+                for (
+                    model_id,
+                    model_name,
+                    x,
+                    train_model,
+                    validation_df,
+                ) in model_output:
+                    logging.info(
+                        f"Training and evaluating model {model_output[x][0]}"
+                    )
+                    model_evaluator = ModelEvaluatorFlow().execute()
+                    valid_pred, results_metrics_df = model_evaluator.execute(
+                        x,
+                        train_model,
+                        model_name,
+                        model_id,
+                        validation_df,
+                        valid_labels,
+                        start_datetime,
+                        engine,
+                    )
+                    ModelVisualizerFlow(plots_directory).execute(
+                        validation_df,
+                        valid_pred,
+                        valid_labels,
+                        start_datetime,
+                        model_name,
+                        results_metrics_df,
+                    )
 
-        # end_datetime = datetime.now()
-        # logging.info(f"Ending pipeline at {end_datetime}")
-        # logging.info(
-        #     f"Total time elapsed: {end_datetime - start_datetime}"
-        # )
+        end_datetime = datetime.now()
+        logging.info(f"Ending pipeline at {end_datetime}")
+        logging.info(f"Total time elapsed: {end_datetime - start_datetime}")
 
 
 @train_model_options()
