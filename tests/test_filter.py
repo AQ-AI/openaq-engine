@@ -3,8 +3,7 @@ from unittest.mock import patch
 
 import pandas as pd
 import pytest
-
-from openaq_engine.src.preprocessing.filter import Filter
+from src.preprocessing.filter import Filter
 
 
 @pytest.fixture(autouse=True)

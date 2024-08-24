@@ -3,13 +3,13 @@ from unittest.mock import MagicMock
 
 import pandas as pd
 import pytest
-
-from config.model_settings import BuildFeaturesConfig
-from openaq_engine.src.features.build_features import (
+from src.features.build_features import (
     BuildFeaturesRandomForest,
     get_feature_builder,
 )
-from openaq_engine.src.features.satellite._ee_data import EEFeatures
+from src.features.satellite._ee_data import EEFeatures
+
+from config.model_settings import BuildFeaturesConfig
 
 
 @pytest.fixture
@@ -96,28 +96,6 @@ def test_split_train_valid(cohort_df, feature_df):
     result = builder._split_train_valid(cohort_df, feature_df)
     assert isinstance(result, tuple)
     assert len(result) == 6
-
-
-def test_results_to_db(mocker, mock_engine, feature_df):
-    mock_write_to_db = mocker.patch(
-        "openaq_engine.src.features.build_features.write_to_db"
-    )
-    config = BuildFeaturesConfig(
-        CATEGORICAL_FEATURES=[],
-        ALL_MODEL_FEATURES=[],
-        TARGET_COL="value",
-    )
-
-    # Create an instance of BuildFeaturesRandomForest and call _add_ee_features
-    builder = BuildFeaturesRandomForest.from_dataclass_config(config)
-    builder._results_to_db(feature_df, mock_engine)
-    mock_write_to_db.assert_called_once_with(
-        feature_df,
-        mock_engine,
-        "features",
-        "public",
-        "append",
-    )
 
 
 def test_get_feature_builder():

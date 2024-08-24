@@ -8,8 +8,7 @@ import pytest
 import pytz
 from setup_environment import get_dbengine
 from sqlalchemy.exc import OperationalError
-
-from openaq_engine.src.cohort_builder import CohortBuilder
+from src.cohort_builder import CohortBuilder
 
 
 @pytest.fixture(autouse=True)

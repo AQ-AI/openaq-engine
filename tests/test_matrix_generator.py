@@ -7,10 +7,10 @@ import joblib
 import pandas as pd
 import pytest
 from sqlalchemy import create_engine, text
+from src.features.build_features import BuildFeaturesRandomForest
+from src.matrix_generator import MatrixGenerator
 
 from config.model_settings import MatrixGeneratorConfig
-from openaq_engine.src.features.build_features import BuildFeaturesRandomForest
-from openaq_engine.src.matrix_generator import MatrixGenerator
 
 
 @pytest.fixture

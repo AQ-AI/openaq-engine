@@ -1,13 +1,12 @@
+import os
 import unittest
 from unittest.mock import MagicMock, patch
-import os
 
 import pandas as pd
 import pytest
 from sqlalchemy import create_engine
-
-from openaq_engine.src.model_visualizer import ModelVisualizer
-from openaq_engine.src.matrix_generator import MatrixGenerator
+from src.matrix_generator import MatrixGenerator
+from src.model_visualizer import ModelVisualizer
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -121,7 +120,7 @@ class TestModelVisualizer(unittest.TestCase):
 
         # Call the method under test
         results = self.visualizer.get_results(
-            run_date="2024-01-01 00:00:00", use_test_db=True
+            run_date="2024-01-01 00:00:00",
         )
 
         # Assertions to check if the results are as expected

@@ -2,8 +2,7 @@ import json
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
-
-from openaq_engine.src.utils.utils import (
+from src.utils.utils import (
     api_response_to_df,
     ee_array_to_df,
     get_categorical_feature_indices,
@@ -46,13 +45,13 @@ def test_api_response_to_df(mocker):
     }
     mock_response = MagicMock()
     mock_response.status_code = 200
-    mock_response.text = json.dumps(response_data)
+    mock_response.json.return_value = response_data
+    mock_response.text = json.dumps(
+        response_data
+    )  # Ensure text is a proper JSON string
 
-    # Patch query_results_from_api to return the mock response
-    mocker.patch(
-        "openaq_engine.src.utils.utils.query_results_from_api",
-        return_value=mock_response,
-    )
+    # Patch the requests.get method to return the mock response
+    mocker.patch("requests.get", return_value=mock_response)
 
     url = "http://fakeurl.com"
     df = api_response_to_df(url)

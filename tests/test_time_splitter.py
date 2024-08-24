@@ -3,8 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from sqlalchemy.engine import Engine
-
-from openaq_engine.src.time_splitter import TimeSplitter, TimeSplitterBase
+from src.time_splitter import TimeSplitter, TimeSplitterBase
 
 
 @pytest.fixture
