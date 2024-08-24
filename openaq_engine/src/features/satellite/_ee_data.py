@@ -46,16 +46,20 @@ class EEFeatures:
         satellite_config: dict,
         date_col: str,
         bucket_name: str,
-        path_to_private_key: str,
-        service_account: str,
         lookback_n: int,
     ):
         self.satellite_config = satellite_config
         self.date_col = date_col
         self.bucket_name = bucket_name
-        self.path_to_private_key = path_to_private_key
-        self.service_account = service_account
         self.lookback_n = lookback_n
+        # Retrieve service account email and path to private key from environment variables
+        self.service_account = os.getenv("SERVICE_ACCOUNT_EMAIL")
+        self.path_to_private_key = os.getenv("EARTHENGINE_CREDENTIALS")
+
+        if not self.service_account or not self.path_to_private_key:
+            raise ValueError(
+                "Environment variables for service account credentials are not set."
+            )
 
     @classmethod
     def from_dataclass_config(cls, config: EEConfig) -> "EEFeatures":
@@ -76,8 +80,6 @@ class EEFeatures:
             satellite_config=MatrixGeneratorConfig.SATELLITE_CONFIG,
             date_col=config.DATE_COL,
             bucket_name=config.BUCKET_NAME,
-            path_to_private_key=config.PATH_TO_PRIVATE_KEY,
-            service_account=config.SERVICE_ACCOUNT,
             lookback_n=config.LOOKBACK_N,
         )
 

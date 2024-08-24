@@ -54,7 +54,10 @@ def get_dbengine(
 
 
 @contextmanager
-def connect_to_db(use_test_db=True):
+def connect_to_db():
+    # Check if the USE_TEST_DB environment variable is set to "true"
+    use_test_db = os.getenv("USE_TEST_DB", "false").lower() == "true"
+
     if use_test_db:
         database = os.getenv("TEST_PGDATABASE")
         user = os.getenv("TEST_PGUSER")

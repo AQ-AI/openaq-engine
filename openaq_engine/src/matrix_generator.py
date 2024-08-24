@@ -10,10 +10,10 @@ from joblib import dump, load
 from setup_environment import get_dbengine
 from sklearn.ensemble import RandomForestRegressor
 from sqlalchemy import text
+from src.features.build_features import BuildFeaturesRandomForest
+from src.utils.utils import get_data, write_to_db
 
 from config.model_settings import BuildFeaturesConfig, MatrixGeneratorConfig
-from openaq_engine.src.features.build_features import BuildFeaturesRandomForest
-from openaq_engine.src.utils.utils import get_data, write_to_db
 
 logging.basicConfig(level=logging.INFO)
 

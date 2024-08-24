@@ -26,5 +26,16 @@ def train_model_options(fn):
         default=False,
         help="Whether features have been generated",
     )
-
-    return features(cohort_table(fn))
+    city = train_model_config.option(
+        "--city",
+        type=click.STRING,
+        default=None,
+        help="Name of the city to filter the data (optional)",
+    )
+    country = train_model_config.option(
+        "--country",
+        type=click.STRING,
+        default=None,
+        help="Name of the country to filter the data (optional)",
+    )
+    return country(city(features(cohort_table(fn))))

@@ -78,6 +78,25 @@ class ModelTrainerConfig:
         "cohort_type",
     ]
     RANDOM_STATE = 99
+    CORE_FEATURES = [
+        "timestamp_as_float",
+        "y",
+        "x",
+        "Optical_Depth_047",
+        "Optical_Depth_047_time_diff",
+        "SR_B4",
+        "SR_B4_time_diff",
+        "SR_B3",
+        "SR_B2",
+        "avg_rad",
+        "avg_rad_time_diff",
+        "temperature_2m_above_ground",
+        "temperature_2m_above_ground_time_diff",
+        "relative_humidity_2m_above_ground",
+        "precipitable_water_entire_atmosphere",
+        "u_component_of_wind_10m_above_ground",
+        "v_component_of_wind_10m_above_ground",
+    ]
 
 
 @dataclass
@@ -113,7 +132,7 @@ class HyperparamConfig:
         },  # 5, 50, 500, 10000 50, 100, 200, 300
         "RFR": {
             "n_estimators": [500, 800],  # 100, 500, 800, 1000
-            "max_depth": [10, 50, 70],  # 5, 50, 80, 500, 10000  100, 200, 300
+            "max_depth": [10],  # 5, 50, 80, 500, 10000  100, 200, 300
         },
         "XGB": {
             "max_depth": [5, 150, 200, 250, 300],

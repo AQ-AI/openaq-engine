@@ -10,16 +10,16 @@ import pandas as pd
 from joblib import Parallel, delayed
 from setup_environment import get_dbengine
 from sqlalchemy import text
-
-from config.model_settings import CohortBuilderConfig
-from openaq_engine.src.preprocess import Preprocess
-from openaq_engine.src.utils.utils import (
+from src.preprocess import Preprocess
+from src.utils.utils import (
     api_response_to_df,
     extract_utc_date,
     get_data,
     query_results_from_aws,
     write_to_db,
 )
+
+from config.model_settings import CohortBuilderConfig
 
 logging.basicConfig(level=logging.INFO)
 

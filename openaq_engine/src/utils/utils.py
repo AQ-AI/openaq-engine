@@ -9,6 +9,7 @@ import pandas as pd
 import requests
 from pydantic.json import pydantic_encoder
 from setup_environment import connect_to_db
+from sqlalchemy import text
 
 
 def read_csv(path: str, **kwargs: Any) -> pd.DataFrame:
@@ -179,7 +180,7 @@ def parametrized(dec):
     return layer
 
 
-def get_data(query, use_test_db=True):
+def get_data(query):
     """
     Pulls data from the db based on the query
     Input
@@ -191,8 +192,13 @@ def get_data(query, use_test_db=True):
     data: DataFrame
        Dump of Query into a DataFrame
     """
-    with connect_to_db(use_test_db=use_test_db) as conn:
-        print(conn)
+
+    if isinstance(query, str):
+        query = text(
+            query
+        )  # Only wrap in text if it's a string, not already a TextClause
+
+    with connect_to_db() as conn:
         df = pd.read_sql_query(query, conn)
     return df
 
@@ -255,3 +261,72 @@ def ee_array_to_df(arr, list_of_bands):
     df = df[["longitude", "latitude", "time", "datetime", *list_of_bands]]
 
     return df
+
+
+def load_data_for_single_tv_set(cohort_table, tv_set):
+    # SQL query for X_train and Y_train filtered by tv_set
+    train_query = f"""
+    SELECT
+        EXTRACT(EPOCH FROM "datetime_hour") AS "timestamp_as_float",
+        "y",
+        "x",
+        "Optical_Depth_047",
+        "Optical_Depth_047_time_diff",
+        "SR_B4",
+        "SR_B4_time_diff",
+        "SR_B3",
+        "SR_B2",
+        "avg_rad",
+        "avg_rad_time_diff",
+        "temperature_2m_above_ground",
+        "temperature_2m_above_ground_time_diff",
+        "relative_humidity_2m_above_ground",
+        "precipitable_water_entire_atmosphere",
+        "u_component_of_wind_10m_above_ground",
+        "v_component_of_wind_10m_above_ground",
+        "value"
+    FROM
+        "{cohort_table}_training"
+    WHERE
+        {tv_set} = ANY("tv_set"::int[]);
+    """
+
+    # SQL query for X_valid and Y_valid filtered by tv_set
+    valid_query = f"""
+    SELECT
+        EXTRACT(EPOCH FROM "datetime_hour") AS "timestamp_as_float",
+        "y",
+        "x",
+        "Optical_Depth_047",
+        "Optical_Depth_047_time_diff",
+        "SR_B4",
+        "SR_B4_time_diff",
+        "SR_B3",
+        "SR_B2",
+        "avg_rad",
+        "avg_rad_time_diff",
+        "temperature_2m_above_ground",
+        "temperature_2m_above_ground_time_diff",
+        "relative_humidity_2m_above_ground",
+        "precipitable_water_entire_atmosphere",
+        "u_component_of_wind_10m_above_ground",
+        "v_component_of_wind_10m_above_ground",
+        "value"
+    FROM
+        "{cohort_table}_validation"
+    WHERE
+        {tv_set} = ANY("tv_set"::int[]);
+    """
+
+    # Retrieve data from the database
+    train_df = get_data(train_query)
+    valid_df = get_data(valid_query)
+
+    # Separate features (X) and labels (Y)
+    X_train = train_df.drop(columns=["value"])
+    Y_train = train_df["value"]
+
+    X_valid = valid_df.drop(columns=["value"])
+    Y_valid = valid_df["value"]
+
+    return X_train, Y_train, X_valid, Y_valid

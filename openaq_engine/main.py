@@ -9,14 +9,15 @@ from mlflows.cli.features.build_features import feature_builder_options
 from mlflows.cli.time_splitter import time_splitter_options
 from mlflows.cli.train_model import train_model_options
 from setup_environment import get_dbengine
+from sqlalchemy.sql import text
 from src.cohort_builder import CohortBuilder
+from src.evaluation.model_evaluator import ModelEvaluator
 from src.features.build_features import BuildFeaturesRandomForest
 from src.matrix_generator import MatrixGenerator
-from src.model_evaluator import ModelEvaluator
 from src.model_visualizer import ModelVisualizer
 from src.time_splitter import TimeSplitter
 from src.train_model import ModelTrainer
-from src.utils.utils import get_data
+from src.utils.utils import get_data, load_data_for_single_tv_set
 
 from config.model_settings import (
     BuildFeaturesConfig,
@@ -92,11 +93,23 @@ class ModelEvaluatorFlow:
 
 
 class ModelVisualizerFlow:
-    def __init__(self):
+    def __init__(self, plots_directory):
         self.config = ModelVisualizerConfig()
+        self.eval_config = ModelEvaluatorConfig()
+        self.plots_directory = plots_directory
 
-    def execute(self):
-        return ModelVisualizer.from_dataclass_config(self.config)
+    def execute(
+        self,
+        validation_df,
+        valid_pred,
+        valid_labels,
+        start_datetime,
+        model_name,
+        results_metrics_df,
+    ):
+        return ModelVisualizer.from_dataclass_config(
+            self.config, self.eval_config
+        )
 
 
 @time_splitter_options()
@@ -174,60 +187,12 @@ def feature_builder(models_directory, plots_directory, cohort_table):
             x = row["x"]
             y = row["y"]
 
-            satellite_df = matrix_generator.execute(engine, x, y, cohort_table)
+            matrix_generator.execute(engine, x, y, cohort_table)
+        matrix_generator.build_features(cohort_table)
 
-            if not satellite_df.empty:
-                (
-                    validation_features_df,
-                    full_features_df,
-                    valid_labels,
-                    train_labels,
-                ) = satellite_df
-
-                model_trainer = ModelTrainerFlow().execute()
-                model_output = model_trainer.train_all_models(
-                    x,
-                    full_features_df,
-                    train_labels,
-                    models_directory,
-                    start_datetime,
-                    engine,
-                    validation_features_df,
-                )
-
-                for (
-                    model_id,
-                    model_name,
-                    x,
-                    train_model,
-                    validation_df,
-                ) in model_output:
-                    logging.info(
-                        f"Training and evaluating model {model_output[x][0]}"
-                    )
-                    model_evaluator = ModelEvaluatorFlow().execute()
-                    valid_pred, results_metrics_df = model_evaluator.execute(
-                        x,
-                        train_model,
-                        model_name,
-                        model_id,
-                        validation_df,
-                        valid_labels,
-                        start_datetime,
-                        engine,
-                    )
-                    ModelVisualizerFlow(plots_directory).execute(
-                        validation_df,
-                        valid_pred,
-                        valid_labels,
-                        start_datetime,
-                        model_name,
-                        results_metrics_df,
-                    )
-
-        end_datetime = datetime.now()
-        logging.info(f"Ending pipeline at {end_datetime}")
-        logging.info(f"Total time elapsed: {end_datetime - start_datetime}")
+    end_datetime = datetime.now()
+    logging.info(f"Ending pipeline at {end_datetime}")
+    logging.info(f"Total time elapsed: {end_datetime - start_datetime}")
 
 
 @train_model_options()
@@ -239,6 +204,8 @@ def run_pipeline(
     plots_directory,
     cohort_table,
     features,
+    city,
+    country,
 ):
     start_datetime = datetime.now()
     logging.info(f"Starting pipeline at {start_datetime}")
@@ -275,75 +242,87 @@ def run_pipeline(
 
                 matrix_generator.execute(engine, x, y, cohort_table)
 
-        matrix_generator.build_features(cohort_table)
+            matrix_generator.build_features(cohort_table)
 
-        # for i in train_validation_set:
-        #     start_model_datetime = datetime.now()
-        #     if city:
-        #         (
-        #             validation_features_df,
-        #             full_features_df,
-        #             valid_labels,
-        #             train_labels,
-        #         ) = matrix_generator.execute(engine, i, start_datetime, city)
-        #     if country:
-        #         (
-        #             validation_features_df,
-        #             full_features_df,
-        #             valid_labels,
-        #             train_labels,
-        #         ) = matrix_generator.execute(
-        #             engine, i, start_datetime, country
-        #         )
-        #     logging.info(
-        #         f"Starting pipeline for model {i} {start_model_datetime}"
-        #     )
-        #     model_trainer = ModelTrainerFlow().execute()
-        #     model_output += model_trainer.train_all_models(
-        #         i,
-        #         full_features_df,
-        #         train_labels,
-        #         models_directory,
-        #         start_datetime,
-        #         engine,
-        #         validation_features_df,
-        #     )
-        #     # logging.info("Getting model output")
-        #     for (
-        #         model_id,
-        #         model_name,
-        #         i,
-        #         train_model,
-        #         validation_df,
-        #     ) in model_output:
-        #         logging.info(
-        #             f"Training and evaluating model {model_output[i][0]}"
-        #         )
-        #         model_evaluator = ModelEvaluatorFlow().execute()
-        #         valid_pred, results_metrics_df = model_evaluator.execute(
-        #             i,
-        #             train_model,
-        #             model_name,
-        #             model_id,
-        #             validation_df,
-        #             valid_labels,
-        #             start_datetime,
-        #             engine,
-        #         )
-        #         ModelVisualizerFlow(plots_directory).execute(
-        #             validation_features_df,
-        #             valid_pred,
-        #             valid_labels,
-        #             start_datetime,
-        #             model_name,
-        #             results_metrics_df,
-        #         )
+        query = text(
+            f"""WITH tv_sets AS (
+                SELECT UNNEST(
+                    string_to_array(
+                        trim(both '{{}}' from tv_set),
+                        ','
+                    )::int[]
+                ) AS tv_set
+                FROM "{cohort_table}_training"
 
-        #     end_datetime = datetime.now()
-        #     logging.info(f"Ending pipeline at {end_datetime}")
-        #     logging.info(
-        #         f"Total time ellapsed: {end_datetime - start_datetime}"
-        #     )
+                UNION ALL
+
+                SELECT UNNEST(
+                    string_to_array(
+                        trim(both '{{}}' from tv_set),
+                        ','
+                    )::int[]
+                ) AS tv_set
+                FROM "{cohort_table}_validation"
+            )
+
+            SELECT DISTINCT tv_set
+            FROM tv_sets;"""
+        )
+
+        tv_sets_df = get_data(query)
+        train_validation_set = tv_sets_df["tv_set"].tolist()
+
+        model_output = []
+
+        for i in train_validation_set:
+            start_model_datetime = datetime.now()
+
+            logging.info(
+                f"Starting pipeline for model {i} {start_model_datetime}"
+            )
+            X_train, Y_train, X_valid, Y_valid = load_data_for_single_tv_set(
+                cohort_table, i
+            )
+
+            model_trainer = ModelTrainerFlow().execute()
+            model_output += model_trainer.train_all_models(
+                i,
+                X_train,
+                Y_train,
+                models_directory,
+                start_datetime,
+                engine,
+            )
+            logging.info("Getting model output")
+            for model_id, model_name, train_model in model_output:
+                logging.info(
+                    f"Training and evaluating model {model_output[1]}"
+                )
+                model_evaluator = ModelEvaluatorFlow().execute()
+                valid_pred, results_metrics_df = model_evaluator.execute(
+                    i,
+                    train_model,
+                    model_name,
+                    model_id,
+                    X_valid,
+                    Y_valid,
+                    start_datetime,
+                    engine,
+                )
+                ModelVisualizerFlow(plots_directory).execute(
+                    X_valid,
+                    valid_pred,
+                    Y_valid,
+                    start_datetime,
+                    model_name,
+                    results_metrics_df,
+                )
+
+            end_datetime = datetime.now()
+            logging.info(f"Ending pipeline at {end_datetime}")
+            logging.info(
+                f"Total time ellapsed: {end_datetime - start_datetime}"
+            )
 
 
 @click.group("openaq-engine", help="Library to query openaq data")
