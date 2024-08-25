@@ -310,9 +310,7 @@ def test_bands_available():
             mock_image_collection = mock.MagicMock()
             mock_image = mock.MagicMock()
             mock_image.getInfo.return_value = {
-                "SR_B4": 1.0,
-                "SR_B3": 2.0,
-                "SR_B2": 3.0,
+                "bands": ["SR_B4", "SR_B3", "SR_B2"]
             }
             mock_image.select.return_value = mock_image
             mock_image_collection.first.return_value = mock_image
@@ -321,20 +319,20 @@ def test_bands_available():
             result = ee_features.bands_available(
                 mock_image_collection, ["SR_B4", "SR_B3", "SR_B2"]
             )
-            assert result is True
+            assert result is True  # Expected to pass
 
         # Case where bands are not available (raises an exception)
         with mock.patch("ee.ImageCollection") as mock_image_collection_class:
             mock_image_collection = mock.MagicMock()
             mock_image = mock.MagicMock()
-            mock_image.getInfo.side_effect = Exception("Bands not available")
+            mock_image.select.side_effect = Exception("Bands not available")
             mock_image_collection.first.return_value = mock_image
             mock_image_collection_class.return_value = mock_image_collection
 
             result = ee_features.bands_available(
                 mock_image_collection, ["SR_B4", "SR_B3", "SR_B2"]
             )
-            assert result is False
+            assert result is False  # Expected to pass
 
 
 # Test the _generate_timerange method
