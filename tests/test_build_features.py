@@ -370,6 +370,8 @@ def test_get_satellite_data_within_hour(mock_env_vars):
         "ee.ServiceAccountCredentials"
     ) as mock_credentials, mock.patch("ee.Initialize"), mock.patch(
         "ee.Date", return_value=MagicMock()
+    ), mock.patch(
+        "ee.Geometry.Point", return_value=MagicMock()
     ), mock.patch.object(
         ee_features, "bands_available", return_value=True
     ), mock.patch.object(
