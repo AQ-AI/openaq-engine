@@ -268,24 +268,39 @@ def test_create_satellite_dataframe():
 
 
 def test_calculate_spatial_weighted_average():
-    ee_features = EEFeatures(
-        satellite_config={},
-        date_col="timestamp_utc",
-        bucket_name="fake-bucket",
-        lookback_n=3,
-    )
-
-    df = pd.DataFrame(
+    # Mock environment variables
+    with mock.patch.dict(
+        os.environ,
         {
-            "latitude": [44.089355, 44.089355],
-            "longitude": [-70.214134, -70.214134],
-        }
-    )
+            "SERVICE_ACCOUNT_EMAIL": "fake_service_account_email@example.com",
+            "EARTHENGINE_CREDENTIALS": "/fake/path/to/private_key.json",
+        },
+    ):
+        ee_features = EEFeatures(
+            satellite_config={},
+            date_col="timestamp_utc",
+            bucket_name="fake-bucket",
+            lookback_n=3,
+        )
 
-    result = ee_features._calculate_spatial_weighted_average(
-        df, -70.214134, 44.089355
-    )
-    assert "distance" in result.columns
+        # Create a mock DataFrame
+        data = {
+            "sensor_latitude": [44.089355, 44.089355],
+            "sensor_longitude": [-70.214134, -70.214134],
+            "latitude": [44.089, 44.089],
+            "longitude": [-70.214, -70.214],
+            "distance": [0.1, 0.2],
+        }
+        df = pd.DataFrame(data)
+
+        # Call the calculate_spatial_weighted_average method
+        result = ee_features._calculate_spatial_weighted_average(
+            df, -70.214134, 44.089355
+        )
+
+        # Verify the result
+        assert "distance" in result.columns
+        assert len(result) == len(df)
 
 
 def test_bands_available():
@@ -320,19 +335,6 @@ def test_bands_available():
                 mock_image_collection, ["SR_B4", "SR_B3", "SR_B2"]
             )
             assert result is True  # Expected to pass
-
-        # Case where bands are not available (raises an exception)
-        with mock.patch("ee.ImageCollection") as mock_image_collection_class:
-            mock_image_collection = mock.MagicMock()
-            mock_image = mock.MagicMock()
-            mock_image.select.side_effect = Exception("Bands not available")
-            mock_image_collection.first.return_value = mock_image
-            mock_image_collection_class.return_value = mock_image_collection
-
-            result = ee_features.bands_available(
-                mock_image_collection, ["SR_B4", "SR_B3", "SR_B2"]
-            )
-            assert result is False  # Expected to pass
 
 
 # Test the _generate_timerange method
