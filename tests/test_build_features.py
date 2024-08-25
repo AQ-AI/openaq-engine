@@ -305,40 +305,36 @@ def test_bands_available():
             lookback_n=3,
         )
 
-        # Mocking an image collection and its method
-        mock_image_collection = mock.MagicMock()
-        mock_image_collection.first.return_value = mock.MagicMock()
-        mock_image_collection.first.return_value.select.return_value = (
-            mock_image_collection
-        )
-
-        # Mock the bands_available method
+        # Case where bands are available
         with mock.patch("ee.ImageCollection") as mock_image_collection_class:
+            mock_image_collection = mock.MagicMock()
+            mock_image = mock.MagicMock()
+            mock_image.getInfo.return_value = {
+                "SR_B4": 1.0,
+                "SR_B3": 2.0,
+                "SR_B2": 3.0,
+            }
+            mock_image.select.return_value = mock_image
+            mock_image_collection.first.return_value = mock_image
             mock_image_collection_class.return_value = mock_image_collection
+
             result = ee_features.bands_available(
                 mock_image_collection, ["SR_B4", "SR_B3", "SR_B2"]
             )
+            assert result is True
 
-        assert result is True
+        # Case where bands are not available (raises an exception)
+        with mock.patch("ee.ImageCollection") as mock_image_collection_class:
+            mock_image_collection = mock.MagicMock()
+            mock_image = mock.MagicMock()
+            mock_image.getInfo.side_effect = Exception("Bands not available")
+            mock_image_collection.first.return_value = mock_image
+            mock_image_collection_class.return_value = mock_image_collection
 
-    # Add additional tests for bands that are not available
-    with mock.patch("ee.ImageCollection") as mock_image_collection, mock.patch(
-        "ee.Initialize"
-    ) as mock_initialize, mock.patch("ee.ServiceAccountCredentials"):
-
-        # Set up the return values for the mock methods
-        mock_image_collection().first().bandNames().getInfo.return_value = [
-            "SR_B1",
-            "SR_B2",
-        ]
-        mock_initialize.return_value = None
-
-        # Now test the bands_available method
-        image_collection = mock_image_collection.return_value
-        image_bands = ["SR_B4", "SR_B3", "SR_B2"]
-        result = ee_features.bands_available(image_collection, image_bands)
-
-        assert result is False
+            result = ee_features.bands_available(
+                mock_image_collection, ["SR_B4", "SR_B3", "SR_B2"]
+            )
+            assert result is False
 
 
 # Test the _generate_timerange method
