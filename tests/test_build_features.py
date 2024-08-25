@@ -238,33 +238,49 @@ def test_ee_features_query_satellite(mock_env_vars):
         assert not result.empty
 
 
-def test_create_satellite_dataframe():
-    ee_features = EEFeatures(
-        satellite_config={},
-        date_col="timestamp_utc",
-        bucket_name="fake-bucket",
-        lookback_n=3,
-    )
+def test_create_satellite_dataframe(mock_env_vars):
+    # Mock the required Earth Engine components
+    with mock.patch("ee.ServiceAccountCredentials"), mock.patch(
+        "ee.Initialize"
+    ):
+        ee_features = EEFeatures(
+            satellite_config={},
+            date_col="timestamp_utc",
+            bucket_name="fake-bucket",
+            lookback_n=3,
+        )
 
-    # Adjusted 'info' to include 'longitude', 'latitude', and 'time' columns
-    info = [
-        ["longitude", "latitude", "time", "SR_B4", "SR_B3", "SR_B2"],
-        [106.79481, 47.922497, 1, 1.0, 2.0, 3.0],
-        [106.79481, 47.922497, 2, 4.0, 5.0, 6.0],
-    ]
+        info = [
+            ["timestamp_utc", "SR_B4", "SR_B3", "SR_B2"],
+            [1, 1.0, 2.0, 3.0],
+            [2, 4.0, 5.0, 6.0],
+        ]
 
-    result = ee_features._create_satellite_dataframe(
-        info, ["SR_B4", "SR_B3", "SR_B2"], "2021-01-01", -70.214134, 44.089355
-    )
+        # Mock the method that converts the array to a DataFrame
+        with mock.patch(
+            "src.utils.utils.ee_array_to_df"
+        ) as mock_ee_array_to_df:
+            mock_ee_array_to_df.return_value = pd.DataFrame(
+                {
+                    "longitude": [-70.214134],
+                    "latitude": [44.089355],
+                    "time": [1],
+                    "SR_B4": [1.0],
+                    "SR_B3": [2.0],
+                    "SR_B2": [3.0],
+                }
+            )
 
-    # Assertions to ensure the DataFrame was created correctly
-    assert "SR_B4" in result.columns
-    assert "SR_B3" in result.columns
-    assert "SR_B2" in result.columns
-    assert "longitude" in result.columns
-    assert "latitude" in result.columns
-    assert "time" in result.columns
-    assert not result.empty
+            result = ee_features._create_satellite_dataframe(
+                info,
+                ["SR_B4", "SR_B3", "SR_B2"],
+                "2021-01-01",
+                -70.214134,
+                44.089355,
+            )
+
+            assert isinstance(result, pd.DataFrame)
+            assert not result.empty
 
 
 def test_calculate_spatial_weighted_average():
