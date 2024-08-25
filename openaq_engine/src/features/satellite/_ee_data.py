@@ -180,6 +180,7 @@ class EEFeatures:
 
                 result = self.query_satellite(
                     satellite,
+                    table_name,
                     config["bands"],
                     start_datetime,
                     end_datetime,
@@ -199,6 +200,7 @@ class EEFeatures:
     def query_satellite(
         self,
         satellite,
+        table_name,
         bands,
         start_datetime,
         end_datetime,
@@ -248,7 +250,7 @@ class EEFeatures:
             write_to_db(
                 ee_df,
                 engine,
-                f"{satellite.replace('/', '_')}_test",
+                f"{satellite.replace('/', '_')}_{table_name}",
                 "public",
                 "append",
             )

@@ -226,6 +226,7 @@ def test_ee_features_query_satellite(mock_env_vars):
     ):
         result = ee_features.query_satellite(
             "LANDSAT/LC08/C02/T1_L2",
+            "cohorts_mumbai",
             ["SR_B4", "SR_B3", "SR_B2"],
             datetime.datetime(2021, 1, 1, 0, 0),
             datetime.datetime(2021, 1, 1, 23, 59),
@@ -251,9 +252,9 @@ def test_create_satellite_dataframe(mock_env_vars):
         )
 
         info = [
-            ["timestamp_utc", "SR_B4", "SR_B3", "SR_B2"],
-            [1, 1.0, 2.0, 3.0],
-            [2, 4.0, 5.0, 6.0],
+            ["longitude", "latitude", "time", "SR_B4", "SR_B3", "SR_B2"],
+            [-70.214134, 44.089355, 1, 1.0, 2.0, 3.0],
+            [-70.214134, 44.089355, 2, 4.0, 5.0, 6.0],
         ]
 
         # Mock the method that converts the array to a DataFrame
@@ -278,6 +279,7 @@ def test_create_satellite_dataframe(mock_env_vars):
                 -70.214134,
                 44.089355,
             )
+            print(result)
 
             assert isinstance(result, pd.DataFrame)
             assert not result.empty
