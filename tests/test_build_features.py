@@ -1,3 +1,4 @@
+import os
 import unittest.mock as mock
 from unittest.mock import MagicMock
 
@@ -69,23 +70,31 @@ def test_build_features_random_forest_initialization():
 
 
 def test_add_ee_features(feature_df):
-    config = BuildFeaturesConfig(
-        CATEGORICAL_FEATURES=[],
-        ALL_MODEL_FEATURES=[],
-        TARGET_COL="value",
-    )
-    # Define the required arguments for _add_ee_features
-    x = -70.214134  # Example longitude, replace with actual value
-    y = 44.089355  # Example latitude, replace with actual value
-    table_name = "example_table"
-    # Create an instance of BuildFeaturesRandomForest and call _add_ee_features
-    builder = BuildFeaturesRandomForest.from_dataclass_config(config)
-    # Mock EEFeatures.execute method to return a predefined DataFrame
-    with mock.patch.object(EEFeatures, "execute", return_value=feature_df):
-        result = builder._add_ee_features(x, y, table_name)
+    # Mock the environment variables
+    with mock.patch.dict(
+        os.environ,
+        {
+            "SERVICE_ACCOUNT_EMAIL": "fake_service_account_email@example.com",
+            "EARTHENGINE_CREDENTIALS": "/fake/path/to/private_key.json",
+        },
+    ):
+        config = BuildFeaturesConfig(
+            CATEGORICAL_FEATURES=[],
+            ALL_MODEL_FEATURES=[],
+            TARGET_COL="value",
+        )
+        # Define the required arguments for _add_ee_features
+        x = -70.214134  # Example longitude, replace with actual value
+        y = 44.089355  # Example latitude, replace with actual value
+        table_name = "example_table"
+        # Create an instance of BuildFeaturesRandomForest and call _add_ee_features
+        builder = BuildFeaturesRandomForest.from_dataclass_config(config)
+        # Mock EEFeatures.execute method to return a predefined DataFrame
+        with mock.patch.object(EEFeatures, "execute", return_value=feature_df):
+            result = builder._add_ee_features(x, y, table_name)
 
-    # Assert that the resulting DataFrame equals the original feature_df
-    assert result.equals(feature_df)
+        # Assert that the resulting DataFrame equals the original feature_df
+        assert result.equals(feature_df)
 
 
 def test_split_train_valid(cohort_df, feature_df):
