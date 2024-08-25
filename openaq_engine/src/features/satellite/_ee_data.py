@@ -83,7 +83,7 @@ class EEFeatures:
             lookback_n=config.LOOKBACK_N,
         )
 
-    def execute(self, x, y, table_name, save_images):
+    def execute(self, x, y, table_name, save_images, use_parallel=True):
         """
         Create an instance of EEFeatures from a configuration dataclass.
 
@@ -103,12 +103,22 @@ class EEFeatures:
         )
         ee.Initialize(credentials)
 
-        results = Parallel(n_jobs=-1, backend="multiprocessing", verbose=5)(
-            delayed(self.query_satellite_for_time_range)(
-                satellite, config, x, y, table_name, save_images
+        if use_parallel:
+            results = Parallel(
+                n_jobs=-1, backend="multiprocessing", verbose=5
+            )(
+                delayed(self.query_satellite_for_time_range)(
+                    satellite, config, x, y, table_name, save_images
+                )
+                for satellite, config in self.satellite_config.items()
             )
-            for satellite, config in self.satellite_config.items()
-        )
+        else:
+            results = [
+                self.query_satellite_for_time_range(
+                    satellite, config, x, y, table_name, save_images
+                )
+                for satellite, config in self.satellite_config.items()
+            ]
 
         # Flatten the list of DataFrames
         satellite_dfs = [
