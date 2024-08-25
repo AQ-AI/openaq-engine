@@ -289,31 +289,35 @@ def test_calculate_spatial_weighted_average():
 
 
 def test_bands_available():
-    # Set up the EEFeatures object
-    ee_features = EEFeatures(
-        satellite_config={},
-        date_col="timestamp_utc",
-        bucket_name="fake-bucket",
-        lookback_n=3,
-    )
+    # Mock environment variables
+    with mock.patch.dict(
+        os.environ,
+        {
+            "SERVICE_ACCOUNT_EMAIL": "fake_service_account_email@example.com",
+            "EARTHENGINE_CREDENTIALS": "/fake/path/to/private_key.json",
+        },
+    ):
+        # Set up the EEFeatures object
+        ee_features = EEFeatures(
+            satellite_config={},
+            date_col="timestamp_utc",
+            bucket_name="fake-bucket",
+            lookback_n=3,
+        )
 
-    # Mock the ee.ImageCollection and related methods
-    with mock.patch("ee.ImageCollection") as mock_image_collection, mock.patch(
-        "ee.Initialize"
-    ) as mock_initialize, mock.patch("ee.ServiceAccountCredentials"):
+        # Mocking an image collection and its method
+        mock_image_collection = mock.MagicMock()
+        mock_image_collection.first.return_value = mock.MagicMock()
+        mock_image_collection.first.return_value.select.return_value = (
+            mock_image_collection
+        )
 
-        # Set up the return values for the mock methods
-        mock_image_collection().first().bandNames().getInfo.return_value = [
-            "SR_B4",
-            "SR_B3",
-            "SR_B2",
-        ]
-        mock_initialize.return_value = None
-
-        # Now test the bands_available method
-        image_collection = mock_image_collection.return_value
-        image_bands = ["SR_B4", "SR_B3", "SR_B2"]
-        result = ee_features.bands_available(image_collection, image_bands)
+        # Mock the bands_available method
+        with mock.patch("ee.ImageCollection") as mock_image_collection_class:
+            mock_image_collection_class.return_value = mock_image_collection
+            result = ee_features.bands_available(
+                mock_image_collection, ["SR_B4", "SR_B3", "SR_B2"]
+            )
 
         assert result is True
 
