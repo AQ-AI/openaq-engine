@@ -70,8 +70,6 @@ we also have an API reference, the :ref:`modindex`.
    :template: custom-module-template.rst
    :recursive:
 
-   openaq_engine
-
 
 
 Indices and tables

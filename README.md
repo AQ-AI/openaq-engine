@@ -31,7 +31,7 @@ $ openaq-engine --help
 
 To run the pipeline globally run:
 ```bash
-$ openaq-engine run-pipeline /path/to/models/dir /path/to/plots/dir pollutant pm25 --source openaq-api
+$ openaq-engine run-pipeline /path/to/models/dir /path/to/plots/dir --cohort-table
 ```
 
 Remember to define your psql environment variables and export them using:
