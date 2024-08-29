@@ -1,9 +1,9 @@
 
-![CI](https://img.shields.io/github/actions/workflow/status/AQ-AI/openaq-engine/.github/workflows/workflow.yaml?branch=develop)
+# Welcome to openaq-engine’s documentation!
 
-*⁠ Documentation ⁠* |
-------------------- |
-[![Documentation](https://img.shields.io/badge/api-reference-blue.svg)](https://www.aqai.xyz/openaq-engine/) |
+*⁠ Documentation ⁠* | * Build * |
+------------------- | ------------------- |
+[![Documentation](https://img.shields.io/badge/api-reference-blue.svg)](https://www.aqai.xyz/openaq-engine/) | ![CI](https://img.shields.io/github/actions/workflow/status/AQ-AI/openaq-engine/.github/workflows/workflow.yaml?branch=develop) |
 
 The documentation is built up in the following parts:
 
