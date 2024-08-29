@@ -1,7 +1,7 @@
 
 # Welcome to openaq-engine’s documentation!
 
-*⁠ Documentation ⁠* | * Build * |
+*⁠ Documentation ⁠* | *⁠ Build ⁠*  |
 ------------------- | ------------------- |
 [![Documentation](https://img.shields.io/badge/api-reference-blue.svg)](https://www.aqai.xyz/openaq-engine/) | ![CI](https://img.shields.io/github/actions/workflow/status/AQ-AI/openaq-engine/.github/workflows/workflow.yaml?branch=develop) |
 
