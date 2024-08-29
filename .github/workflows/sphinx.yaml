@@ -25,7 +25,7 @@ jobs:
 
       - name: Build HTML
         run: |
-          poetry run sphinx-build -b html docs/source docs/build/html
+          PYTHONPATH=$PYTHONPATH:$(pwd) poetry run sphinx-build -b html docs/source docs/build/html
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3

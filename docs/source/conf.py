@@ -22,7 +22,8 @@ extensions = [
     'sphinx.ext.viewcode',
 ]
 
-autodoc_mock_imports = ['openaq_engine.setup']
+autodoc_mock_imports = ['openaq_engine.setup', 'mlflows', 'setup_environment', 'src']
+
 
 autosummary_generate = True
 templates_path = ["_templates"]
