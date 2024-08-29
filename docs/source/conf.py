@@ -1,14 +1,9 @@
 import os
 import sys
 
-
 # Add the openaq_engine directory to the Python path
 # Adjust the sys.path to point to the correct directory
-sys.path.insert(0, os.path.abspath('../../openaq_engine'))
-
-# # Add the config and mlflows directories to the Python path if needed
-# sys.path.insert(0, os.path.abspath('../openaq_engine/config'))
-# sys.path.insert(0, os.path.abspath('../openaq_engine/mlflows'))
+sys.path.insert(0, os.path.abspath('../../'))  # Adjusted to point to the correct directory
 
 print("Current working directory: " + os.getcwd())
 print("Python path includes: " + str(sys.path))
@@ -26,6 +21,8 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
 ]
+
+autodoc_mock_imports = ['openaq_engine.setup']
 
 autosummary_generate = True
 templates_path = ["_templates"]

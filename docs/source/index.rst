@@ -55,8 +55,8 @@ If at any point the documentation does not suffice, you can always get help by m
    install/architecture
    install/database_schema
    install/mlflow_setup
-   install/modules
-   :ref:`modindex`
+
+.. include:: genindex.rst
 
 
 ------------
