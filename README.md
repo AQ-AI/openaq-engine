@@ -1,6 +1,9 @@
 
 ![CI](https://img.shields.io/github/actions/workflow/status/AQ-AI/openaq-engine/.github/workflows/workflow.yaml?branch=develop)
-![Coverage](https://img.shields.io/badge/coverage-80%25-brightgreen)
+
+*⁠ Documentation ⁠* |
+------------------- |
+[![Documentation](https://img.shields.io/badge/api-reference-blue.svg)](https://www.aqai.xyz/openaq-engine/) |
 
 The documentation is built up in the following parts:
 
