@@ -1,5 +1,6 @@
 from abc import ABC
 
+import mlflow
 from sqlalchemy import text
 from src.utils.utils import write_to_db
 
@@ -15,13 +16,16 @@ class ModelEvaluatorBase(ABC):
         engine,
     ):
         """Write model results to the database for all metrics and constraints"""
+        # Define columns for the database
         columns_to_add = [
             x + " numeric"
-            # hardcoded as they should not change
-            # even if self.metrics change, the columns should just
-            # be blank to prevent issues when appending data later
-            for x in ["mse", "mape"]
+            for x in [
+                "mse",
+                "mape",
+            ]  # Metrics that will be logged to both DB and MLflow
         ]
+
+        # Create table if not exists
         with engine.begin() as connection:
             connection.execute(
                 text(
@@ -37,6 +41,7 @@ class ModelEvaluatorBase(ABC):
                 )
             )
 
+        # Write results to the database
         write_to_db(
             results,
             engine,
@@ -44,3 +49,9 @@ class ModelEvaluatorBase(ABC):
             "public",
             "append",
         )
+
+    def _log_metrics_to_mlflow(self, run_id, metric, metric_value):
+        """
+        Log metrics to MLflow using the specified run_id.
+        """
+        mlflow.log_metric(metric, float(metric_value))

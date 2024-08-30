@@ -220,7 +220,10 @@ def run_pipeline(
         os.getenv("PGUSER"),
         os.getenv("PGPASSWORD"),
     )
-    with mlflow.start_run(experiment_id=experiment_id, nested=True):
+
+    # Start the MLflow run and capture the run_id
+    with mlflow.start_run(experiment_id=experiment_id, nested=True) as run:
+        run_id = run.info.run_id  # Capture the run_id for logging
 
         matrix_generator = MatrixGeneratorFlow().execute()
 
@@ -228,7 +231,6 @@ def run_pipeline(
             logging.info(
                 "Satellites data generated. Starting feature building"
             )
-
         else:
             locations_query = (
                 f"""SELECT DISTINCT "x", "y" FROM "{cohort_table}";"""
@@ -275,54 +277,55 @@ def run_pipeline(
         model_output = []
 
         for i in train_validation_set:
-            start_model_datetime = datetime.now()
+            if i in [3, 4]:
+                start_model_datetime = datetime.now()
 
-            logging.info(
-                f"Starting pipeline for model {i} {start_model_datetime}"
-            )
-            X_train, Y_train, X_valid, Y_valid = load_data_for_single_tv_set(
-                cohort_table, i
-            )
-
-            model_trainer = ModelTrainerFlow().execute()
-            model_output += model_trainer.train_all_models(
-                i,
-                X_train,
-                Y_train,
-                models_directory,
-                start_datetime,
-                engine,
-            )
-            logging.info("Getting model output")
-            for model_id, model_name, train_model in model_output:
                 logging.info(
-                    f"Training and evaluating model {model_output[1]}"
+                    f"Starting pipeline for model {i} {start_model_datetime}"
                 )
-                model_evaluator = ModelEvaluatorFlow().execute()
-                valid_pred, results_metrics_df = model_evaluator.execute(
+                X_train, Y_train, X_valid, Y_valid = (
+                    load_data_for_single_tv_set(cohort_table, i)
+                )
+
+                model_trainer = ModelTrainerFlow().execute()
+                model_output += model_trainer.train_all_models(
                     i,
-                    train_model,
-                    model_name,
-                    model_id,
-                    X_valid,
-                    Y_valid,
+                    X_train,
+                    Y_train,
+                    models_directory,
                     start_datetime,
                     engine,
                 )
-                ModelVisualizerFlow(plots_directory).execute(
-                    X_valid,
-                    valid_pred,
-                    Y_valid,
-                    start_datetime,
-                    model_name,
-                    results_metrics_df,
-                )
+                logging.info("Getting model output")
+                for model_id, model_name, train_model in model_output:
+                    logging.info(f"Training and evaluating model {model_name}")
+                    model_evaluator = ModelEvaluatorFlow().execute()
+                    # Pass the run_id to the execute method of ModelEvaluator
+                    valid_pred, results_metrics_df = model_evaluator.execute(
+                        i,
+                        train_model,
+                        model_name,
+                        model_id,
+                        X_valid,
+                        Y_valid,
+                        start_datetime,
+                        engine,
+                        run_id=run_id,  # Pass run_id here
+                    )
+                    ModelVisualizerFlow(plots_directory).execute(
+                        X_valid,
+                        valid_pred,
+                        Y_valid,
+                        start_datetime,
+                        model_name,
+                        results_metrics_df,
+                    )
 
-            end_datetime = datetime.now()
-            logging.info(f"Ending pipeline at {end_datetime}")
-            logging.info(
-                f"Total time ellapsed: {end_datetime - start_datetime}"
-            )
+                end_datetime = datetime.now()
+                logging.info(f"Ending pipeline at {end_datetime}")
+                logging.info(
+                    f"Total time ellapsed: {end_datetime - start_datetime}"
+                )
 
 
 @click.group("openaq-engine", help="Library to query openaq data")
