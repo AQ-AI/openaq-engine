@@ -24,6 +24,7 @@ extensions = [
 
 autodoc_mock_imports = ['openaq_engine.setup', 'mlflows', 'setup_environment', 'src']
 
+html_static_path = ['_static']
 
 autosummary_generate = True
 templates_path = ["_templates"]
