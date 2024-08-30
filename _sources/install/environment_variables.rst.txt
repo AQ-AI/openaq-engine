@@ -40,7 +40,7 @@ Database Environment Variables
   - These variables are related to your PostgreSQL database configuration. You should set them according to your database setup.
 
 AWS Environment Variables
-^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - `S3_OUTPUT_OPENAQ`, `S3_BUCKET_OPENAQ`, `AWS_PROFILE`, `AWS_USER`, `AWS_ACCESS_KEY`, `AWS_SECRET_ACCESS_KEY`, `MLFLOW_S3_BUCKET`:
 - These variables are related to your AWS configuration. You can obtain the access keys and bucket names from the AWS Management Console.

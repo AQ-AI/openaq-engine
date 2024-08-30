@@ -12,6 +12,11 @@ The AQAI Pipeline is a comprehensive data processing and machine learning system
 4. AQAI.Board
 5. VPC
 
+.. image:: ../../_static/AQAI_architecture.svg
+   :alt: AQAI Pipeline Diagram
+   :align: center
+   :width: 100%
+
 Data Sources
 ------------
 
