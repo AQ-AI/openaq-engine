@@ -56,8 +56,8 @@ If at any point the documentation does not suffice, you can always get help by m
    install/database_schema
    install/mlflow_setup
    install/sphinx_setup
-   install/modules
-   :ref:`modindex`
+
+.. include:: genindex.rst
 
 
 ------------
@@ -70,8 +70,6 @@ we also have an API reference, the :ref:`modindex`.
    :toctree: _autosummary
    :template: custom-module-template.rst
    :recursive:
-
-   openaq_engine
 
 
 
