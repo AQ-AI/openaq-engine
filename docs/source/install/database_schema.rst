@@ -168,7 +168,7 @@ The `model_metadata` table stores all outputs of the machine learning pipeline. 
      - timestamp
    * - randomforestregressor_n_estimators500_max_depth10_8
      - randomforestregressor_n_estimators500_max_depth10
-     - {Optical_Depth_047,SR_B4,SR_B3,SR_B2,avg_rad,temperature_2m_above_ground,relative_humidity_2m_above_ground,precipitable_water_entire_atmosphere,total_cloud_cover_entire_atmosphere,u_component_of_wind_10m_above_ground,v_component_of_wind_10m_above_ground}
+     - {Optical_Depth_047, SR_B4, SR_B3, SR_B2, avg_rad, temperature_2m_above_ground, relative_humidity_2m_above_ground, precipitable_water_entire_atmosphere, total_cloud_cover_entire_atmosphere, u_component_of_wind_10m_above_ground, v_component_of_wind_10m_above_ground}
      - {value}
      - n_estimators500_max_depth10
      - 2024-05-31 14:48:41.217907
