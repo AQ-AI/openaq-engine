@@ -121,3 +121,15 @@ venv.bak/
 
 # Data
 local_data/*
+
+## Notebooks
+openaq_engine/scripts/plume_labs.ipynb
+
+openssl-1.1.1k/*
+
+google-cloud-sdk/*
+
+EarthEngineImages/*
+UnzippedImages/*
+
+mlruns/

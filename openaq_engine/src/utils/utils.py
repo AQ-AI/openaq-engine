@@ -5,6 +5,7 @@ from typing import Any, List
 import boto3
 import numpy as np
 import pandas as pd
+import requests
 from pydantic.json import pydantic_encoder
 from setup_environment import connect_to_db
 
@@ -36,14 +37,29 @@ def write_csv(df: pd.DataFrame, path: str, **kwargs: Any) -> None:
         index=False,
         na_rep="",
         sep=",",
-        line_terminator="\n",
+        lineterminator="\n",
         encoding="utf-8",
         escapechar="\r",
         **kwargs,
     )
 
 
-def query_results(params, query, wait=True):
+def query_results_from_api(headers, url):
+    response = requests.get(url, headers=headers)
+    return response
+
+
+def api_response_to_df(url):
+    headers = {"accept": "application/json"}
+    response = query_results_from_api(headers, url)
+    try:
+        # Directly use response.json() without json.loads
+        return pd.DataFrame(response.json()["results"])
+    except KeyError:
+        pass
+
+
+def query_results_from_aws(params, query, wait=True):
     session = boto3.Session()
 
     client = session.client("athena", params["region"])
@@ -52,7 +68,7 @@ def query_results(params, query, wait=True):
         QueryString=query,
         QueryExecutionContext={"Database": "default"},
         ResultConfiguration={
-            "OutputLocation": "s3://" + params["bucket"] + "/" + params["path"] + "/"
+            "OutputLocation": f"s3://{params['bucket']}/{params['path']}/"
         },
     )
 
@@ -68,21 +84,27 @@ def query_results(params, query, wait=True):
         while iterations > 0:
             iterations = iterations - 1
             response_get_query_details = client.get_query_execution(
-                QueryExecutionId=response_query_execution_id["QueryExecutionId"]
+                QueryExecutionId=response_query_execution_id[
+                    "QueryExecutionId"
+                ]
             )
-            status = response_get_query_details["QueryExecution"]["Status"]["State"]
+            status = response_get_query_details["QueryExecution"]["Status"][
+                "State"
+            ]
 
             if (status == "FAILED") or (status == "CANCELLED"):
-                failure_reason = response_get_query_details["QueryExecution"]["Status"][
-                    "StateChangeReason"
-                ]
+                failure_reason = response_get_query_details["QueryExecution"][
+                    "Status"
+                ]["StateChangeReason"]
                 print(failure_reason)
                 return False, False
 
             elif status == "SUCCEEDED":
                 # Function to get output results
                 response_query_result = client.get_query_results(
-                    QueryExecutionId=response_query_execution_id["QueryExecutionId"]
+                    QueryExecutionId=response_query_execution_id[
+                        "QueryExecutionId"
+                    ]
                 )
                 return response_query_result
 
@@ -110,7 +132,9 @@ def write_dataclass(dclass: object, path: str) -> None:
     """
     with open(path, "w+") as f:
         f.write(
-            json.dumps(dclass, indent=4, ensure_ascii=True, default=pydantic_encoder)
+            json.dumps(
+                dclass, indent=4, ensure_ascii=True, default=pydantic_encoder
+            )
         )
 
 
@@ -135,17 +159,18 @@ def parametrized(dec):
 
 def get_data(query):
     """
-    Pulls data from the db based on the query
-    Input
-    -----
-    query: str
-       SQL query from the database
-    Output
-    ------
-    data: DataFrame
-       Dump of Query into a DataFrame
-    """
+    Pulls data from the db based on the query.
 
+    Parameters
+    ----------
+    query : str
+        SQL query from the database
+
+    Returns
+    -------
+    pd.DataFrame
+        Dump of Query into a DataFrame
+    """
     with connect_to_db() as conn:
         df = pd.read_sql_query(query, conn)
     return df
@@ -162,7 +187,6 @@ def write_to_db(
 ):
     #     with engine.begin() as connection:
     #         connection.execute(text("""SET ROLE "pakistan-ihhn-role" """))
-
     df.to_sql(
         name=table_name,
         schema=schema_name,
@@ -178,13 +202,16 @@ def ee_array_to_df(arr, list_of_bands):
     df = pd.DataFrame(arr)
 
     # Rearrange the header.
-    headers = df.iloc[0]
+    headers = df.iloc[0].tolist()  # Ensure headers are in list format
     df = pd.DataFrame(df.values[1:], columns=headers)
 
     # Remove rows without data inside.
     df = df[["longitude", "latitude", "time", *list_of_bands]].dropna()
 
     # Convert the data to numeric values.
+    df["longitude"] = pd.to_numeric(df["longitude"], errors="coerce")
+    df["latitude"] = pd.to_numeric(df["latitude"], errors="coerce")
+    df["time"] = pd.to_numeric(df["time"], errors="coerce")
     for band in list_of_bands:
         df[band] = pd.to_numeric(df[band], errors="coerce")
 
@@ -194,4 +221,4 @@ def ee_array_to_df(arr, list_of_bands):
     # Keep the columns of interest.
     df = df[["longitude", "latitude", "time", "datetime", *list_of_bands]]
 
-    return df
+    return df.reset_index(drop=True)

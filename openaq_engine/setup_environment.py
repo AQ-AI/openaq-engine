@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 """
-Setup Enviroment
+Setup Environment
 
-Tools for connecting to the
-database.
-
+Tools for connecting to the database.
 """
 
 import os
@@ -17,11 +15,12 @@ from sqlalchemy.engine import create_engine
 
 def get_athena_engine():
     """
-    Returns a sql engine
+    Creates and returns a SQLAlchemy engine for connecting to AWS Athena.
 
-    Output
-    ------
-    engine: SQLalchemy engine
+    Returns
+    -------
+    engine : SQLAlchemy Engine
+        A SQLAlchemy engine connected to AWS Athena.
     """
     conn_str = (
         "awsathena+rest://{aws_access_key_id}:{aws_secret_access_key}"
@@ -50,22 +49,27 @@ def get_dbengine(
     DBTYPE="postgresql",
 ):
     """
-    Returns a sql engine
+    Creates and returns a SQLAlchemy engine for connecting to a PostgreSQL database.
 
-    Input
-    -----
-    PGDATABASE: str
-    DB Name
-    PGHOST: str
-    hostname
-    PGPASSWORD: str
-    DB password
-    DBTYPE: str
-    type of database, default is posgresql
+    Parameters
+    ----------
+    PGDATABASE : str
+        The name of the database to connect to.
+    PGHOST : str
+        The hostname of the database server.
+    PGPORT : int, optional
+        The port number to connect to (default is 5432).
+    PGPASSWORD : str
+        The password for the database user.
+    PGUSER : str
+        The username for the database.
+    DBTYPE : str, optional
+        The type of database, default is "postgresql".
 
-    Output
-    ------
-    engine: SQLalchemy engine
+    Returns
+    -------
+    engine : SQLAlchemy Engine
+        A SQLAlchemy engine connected to the specified database.
     """
     str_conn = "{dbtype}://{username}@{host}:{port}/{db}".format(
         dbtype=DBTYPE,
@@ -81,11 +85,17 @@ def get_dbengine(
 @contextmanager
 def connect_to_db(PGPORT=5432):
     """
-    Connects to database
-    Output
+    Context manager for connecting to a PostgreSQL database.
+
+    Parameters
+    ----------
+    PGPORT : int, optional
+        The port number to connect to (default is 5432).
+
+    Yields
     ------
-    conn: object
-       Database connection.
+    conn : SQLAlchemy Connection
+        A connection to the PostgreSQL database.
     """
     try:
         engine = get_dbengine(
@@ -96,7 +106,6 @@ def connect_to_db(PGPORT=5432):
             PGPASSWORD=os.getenv("PGPASSWORD"),
         )
         conn = engine.connect()
-
         yield conn
     except psycopg2.Error:
         raise SystemExit("Cannot Connect to DB")
@@ -106,8 +115,17 @@ def connect_to_db(PGPORT=5432):
 
 def run_query(query):
     """
-    Runs a query on the database and returns
-    the result in a dataframe.
+    Executes a SQL query on the database and returns the result as a pandas DataFrame.
+
+    Parameters
+    ----------
+    query : str
+        The SQL query to execute.
+
+    Returns
+    -------
+    data : pandas DataFrame
+        A DataFrame containing the results of the query.
     """
     with connect_to_db() as conn:
         data = pd.read_sql(query, conn)
@@ -116,9 +134,14 @@ def run_query(query):
 
 def test_database_connect():
     """
-    test database connection
+    Tests the database connection by running a simple query.
+
+    Raises
+    ------
+    AssertionError
+        If the query returns fewer than 1 row.
     """
     with connect_to_db() as conn:
-        query = "select * from raw.codes limit 10"
+        query = "SELECT * FROM raw.codes LIMIT 10"
         data = pd.read_sql_query(query, conn)
         assert len(data) > 1

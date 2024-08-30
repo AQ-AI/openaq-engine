@@ -1,0 +1,41 @@
+name: Sphinx build
+
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          poetry --version
+
+      - name: Install dependencies
+        run: |
+          poetry install
+
+      - name: Build HTML
+        run: |
+          PYTHONPATH=$PYTHONPATH:$(pwd) poetry run sphinx-build -b html docs/source docs/build/html
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: html-docs
+          path: docs/build/html/
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        if: github.ref == 'refs/heads/develop'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/build/html
