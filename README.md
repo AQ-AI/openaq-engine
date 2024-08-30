@@ -35,4 +35,10 @@ To run the pipeline globally run:
 $ openaq-engine run-pipeline /path/to/models/dir /path/to/plots/dir --cohort-table
 ```
 
+## Detailed answer:
+
+*⁠ Documentation ⁠* |
+------------------- | 
+[![Documentation](https://img.shields.io/badge/api-reference-blue.svg)](https://www.aqai.xyz/openaq-engine/) | 
+
 If at any point the documentation does not suffice, you can always get help by emailing us at [info@aqai.xyz](mailto:info@aqai.xyz).
