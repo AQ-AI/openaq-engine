@@ -64,33 +64,43 @@
 <section id="obtaining-environment-variables">
 <h2>Obtaining Environment Variables<a class="headerlink" href="#obtaining-environment-variables" title="Link to this heading">¶</a></h2>
 <p>The environment variables can be obtained or set up as follows:</p>
-<p>### Database Environment Variables</p>
+<section id="database-environment-variables">
+<h3>Database Environment Variables<a class="headerlink" href="#database-environment-variables" title="Link to this heading">¶</a></h3>
 <ul class="simple">
 <li><p><cite>DB_NAME_OPENAQ</cite>, <cite>PGDATABASE</cite>, <cite>PGUSER</cite>, <cite>PGPASSWORD</cite>, <cite>PGHOST</cite>, <cite>TEST_PGDATABASE</cite>, <cite>TEST_PGUSER</cite>, <cite>TEST_PGPASSWORD</cite>, <cite>TEST_PGHOST</cite>:
 - These variables are related to your PostgreSQL database configuration. You should set them according to your database setup.</p></li>
 </ul>
-<p>### AWS Environment Variables</p>
+</section>
+<section id="aws-environment-variables">
+<h3>AWS Environment Variables<a class="headerlink" href="#aws-environment-variables" title="Link to this heading">¶</a></h3>
 <ul class="simple">
-<li><p><cite>S3_OUTPUT_OPENAQ</cite>, <cite>S3_BUCKET_OPENAQ</cite>, <cite>AWS_PROFILE</cite>, <cite>AWS_USER</cite>, <cite>AWS_ACCESS_KEY</cite>, <cite>AWS_SECRET_ACCESS_KEY</cite>, <cite>MLFLOW_S3_BUCKET</cite>:
-- These variables are related to your AWS configuration. You can obtain the access keys and bucket names from the AWS Management Console.
-- <cite>AWS_ACCESS_KEY</cite> and <cite>AWS_SECRET_ACCESS_KEY</cite> can be generated from the AWS IAM service. Ensure you have the necessary permissions to access the required resources.
-- <cite>AWS_PROFILE</cite> is the name of the AWS CLI profile you are using, which is configured in your AWS credentials file (usually located at <cite>~/.aws/credentials</cite>).</p></li>
+<li><p><cite>S3_OUTPUT_OPENAQ</cite>, <cite>S3_BUCKET_OPENAQ</cite>, <cite>AWS_PROFILE</cite>, <cite>AWS_USER</cite>, <cite>AWS_ACCESS_KEY</cite>, <cite>AWS_SECRET_ACCESS_KEY</cite>, <cite>MLFLOW_S3_BUCKET</cite>:</p></li>
+<li><p>These variables are related to your AWS configuration. You can obtain the access keys and bucket names from the AWS Management Console.</p></li>
+<li><p><cite>AWS_ACCESS_KEY</cite> and <cite>AWS_SECRET_ACCESS_KEY</cite> can be generated from the AWS IAM service. Ensure you have the necessary permissions to access the required resources.</p></li>
+<li><p><cite>AWS_PROFILE</cite> is the name of the AWS CLI profile you are using, which is configured in your AWS credentials file (usually located at <cite>~/.aws/credentials</cite>).</p></li>
 </ul>
-<p>### Earth Engine API Key</p>
+</section>
+<section id="earth-engine-api-key">
+<h3>Earth Engine API Key<a class="headerlink" href="#earth-engine-api-key" title="Link to this heading">¶</a></h3>
 <ul class="simple">
-<li><p><cite>EE_API_KEY</cite>:
-- This is the API key for Google Earth Engine. You can generate an API key from the Google Earth Engine Developers Console.</p></li>
+<li><p><cite>EE_API_KEY</cite>:</p></li>
+<li><p>This is the API key for Google Earth Engine. You can generate an API key from the Google Earth Engine Developers Console.</p></li>
 </ul>
-<p>### MLflow Environment Variables</p>
+</section>
+<section id="mlflow-environment-variables">
+<h3>MLflow Environment Variables<a class="headerlink" href="#mlflow-environment-variables" title="Link to this heading">¶</a></h3>
 <ul class="simple">
-<li><p><cite>MLFLOW_S3_BUCKET</cite>, <cite>MLFLOW_TRACKING_URI</cite>:
-- These variables are used for configuring MLflow with an S3 bucket and a tracking URI. You should set these according to your MLflow setup.</p></li>
+<li><p><cite>MLFLOW_S3_BUCKET</cite>, <cite>MLFLOW_TRACKING_URI</cite>:</p></li>
+<li><p>These variables are used for configuring MLflow with an S3 bucket and a tracking URI. You should set these according to your MLflow setup.</p></li>
 </ul>
-<p>### Python Path</p>
+</section>
+<section id="python-path">
+<h3>Python Path<a class="headerlink" href="#python-path" title="Link to this heading">¶</a></h3>
 <ul class="simple">
-<li><p><cite>PYTHONPATH=$(pwd)</cite>:
-- This sets the Python path to the current working directory. It ensures that the Python interpreter can locate the modules in your project.</p></li>
+<li><p><cite>PYTHONPATH=$(pwd)</cite>:</p></li>
+<li><p>This sets the Python path to the current working directory. It ensures that the Python interpreter can locate the modules in your project.</p></li>
 </ul>
+</section>
 </section>
 <section id="setting-environment-variables">
 <h2>Setting Environment Variables<a class="headerlink" href="#setting-environment-variables" title="Link to this heading">¶</a></h2>
@@ -168,10 +178,6 @@
 <li class="toctree-l1"><a class="reference internal" href="architecture.html">AQAI Pipeline</a></li>
 <li class="toctree-l1"><a class="reference internal" href="database_schema.html">AQAI Database Schema</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mlflow_setup.html">Mlflow Experiment Implementation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="modules.html">Module Index</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../_autosummary/openaq_engine.html">openaq_engine</a></li>
 </ul>
 
 <div class="relations">

@@ -33,32 +33,37 @@ Obtaining Environment Variables
 
 The environment variables can be obtained or set up as follows:
 
-### Database Environment Variables
+Database Environment Variables
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - `DB_NAME_OPENAQ`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`, `PGHOST`, `TEST_PGDATABASE`, `TEST_PGUSER`, `TEST_PGPASSWORD`, `TEST_PGHOST`:
   - These variables are related to your PostgreSQL database configuration. You should set them according to your database setup.
 
-### AWS Environment Variables
+AWS Environment Variables
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 - `S3_OUTPUT_OPENAQ`, `S3_BUCKET_OPENAQ`, `AWS_PROFILE`, `AWS_USER`, `AWS_ACCESS_KEY`, `AWS_SECRET_ACCESS_KEY`, `MLFLOW_S3_BUCKET`:
-  - These variables are related to your AWS configuration. You can obtain the access keys and bucket names from the AWS Management Console.
-  - `AWS_ACCESS_KEY` and `AWS_SECRET_ACCESS_KEY` can be generated from the AWS IAM service. Ensure you have the necessary permissions to access the required resources.
-  - `AWS_PROFILE` is the name of the AWS CLI profile you are using, which is configured in your AWS credentials file (usually located at `~/.aws/credentials`).
+- These variables are related to your AWS configuration. You can obtain the access keys and bucket names from the AWS Management Console.
+- `AWS_ACCESS_KEY` and `AWS_SECRET_ACCESS_KEY` can be generated from the AWS IAM service. Ensure you have the necessary permissions to access the required resources.
+- `AWS_PROFILE` is the name of the AWS CLI profile you are using, which is configured in your AWS credentials file (usually located at `~/.aws/credentials`).
 
-### Earth Engine API Key
+Earth Engine API Key
+^^^^^^^^^^^^^^^^^^^^
 
 - `EE_API_KEY`:
-  - This is the API key for Google Earth Engine. You can generate an API key from the Google Earth Engine Developers Console.
+- This is the API key for Google Earth Engine. You can generate an API key from the Google Earth Engine Developers Console.
 
-### MLflow Environment Variables
+MLflow Environment Variables
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - `MLFLOW_S3_BUCKET`, `MLFLOW_TRACKING_URI`:
-  - These variables are used for configuring MLflow with an S3 bucket and a tracking URI. You should set these according to your MLflow setup.
+- These variables are used for configuring MLflow with an S3 bucket and a tracking URI. You should set these according to your MLflow setup.
 
-### Python Path
+Python Path
+^^^^^^^^^^^
 
 - `PYTHONPATH=$(pwd)`:
-  - This sets the Python path to the current working directory. It ensures that the Python interpreter can locate the modules in your project.
+- This sets the Python path to the current working directory. It ensures that the Python interpreter can locate the modules in your project.
 
 Setting Environment Variables
 -----------------------------

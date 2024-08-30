@@ -38,91 +38,6 @@
 </section>
 <section id="module-src.utils.utils">
 <span id="src-utils-utils-module"></span><h2>src.utils.utils module<a class="headerlink" href="#module-src.utils.utils" title="Link to this heading">¶</a></h2>
-<dl class="py function">
-<dt class="sig sig-object py" id="src.utils.utils.api_response_to_df">
-<span class="sig-prename descclassname"><span class="pre">src.utils.utils.</span></span><span class="sig-name descname"><span class="pre">api_response_to_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/utils/utils.html#api_response_to_df"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.utils.utils.api_response_to_df" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="src.utils.utils.ee_array_to_df">
-<span class="sig-prename descclassname"><span class="pre">src.utils.utils.</span></span><span class="sig-name descname"><span class="pre">ee_array_to_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_of_bands</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/utils/utils.html#ee_array_to_df"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.utils.utils.ee_array_to_df" title="Link to this definition">¶</a></dt>
-<dd><p>Transforms client-side ee.Image.getRegion array to pandas.DataFrame.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="src.utils.utils.get_categorical_feature_indices">
-<span class="sig-prename descclassname"><span class="pre">src.utils.utils.</span></span><span class="sig-name descname"><span class="pre">get_categorical_feature_indices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/src/utils/utils.html#get_categorical_feature_indices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.utils.utils.get_categorical_feature_indices" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="src.utils.utils.get_data">
-<span class="sig-prename descclassname"><span class="pre">src.utils.utils.</span></span><span class="sig-name descname"><span class="pre">get_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/utils/utils.html#get_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.utils.utils.get_data" title="Link to this definition">¶</a></dt>
-<dd><p>Pulls data from the db based on the query
-Input
-—–
-query: str</p>
-<blockquote>
-<div><p>SQL query from the database</p>
-</div></blockquote>
-<section id="output">
-<h3>Output<a class="headerlink" href="#output" title="Link to this heading">¶</a></h3>
-<dl class="simple">
-<dt>data: DataFrame</dt><dd><p>Dump of Query into a DataFrame</p>
-</dd>
-</dl>
-</section>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="src.utils.utils.get_s3_file_path_list">
-<span class="sig-prename descclassname"><span class="pre">src.utils.utils.</span></span><span class="sig-name descname"><span class="pre">get_s3_file_path_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resource</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bucket</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/utils/utils.html#get_s3_file_path_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.utils.utils.get_s3_file_path_list" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="src.utils.utils.json_provider">
-<span class="sig-prename descclassname"><span class="pre">src.utils.utils.</span></span><span class="sig-name descname"><span class="pre">json_provider</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmd_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/utils/utils.html#json_provider"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.utils.utils.json_provider" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="src.utils.utils.parametrized">
-<span class="sig-prename descclassname"><span class="pre">src.utils.utils.</span></span><span class="sig-name descname"><span class="pre">parametrized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/utils/utils.html#parametrized"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.utils.utils.parametrized" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="src.utils.utils.query_results_from_api">
-<span class="sig-prename descclassname"><span class="pre">src.utils.utils.</span></span><span class="sig-name descname"><span class="pre">query_results_from_api</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">headers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/utils/utils.html#query_results_from_api"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.utils.utils.query_results_from_api" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="src.utils.utils.query_results_from_aws">
-<span class="sig-prename descclassname"><span class="pre">src.utils.utils.</span></span><span class="sig-name descname"><span class="pre">query_results_from_aws</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wait</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/utils/utils.html#query_results_from_aws"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.utils.utils.query_results_from_aws" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="src.utils.utils.read_csv">
-<span class="sig-prename descclassname"><span class="pre">src.utils.utils.</span></span><span class="sig-name descname"><span class="pre">read_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/src/utils/utils.html#read_csv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.utils.utils.read_csv" title="Link to this definition">¶</a></dt>
-<dd><p>Read csv ensuring that nan’s are not parsed</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="src.utils.utils.write_csv">
-<span class="sig-prename descclassname"><span class="pre">src.utils.utils.</span></span><span class="sig-name descname"><span class="pre">write_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/src/utils/utils.html#write_csv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.utils.utils.write_csv" title="Link to this definition">¶</a></dt>
-<dd><p>Write csv to provided path ensuring that the correct encoding and escape
-characters are applied.</p>
-<p>Needed when csv’s have text with html tags in it and lists inside cells.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="src.utils.utils.write_dataclass">
-<span class="sig-prename descclassname"><span class="pre">src.utils.utils.</span></span><span class="sig-name descname"><span class="pre">write_dataclass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dclass</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/src/utils/utils.html#write_dataclass"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.utils.utils.write_dataclass" title="Link to this definition">¶</a></dt>
-<dd><p>Write a dataclass to the provided path as a json</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="src.utils.utils.write_to_db">
-<span class="sig-prename descclassname"><span class="pre">src.utils.utils.</span></span><span class="sig-name descname"><span class="pre">write_to_db</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">engine</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schema_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_behaviour</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/utils/utils.html#write_to_db"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.utils.utils.write_to_db" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </section>
 <section id="module-src.utils">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-src.utils" title="Link to this heading">¶</a></h2>
@@ -172,10 +87,6 @@ characters are applied.</p>
 <li class="toctree-l1"><a class="reference internal" href="install/architecture.html">AQAI Pipeline</a></li>
 <li class="toctree-l1"><a class="reference internal" href="install/database_schema.html">AQAI Database Schema</a></li>
 <li class="toctree-l1"><a class="reference internal" href="install/mlflow_setup.html">Mlflow Experiment Implementation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="install/modules.html">Module Index</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="_autosummary/openaq_engine.html">openaq_engine</a></li>
 </ul>
 
 <div class="relations">

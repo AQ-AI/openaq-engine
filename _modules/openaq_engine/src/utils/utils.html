@@ -224,17 +224,18 @@
 <a class="viewcode-back" href="../../../../openaq_engine.src.utils.html#openaq_engine.src.utils.utils.get_data">[docs]</a>
 <span class="k">def</span> <span class="nf">get_data</span><span class="p">(</span><span class="n">query</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Pulls data from the db based on the query</span>
-<span class="sd">    Input</span>
-<span class="sd">    -----</span>
-<span class="sd">    query: str</span>
-<span class="sd">       SQL query from the database</span>
-<span class="sd">    Output</span>
-<span class="sd">    ------</span>
-<span class="sd">    data: DataFrame</span>
-<span class="sd">       Dump of Query into a DataFrame</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    Pulls data from the db based on the query.</span>
 
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    query : str</span>
+<span class="sd">        SQL query from the database</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        Dump of Query into a DataFrame</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">with</span> <span class="n">connect_to_db</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql_query</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">conn</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">df</span></div>
@@ -337,10 +338,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../install/architecture.html">AQAI Pipeline</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../install/database_schema.html">AQAI Database Schema</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../install/mlflow_setup.html">Mlflow Experiment Implementation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../install/modules.html">Module Index</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../../_autosummary/openaq_engine.html">openaq_engine</a></li>
 </ul>
 
 <div class="relations">

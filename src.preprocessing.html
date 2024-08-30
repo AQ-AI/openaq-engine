@@ -38,123 +38,6 @@
 </section>
 <section id="module-src.preprocessing.filter">
 <span id="src-preprocessing-filter-module"></span><h2>src.preprocessing.filter module<a class="headerlink" href="#module-src.preprocessing.filter" title="Link to this heading">¶</a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="src.preprocessing.filter.Filter">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.preprocessing.filter.</span></span><span class="sig-name descname"><span class="pre">Filter</span></span><a class="reference internal" href="_modules/src/preprocessing/filter.html#Filter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.preprocessing.filter.Filter" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="src.preprocessing.filter.Filter.filter_cities">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">filter_cities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cities</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/src/preprocessing/filter.html#Filter.filter_cities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.preprocessing.filter.Filter.filter_cities" title="Link to this definition">¶</a></dt>
-<dd><p>Filters the DataFrame for specific cities.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>df</strong> (<em>pd.DataFrame</em>) – The DataFrame containing location data.</p></li>
-<li><p><strong>cities</strong> (<em>list</em><em> of </em><em>str</em>) – The list of cities to filter for.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The filtered DataFrame containing only rows from the specified cities.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pd.DataFrame</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.preprocessing.filter.Filter.filter_countries">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">filter_countries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">countries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/src/preprocessing/filter.html#Filter.filter_countries"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.preprocessing.filter.Filter.filter_countries" title="Link to this definition">¶</a></dt>
-<dd><p>Filters the DataFrame for specific countries.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>df</strong> (<em>pd.DataFrame</em>) – The DataFrame containing location data.</p></li>
-<li><p><strong>countries</strong> (<em>list</em><em> of </em><em>str</em>) – The list of countries to filter for.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The filtered DataFrame containing only rows from the specified countries.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pd.DataFrame</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.preprocessing.filter.Filter.filter_extreme_values">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">filter_extreme_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/src/preprocessing/filter.html#Filter.filter_extreme_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.preprocessing.filter.Filter.filter_extreme_values" title="Link to this definition">¶</a></dt>
-<dd><p>Filters the DataFrame to remove rows with extreme PM2.5 values.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>df</strong> (<em>pd.DataFrame</em>) – The DataFrame containing air quality data.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The filtered DataFrame with rows containing extreme PM2.5 values removed.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pd.DataFrame</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.preprocessing.filter.Filter.filter_no_coordinates">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">filter_no_coordinates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/src/preprocessing/filter.html#Filter.filter_no_coordinates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.preprocessing.filter.Filter.filter_no_coordinates" title="Link to this definition">¶</a></dt>
-<dd><p>Filters the DataFrame to remove rows with empty coordinates.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>df</strong> (<em>pd.DataFrame</em>) – The DataFrame containing coordinate data.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The filtered DataFrame with rows that have empty coordinates removed.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pd.DataFrame</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.preprocessing.filter.Filter.filter_non_null_values">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">filter_non_null_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/src/preprocessing/filter.html#Filter.filter_non_null_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.preprocessing.filter.Filter.filter_non_null_values" title="Link to this definition">¶</a></dt>
-<dd><p>Filters the DataFrame to remove rows with non-positive values.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>df</strong> (<em>pd.DataFrame</em>) – The DataFrame containing air quality data.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The filtered DataFrame with rows containing non-positive values removed.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pd.DataFrame</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.preprocessing.filter.Filter.filter_pollutant">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">filter_pollutant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pollutant_to_predict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/src/preprocessing/filter.html#Filter.filter_pollutant"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.preprocessing.filter.Filter.filter_pollutant" title="Link to this definition">¶</a></dt>
-<dd><p>Filters the DataFrame for rows containing the specified pollutant.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>df</strong> (<em>pd.DataFrame</em>) – The DataFrame containing air quality data.</p></li>
-<li><p><strong>pollutant_to_predict</strong> (<em>str</em>) – The pollutant to filter for.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The filtered DataFrame containing only rows with the specified pollutant.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pd.DataFrame</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
 </section>
 <section id="module-src.preprocessing">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-src.preprocessing" title="Link to this heading">¶</a></h2>
@@ -204,10 +87,6 @@
 <li class="toctree-l1"><a class="reference internal" href="install/architecture.html">AQAI Pipeline</a></li>
 <li class="toctree-l1"><a class="reference internal" href="install/database_schema.html">AQAI Database Schema</a></li>
 <li class="toctree-l1"><a class="reference internal" href="install/mlflow_setup.html">Mlflow Experiment Implementation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="install/modules.html">Module Index</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="_autosummary/openaq_engine.html">openaq_engine</a></li>
 </ul>
 
 <div class="relations">

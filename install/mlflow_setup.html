@@ -14,7 +14,6 @@
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Module Index" href="modules.html" />
     <link rel="prev" title="AQAI Database Schema" href="database_schema.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
@@ -43,160 +42,132 @@
 <section id="methodology">
 <h2>Methodology<a class="headerlink" href="#methodology" title="Link to this heading">¶</a></h2>
 <p>The team used MLFlow to run each pipeline to gather, process, analyze, and validate the results of the registered machine learning model.</p>
-<ol class="arabic">
-<li><p><strong>Module Options</strong>: Each module has a set of options to parameterize the CLI command using the specified arguments.
-.. code-block:: python</p>
-<blockquote>
-<div><p>from mlflows.cli.cohort_builder import cohort_builder_options</p>
-</div></blockquote>
-</li>
-<li><p><strong>Module Configuration</strong>: Each module has a configuration file where default configs can be stored, as these vary less frequently.
-.. code-block:: python</p>
-<blockquote>
-<div><p>from config.model_settings import CohortBuilderConfig</p>
-</div></blockquote>
-</li>
-<li><p><strong>Flow Classes</strong>: Each module has its own “flow class,” which initializes the module with the configuration in a standard way.
-.. code-block:: python</p>
-<blockquote>
-<div><dl class="simple">
-<dt>class CohortBuilderFlow:</dt><dd><dl class="simple">
-<dt>def __init__(self):</dt><dd><p>self.config = CohortBuilderConfig()</p>
-</dd>
-<dt>def execute(self):</dt><dd><p>return CohortBuilder.from_dataclass_config(self.config)</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</div></blockquote>
-</li>
-<li><p><strong>Command Execution</strong>: Commands execute the modules and any dependent modules. Experiment IDs are the name of the module and the datetime of execution. Storage can be a hosted solution or a local path.
-.. code-block:: python</p>
-<blockquote>
-<div><p>&#64;cohort_builder_options()
-&#64;click.command(“cohort-builder”, help=”Generate cohorts for time splits”)
-def cohort_builder(country, source, pollutant, latest_date):</p>
-<blockquote>
-<div><dl class="simple">
-<dt>experiment_id = mlflow.create_experiment(</dt><dd><p>f”cohort_builder_{str(datetime.now())}”, os.getenv(“MLFLOW_S3_BUCKET”)</p>
-</dd>
-</dl>
-<p>)</p>
-<dl>
-<dt>with mlflow.start_run(experiment_id=experiment_id, nested=True):</dt><dd><p>engine = get_dbengine()
-time_splitter = TimeSplitterFlow().execute()
-train_validation_dict = time_splitter.execute(</p>
-<blockquote>
-<div><p>country, source, pollutant, latest_date</p>
-</div></blockquote>
-<p>)</p>
-<p>cohort_builder = CohortBuilderFlow().execute()
-cohort_builder.execute(</p>
-<blockquote>
-<div><p>train_validation_dict, engine, country, source, pollutant</p>
-</div></blockquote>
-<p>)</p>
-</dd>
-</dl>
-</div></blockquote>
-</div></blockquote>
-</li>
-<li><p><strong>CLI Grouping</strong>: Commands are added to the CLI group <cite>openaq-engine</cite>, grouping the modules into the package.
-.. code-block:: python</p>
-<blockquote>
-<div><p>&#64;click.group(“openaq-engine”, help=”Library to query openaq data”)
-&#64;click.pass_context
-def cli(ctx):</p>
-<blockquote>
-<div><p>…</p>
-</div></blockquote>
-<p>cli.add_command(time_splitter)
-cli.add_command(cohort_builder)
-cli.add_command(feature_builder)
-cli.add_command(run_pipeline)</p>
-<dl class="simple">
-<dt>if __name__ == “__main__”:</dt><dd><p>cli()</p>
-</dd>
-</dl>
-</div></blockquote>
-</li>
-<li><p><strong>MLFlow Tracking URI</strong>: MLFlow initiates the tracking URI through environment variables. This should be set to your specified server or “localhost”.
-.. code-block:: python</p>
-<blockquote>
-<div><dl class="simple">
-<dt>mlflow.set_tracking_uri(</dt><dd><p>os.getenv(“MLFLOW_TRACKING_URI”)</p>
-</dd>
-</dl>
-<p>)</p>
-</div></blockquote>
-</li>
+<ol class="arabic simple">
+<li><p><strong>Module Options</strong>: Each module has a set of options to parameterize the CLI command using the specified arguments.</p></li>
 </ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mlflows.cli.cohort_builder</span> <span class="kn">import</span> <span class="n">cohort_builder_options</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p><strong>Module Configuration</strong>: Each module has a configuration file where default configs can be stored, as these vary less frequently.</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">config.model_settings</span> <span class="kn">import</span> <span class="n">CohortBuilderConfig</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p><strong>Flow Classes</strong>: Each module has its own “flow class,” which initializes the module with the configuration in a standard way.</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">CohortBuilderFlow</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">CohortBuilderConfig</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">CohortBuilder</span><span class="o">.</span><span class="n">from_dataclass_config</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="4">
+<li><p><strong>Command Execution</strong>: Commands execute the modules and any dependent modules. Experiment IDs are the name of the module and the datetime of execution. Storage can be a hosted solution or a local path.</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@cohort_builder_options</span><span class="p">()</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="s2">&quot;cohort-builder&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Generate cohorts for time splits&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">cohort_builder</span><span class="p">(</span><span class="n">country</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">pollutant</span><span class="p">,</span> <span class="n">latest_date</span><span class="p">):</span>
+    <span class="n">experiment_id</span> <span class="o">=</span> <span class="n">mlflow</span><span class="o">.</span><span class="n">create_experiment</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;cohort_builder_</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;MLFLOW_S3_BUCKET&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">mlflow</span><span class="o">.</span><span class="n">start_run</span><span class="p">(</span><span class="n">experiment_id</span><span class="o">=</span><span class="n">experiment_id</span><span class="p">,</span> <span class="n">nested</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">engine</span> <span class="o">=</span> <span class="n">get_dbengine</span><span class="p">()</span>
+        <span class="n">time_splitter</span> <span class="o">=</span> <span class="n">TimeSplitterFlow</span><span class="p">()</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+        <span class="n">train_validation_dict</span> <span class="o">=</span> <span class="n">time_splitter</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="n">country</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">pollutant</span><span class="p">,</span> <span class="n">latest_date</span>
+        <span class="p">)</span>
+
+        <span class="n">cohort_builder</span> <span class="o">=</span> <span class="n">CohortBuilderFlow</span><span class="p">()</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+        <span class="n">cohort_builder</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="n">train_validation_dict</span><span class="p">,</span> <span class="n">engine</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">pollutant</span>
+        <span class="p">)</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="5">
+<li><p><strong>CLI Grouping</strong>: Commands are added to the CLI group <cite>openaq-engine</cite>, grouping the modules into the package.</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@click</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">&quot;openaq-engine&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Library to query openaq data&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
+<span class="k">def</span> <span class="nf">cli</span><span class="p">(</span><span class="n">ctx</span><span class="p">):</span>
+    <span class="o">...</span>
+
+<span class="n">cli</span><span class="o">.</span><span class="n">add_command</span><span class="p">(</span><span class="n">time_splitter</span><span class="p">)</span>
+<span class="n">cli</span><span class="o">.</span><span class="n">add_command</span><span class="p">(</span><span class="n">cohort_builder</span><span class="p">)</span>
+<span class="n">cli</span><span class="o">.</span><span class="n">add_command</span><span class="p">(</span><span class="n">feature_builder</span><span class="p">)</span>
+<span class="n">cli</span><span class="o">.</span><span class="n">add_command</span><span class="p">(</span><span class="n">run_pipeline</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">cli</span><span class="p">()</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="6">
+<li><p><strong>MLFlow Tracking URI</strong>: MLFlow initiates the tracking URI through environment variables. This should be set to your specified server or “localhost”.</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">mlflow</span><span class="o">.</span><span class="n">set_tracking_uri</span><span class="p">(</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;MLFLOW_TRACKING_URI&quot;</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
 </section>
 <section id="example-extending-the-library">
 <h2>Example: Extending the Library<a class="headerlink" href="#example-extending-the-library" title="Link to this heading">¶</a></h2>
 <p>If a user wants to extend the library and write their own class, they can follow these steps:</p>
-<ol class="arabic">
-<li><p><strong>Create a Configuration Class</strong>: Define the configuration for the new module in <cite>config.model_settings</cite>.
-.. code-block:: python</p>
-<blockquote>
-<div><dl class="simple">
-<dt>class CustomModuleConfig:</dt><dd><p>PARAM1 = “default_value”
-PARAM2 = 10</p>
-</dd>
-</dl>
-</div></blockquote>
-</li>
-<li><p><strong>Create a Flow Class</strong>: Define the flow class for the new module.
-.. code-block:: python</p>
-<blockquote>
-<div><dl class="simple">
-<dt>class CustomModuleFlow:</dt><dd><dl class="simple">
-<dt>def __init__(self):</dt><dd><p>self.config = CustomModuleConfig()</p>
-</dd>
-<dt>def execute(self):</dt><dd><p># Implement the execution logic
-pass</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</div></blockquote>
-</li>
-<li><p><strong>Define CLI Command</strong>: Create a CLI command for the new module.
-.. code-block:: python</p>
-<blockquote>
-<div><p>import click
-from mlflows.cli.custom_module import custom_module_options
-from config.model_settings import CustomModuleConfig</p>
-<p>&#64;custom_module_options()
-&#64;click.command(“custom-module”, help=”Description of custom module”)
-def custom_module(param1, param2):</p>
-<blockquote>
-<div><dl class="simple">
-<dt>experiment_id = mlflow.create_experiment(</dt><dd><p>f”custom_module_{str(datetime.now())}”, os.getenv(“MLFLOW_S3_BUCKET”)</p>
-</dd>
-</dl>
-<p>)</p>
-<dl class="simple">
-<dt>with mlflow.start_run(experiment_id=experiment_id, nested=True):</dt><dd><p>custom_module = CustomModuleFlow().execute()
-custom_module.execute(param1, param2)</p>
-</dd>
-</dl>
-</div></blockquote>
-</div></blockquote>
-</li>
-<li><p><strong>Add Command to CLI Group</strong>: Add the new command to the CLI group.
-.. code-block:: python</p>
-<blockquote>
-<div><p>cli.add_command(custom_module)</p>
-</div></blockquote>
-</li>
-<li><p><strong>Run the CLI</strong>: Execute the CLI with the new command.
-.. code-block:: sh</p>
-<blockquote>
-<div><p>python main.py custom-module –param1 value1 –param2 value2</p>
-</div></blockquote>
-</li>
+<ol class="arabic simple">
+<li><p><strong>Create a Configuration Class</strong>: Define the configuration for the new module in <cite>config.model_settings</cite>.</p></li>
 </ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">CustomModuleConfig</span><span class="p">:</span>
+    <span class="n">PARAM1</span> <span class="o">=</span> <span class="s2">&quot;default_value&quot;</span>
+    <span class="n">PARAM2</span> <span class="o">=</span> <span class="mi">10</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p><strong>Create a Flow Class</strong>: Define the flow class for the new module.</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">CustomModuleFlow</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">CustomModuleConfig</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Implement the execution logic</span>
+        <span class="k">pass</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p><strong>Define CLI Command</strong>: Create a CLI command for the new module.</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">click</span>
+<span class="kn">from</span> <span class="nn">mlflows.cli.custom_module</span> <span class="kn">import</span> <span class="n">custom_module_options</span>
+<span class="kn">from</span> <span class="nn">config.model_settings</span> <span class="kn">import</span> <span class="n">CustomModuleConfig</span>
+
+<span class="nd">@custom_module_options</span><span class="p">()</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="s2">&quot;custom-module&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Description of custom module&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">custom_module</span><span class="p">(</span><span class="n">param1</span><span class="p">,</span> <span class="n">param2</span><span class="p">):</span>
+    <span class="n">experiment_id</span> <span class="o">=</span> <span class="n">mlflow</span><span class="o">.</span><span class="n">create_experiment</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;custom_module_</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;MLFLOW_S3_BUCKET&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">mlflow</span><span class="o">.</span><span class="n">start_run</span><span class="p">(</span><span class="n">experiment_id</span><span class="o">=</span><span class="n">experiment_id</span><span class="p">,</span> <span class="n">nested</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">custom_module</span> <span class="o">=</span> <span class="n">CustomModuleFlow</span><span class="p">()</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+        <span class="n">custom_module</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">param1</span><span class="p">,</span> <span class="n">param2</span><span class="p">)</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="4">
+<li><p><strong>Add Command to CLI Group</strong>: Add the new command to the CLI group.</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cli</span><span class="o">.</span><span class="n">add_command</span><span class="p">(</span><span class="n">custom_module</span><span class="p">)</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="5">
+<li><p><strong>Run the CLI</strong>: Execute the CLI with the new command.</p></li>
+</ol>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>openaq-engine<span class="w"> </span>custom-module<span class="w"> </span>--param1<span class="w"> </span>value1<span class="w"> </span>--param2<span class="w"> </span>value2
+</pre></div>
+</div>
 <p>This approach allows users to extend the library easily and integrate new modules into the existing MLFlow experiment framework.</p>
 </section>
 </section>
@@ -249,10 +220,6 @@ custom_module.execute(param1, param2)</p>
 <li class="toctree-l2"><a class="reference internal" href="#example-extending-the-library">Example: Extending the Library</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="modules.html">Module Index</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../_autosummary/openaq_engine.html">openaq_engine</a></li>
 </ul>
 
 <div class="relations">
@@ -260,7 +227,6 @@ custom_module.execute(param1, param2)</p>
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
       <li>Previous: <a href="database_schema.html" title="previous chapter">AQAI Database Schema</a></li>
-      <li>Next: <a href="modules.html" title="next chapter">Module Index</a></li>
   </ul></li>
 </ul>
 </div>
