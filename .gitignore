@@ -166,3 +166,4 @@ data/*
 models/*
 plots/*
 myenv/*
+mlruns/*

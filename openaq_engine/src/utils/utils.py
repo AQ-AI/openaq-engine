@@ -182,22 +182,23 @@ def parametrized(dec):
 
 def get_data(query):
     """
-    Pulls data from the db based on the query
-    Input
-    -----
-    query: str
-       SQL query from the database
-    Output
-    ------
-    data: DataFrame
-       Dump of Query into a DataFrame
-    """
+    Pulls data from the db based on the query.
+
+    Parameters
+    ----------
+    query : str
+        SQL query from the database
 
     if isinstance(query, str):
         query = text(
             query
         )  # Only wrap in text if it's a string, not already a TextClause
 
+    Returns
+    -------
+    pd.DataFrame
+        Dump of Query into a DataFrame
+    """
     with connect_to_db() as conn:
         df = pd.read_sql_query(query, conn)
     return df
