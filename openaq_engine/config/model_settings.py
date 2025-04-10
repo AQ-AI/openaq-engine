@@ -11,8 +11,8 @@ from pydantic.dataclasses import dataclass
 class ModelVisualizerConfig:
     PLOT: bool = True
     PLOT_METRICS: Sequence[str] = field(default_factory=lambda: ["mean"])
-    PLOTS_TABLE_NAME: str = ""
-    PLOTS_SCHEMA_NAME: str = ""
+    PLOTS_TABLE_NAME: str = "plots"
+    PLOTS_SCHEMA_NAME: str = "model_output"
     RESULTS_TABLE_NAME: str = "results"
 
 
@@ -22,6 +22,51 @@ class MatrixGeneratorConfig:
     ID_COLUMN_LIST: Sequence[str] = field(
         default_factory=lambda: ["locationId", "cohort", "cohort_type"]
     )
+    # Satellite configurations
+    SATELLITE_CONFIG = {
+        "MODIS/061/MCD19A2_GRANULES": {
+            "bands": ["Optical_Depth_047"],
+            "resolution": 1000,
+            "time_ranges": [("00:00:00", "08:00:00")],
+            "frequency": "daily",
+        },
+        "LANDSAT/LC08/C02/T1_L2": {
+            "bands": ["SR_B4", "SR_B3", "SR_B2"],
+            "resolution": 30,
+            "time_ranges": [("03:30:00", "04:00:00")],
+            "frequency": "weekly",
+        },
+        "NOAA/VIIRS/DNB/MONTHLY_V1/VCMCFG": {
+            "bands": ["avg_rad"],
+            "resolution": 463.83,
+            "time_ranges": [("00:00:00", "00:59:59")],
+            "frequency": "monthly",
+        },
+        "NOAA/GFS0P25": {
+            "bands": [
+                "temperature_2m_above_ground",
+                "relative_humidity_2m_above_ground",
+                "precipitable_water_entire_atmosphere",
+                "total_cloud_cover_entire_atmosphere",
+                "u_component_of_wind_10m_above_ground",
+                "v_component_of_wind_10m_above_ground",
+            ],
+            "resolution": 27830,
+            "time_ranges": [
+                ("00:00:00", "00:59:59"),
+                ("06:00:00", "06:59:59"),
+                ("12:00:00", "12:59:59"),
+                ("18:00:00", "18:59:59"),
+            ],
+            "frequency": "daily",
+        },
+    }
+
+
+@dataclass
+class FeatureImportanceConfig:
+    NUM_RECORDS: int = 5
+    TABLE_NAME: str = "feature_importance"
 
 
 @dataclass
@@ -33,6 +78,34 @@ class ModelTrainerConfig:
         "cohort_type",
     ]
     RANDOM_STATE = 99
+    CORE_FEATURES = [
+        "timestamp_as_float",
+        "y",
+        "x",
+        "Optical_Depth_047",
+        "Optical_Depth_047_time_diff",
+        "SR_B4",
+        "SR_B4_time_diff",
+        "SR_B3",
+        "SR_B2",
+        "avg_rad",
+        "avg_rad_time_diff",
+        "temperature_2m_above_ground",
+        "temperature_2m_above_ground_time_diff",
+        "relative_humidity_2m_above_ground",
+        "precipitable_water_entire_atmosphere",
+        "u_component_of_wind_10m_above_ground",
+        "v_component_of_wind_10m_above_ground",
+    ]
+
+
+@dataclass
+class ModelEvaluatorConfig:
+    METRICS: Sequence[str] = field(default_factory=lambda: ["mse", "mape"])
+    SUMMARY_METHOD = "summary"
+    VALID_MODELS: Sequence[str] = field(
+        default_factory=lambda: ["DTC", "RFR", "XGB", "MNB", "MLR"]
+    )
     All_MODEL_FEATURES = [
         "Optical_Depth_047",
         "B4",
@@ -59,7 +132,7 @@ class HyperparamConfig:
         },  # 5, 50, 500, 10000 50, 100, 200, 300
         "RFR": {
             "n_estimators": [500, 800],  # 100, 500, 800, 1000
-            "max_depth": [10, 50, 70],  # 5, 50, 80, 500, 10000  100, 200, 300
+            "max_depth": [10],  # 5, 50, 80, 500, 10000  100, 200, 300
         },
         "XGB": {
             "max_depth": [5, 150, 200, 250, 300],
@@ -77,12 +150,16 @@ class HyperparamConfig:
 
 @dataclass
 class BuildFeaturesConfig:
+    TABLE_NAME = ""
     TARGET_COL: str = "value"
     TARGET_VARIABLE = "pm25"
     COUNTRY = ""
     CITY = ""
-    CATEGORICAL_FEATURES: List[StrictStr] = field(default_factory=lambda: [])
-    CORE_FEATURES: List[StrictStr] = field(
+    CATEGORICAL_FEATURES: List[str] = field(
+        default_factory=lambda: ["locationId"]
+    )
+    CORE_FEATURES: List[str] = field(default_factory=list)
+    SATELLITE_FEATURES: List[StrictStr] = field(
         default_factory=lambda: [
             "city",
             "country",
@@ -92,108 +169,17 @@ class BuildFeaturesConfig:
             "mobile",
         ]
     )
-    SATELLITE_FEATURES = []
+    SATELLITE_FEATURES: List[str] = field(default_factory=list)
 
     @property
     def ALL_MODEL_FEATURES(self) -> List[str]:
         """Return all features to be fed into the model"""
-        return list(set(self.CORE_FEATURES + self.CATEGORICAL_FEATURES))
-
-
-@dataclass
-class EEConfig:
-    LOOKBACK_N = 1
-    DATE_COL: str = "timestamp_utc"
-    TABLE_NAME = "cohorts"
-    # Satellite configurations
-    AOD_IMAGE_COLLECTION: str = "MODIS/006/MCD19A2_GRANULES"
-    AOD_IMAGE_BAND: Sequence[str] = field(
-        default_factory=lambda: ["Optical_Depth_047"]
-    )
-    AOD_IMAGE_PERIOD = 2
-    AOD_IMAGE_RES = 1000
-    LANDSAT_IMAGE_COLLECTION: str = "LANDSAT/LC08/C01/T1"
-    LANDSAT_IMAGE_BAND: Sequence[str] = field(
-        default_factory=lambda: ["B4", "B3", "B2"]
-    )
-    LANDSAT_PERIOD = 8
-    LANDSAT_RES = 30
-    NIGHTTIME_LIGHT_IMAGE_COLLECTION: str = "NOAA/VIIRS/DNB/MONTHLY_V1/VCMCFG"
-    NIGHTTIME_LIGHT_IMAGE_BAND: Sequence[str] = field(
-        default_factory=lambda: ["avg_rad"]
-    )
-    NIGHTTIME_LIGHT_PERIOD = 30
-    NIGHTTIME_LIGHT_RES = 463.83
-    METEROLOGICAL_IMAGE_COLLECTION: str = "NOAA/GFS0P25"
-    METEROLOGICAL_IMAGE_BAND: Sequence[str] = field(
-        default_factory=lambda: [
-            "temperature_2m_above_ground",
-            "relative_humidity_2m_above_ground",
-            "total_precipitation_surface",
-            "total_cloud_cover_entire_atmosphere",
-            "u_component_of_wind_10m_above_ground",
-            "v_component_of_wind_10m_above_ground",
-        ]
-    )
-    METEROLOGICAL_IMAGE_PERIOD = 1
-    METEROLOGICAL_IMAGE_RES = 27830
-    POPULATION_IMAGE_COLLECTION: str = (
-        "CIESIN/GPWv411/GPW_Basic_Demographic_Characteristics"
-    )
-    POPULATION_IMAGE_BAND: Sequence[str] = field(
-        default_factory=lambda: ["basic_demographic_characteristics"]
-    )
-    POPULATION_PERIOD = 1100
-    POPULATION_IMAGE_RES = 1000
-    LAND_COVER_IMAGE_COLLECTION: str = (
-        "COPERNICUS/Landcover/100m/Proba-V-C3/Global"
-    )
-    LAND_COVER_IMAGE_BAND: Sequence[str] = field(
-        default_factory=lambda: ["discrete_classification"]
-    )
-    LAND_COVER_IMAGE_RES = 100
-    LAND_COVER_PERIOD = 1500
-    BUCKET_NAME = "earthengine-bucket"
-    PATH_TO_PRIVATE_KEY = ""  # please provide the path to the private key for the service account
-    BUCKET_NAME = ""  # please provide the bucket name
-    SERVICE_ACCOUNT = ""  # please provide the service account
-
-    @property
-    def ALL_SATELLITES(self) -> zip(List[str], List[str]):  # type: ignore
-        """Return varying satellites to be fed into the model"""
-        return zip(
-            [
-                self.AOD_IMAGE_COLLECTION,
-                self.LANDSAT_IMAGE_COLLECTION,
-                self.NIGHTTIME_LIGHT_IMAGE_COLLECTION,
-                self.METEROLOGICAL_IMAGE_COLLECTION,
-                self.POPULATION_IMAGE_COLLECTION,
-                self.LAND_COVER_IMAGE_COLLECTION,
-            ],
-            [
-                self.AOD_IMAGE_BAND,
-                self.LANDSAT_IMAGE_BAND,
-                self.NIGHTTIME_LIGHT_IMAGE_BAND,
-                self.METEROLOGICAL_IMAGE_BAND,
-                self.POPULATION_IMAGE_BAND,
-                self.LAND_COVER_IMAGE_BAND,
-            ],
-            [
-                self.AOD_IMAGE_PERIOD,
-                self.LANDSAT_PERIOD,
-                self.NIGHTTIME_LIGHT_PERIOD,
-                self.METEROLOGICAL_IMAGE_PERIOD,
-                self.POPULATION_PERIOD,
-                self.LAND_COVER_PERIOD,
-            ],
-            [
-                self.AOD_IMAGE_RES,
-                self.LANDSAT_RES,
-                self.NIGHTTIME_LIGHT_RES,
-                self.METEROLOGICAL_IMAGE_RES,
-                self.POPULATION_IMAGE_RES,
-                self.LAND_COVER_IMAGE_RES,
-            ],
+        return list(
+            set(
+                self.CORE_FEATURES
+                + self.CATEGORICAL_FEATURES
+                + self.SATELLITE_FEATURES
+            )
         )
 
 
@@ -220,10 +206,48 @@ class CohortBuilderConfig:
             filter_cities=["city"],
         ),
     )
-    TARGET_VARIABLE = ""
+    TARGET_VARIABLE = "pm25"
     COUNTRY = ""
-    SOURCE = ""
+    SOURCE = "openaq-aws"
     LOCAL_DATA = ""
+
+
+@dataclass
+class EEConfig:
+    LOOKBACK_N = 1
+    DATE_COL: str = "timestamp_utc"
+    TABLE_NAME = "cohorts"
+    BUCKET_NAME = ""
+    PATH_TO_PRIVATE_KEY = ""
+    SERVICE_ACCOUNT = ""
+    ALL_SATELLITES = {
+        "MODIS/061/MCD19A2_GRANULES": {
+            "bands": ["Optical_Depth_047"],
+            "resolution": 1000,
+            "frequency": "daily",
+        },
+        "LANDSAT/LC08/C02/T1_L2": {
+            "bands": ["SR_B4", "SR_B3", "SR_B2"],
+            "resolution": 30,
+            "frequency": "weekly",
+        },
+        "NOAA/VIIRS/DNB/MONTHLY_V1/VCMCFG": {
+            "bands": ["avg_rad"],
+            "resolution": 463.83,
+            "frequency": "monthly",
+        },
+        "NOAA/GFS0P25": {
+            "bands": [
+                "temperature_2m_above_ground",
+                "relative_humidity_2m_above_ground",
+                "precipitable_water_entire_atmosphere",
+                "u_component_of_wind_10m_above_ground",
+                "v_component_of_wind_10m_above_ground",
+            ],
+            "resolution": 27830,
+            "frequency": "daily",
+        },
+    }
 
 
 @dataclass

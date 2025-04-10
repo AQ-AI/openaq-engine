@@ -2,51 +2,22 @@ import click
 from click_option_group import OptionGroup
 from mlflows.utils import parametrized
 
-from config.model_settings import BuildFeaturesConfig
-
 
 @parametrized
-def feature_builder_options(fn, countries_option: bool = True):
+def feature_builder_options(fn):
     """
-    countries_option: bool = True
-        Whether to provide the option to specify countries or not
+    Modify the CLI options to include cohort-table.
     """
     cohort_builder_config = OptionGroup(
         "Options for defining the cohort",
-        help=(
-            "Allows definition of custom cohorts for provided "
-            "countries and from the date provided"
-        ),
+        help="Allows definition of custom cohorts using the provided cohort table",
     )
-    country_ = cohort_builder_config.option(
-        "-c",
-        "--country",
-        default=BuildFeaturesConfig.COUNTRY,
-        type=click.STRING,
-        help=(
-            "Load timesplits from specific countries in the 'Country Code'"
-            " format e.g. 'IN' (India)"
-        ),
-    )
-    pollutant = cohort_builder_config.option(
-        "-p",
-        "--pollutant",
-        default=BuildFeaturesConfig.TARGET_VARIABLE,
-        type=click.Choice(
-            [
-                "co",
-                "no2",
-                "o3",
-                "pm1",
-                "pm10",
-                "pm25",
-                "so2",
-            ]
-        ),
-        help="Load cohorts from data for the pollutant requested",
-    )
-    wrapped_func = pollutant(fn)
-    if countries_option:
-        wrapped_func = country_(wrapped_func)
 
-    return wrapped_func
+    cohort_table = cohort_builder_config.option(
+        "-t",
+        "--cohort-table",
+        type=click.STRING,
+        help="Name of the table containing cohort data",
+    )
+
+    return cohort_table(fn)

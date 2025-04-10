@@ -1,50 +1,46 @@
 import csv
 import logging
 import os
-from typing import Any, List, Tuple
+from typing import Any, Dict, List
 
 import mlflow
+import pandas as pd
 import scipy.sparse as sp
 from joblib import dump, load
+from setup_environment import get_dbengine
+from sklearn.ensemble import RandomForestRegressor
+from sqlalchemy import text
+from src.features.build_features import BuildFeaturesRandomForest
+from src.utils.utils import get_data, write_to_db
 
 from config.model_settings import BuildFeaturesConfig, MatrixGeneratorConfig
-from openaq_engine.src.features.build_features import BuildFeaturesRandomForest
-from openaq_engine.src.utils.utils import get_data
 
 logging.basicConfig(level=logging.INFO)
 
 
 class MatrixGenerator:
-    """
-    Class to generate matrices for training and validation sets using a specified algorithm.
-
-    :param algorithm: The algorithm used for generating features (e.g., 'RFR' for RandomForestRegressor).
-    :type algorithm: str
-    :param id_column_list: A list of column names to be treated as identifiers.
-    :type id_column_list: list
-    """
-
-    def __init__(self, algorithm: str, id_column_list: List[str]) -> None:
+    def __init__(
+        self,
+        satellite_config: Dict[str, Any],
+        algorithm: str,
+        id_column_list: List[str],
+    ) -> None:
+        self.satellite_config = satellite_config
         self.algorithm = algorithm
         self.id_column_list = id_column_list
 
     @classmethod
     def from_dataclass_config(
-        cls, config: MatrixGeneratorConfig
+        cls,
+        config: MatrixGeneratorConfig,
     ) -> "MatrixGenerator":
-        """
-        Create a MatrixGenerator instance from a configuration dataclass.
-
-        :param config: The configuration dataclass.
-        :type config: MatrixGeneratorConfig
-        :return: An instance of MatrixGenerator.
-        :rtype: MatrixGenerator
-        """
         return cls(
-            algorithm=config.ALGORITHM, id_column_list=config.ID_COLUMN_LIST
+            satellite_config=config.SATELLITE_CONFIG,
+            algorithm=config.ALGORITHM,
+            id_column_list=config.ID_COLUMN_LIST,
         )
 
-    def execute_train_valid_set(self, place: str) -> List[str]:
+    def execute(self, engine, x, y, table_name):
         """
         Execute a query to get unique train/validation sets for a specific location.
 
@@ -53,145 +49,227 @@ class MatrixGenerator:
         :return: A list of unique train/validation sets.
         :rtype: list
         """
-        cohorts_query = f"""select distinct "location", "cohort", "cohort_type",
-        "train_validation_set" from "cohorts_local_{place}";"""
-        cohorts_df = get_data(cohorts_query)
+        logging.info(f"Generating features for location ({x}, {y})")
+        df = self.matrix_generator(engine, x, y, table_name)
+        return df
 
-        return cohorts_df.train_validation_set.unique()
+    def matrix_generator(self, engine, x, y, table_name):
+        if self.algorithm == "RFR":
 
-    def execute(
-        self, engine: Any, train_valid_id: str, run_date: Any
-    ) -> Tuple[Any, Any, Any, Any]:
-        """
-        Execute the matrix generation for a specific train/validation ID and date.
+            df = self._get_feature_generator().execute(
+                engine, x, y, table_name
+            )
 
-        :param engine: The database engine used for the operations.
-        :type engine: Any
-        :param train_valid_id: The train/validation ID for which to generate the matrix.
-        :type train_valid_id: str
-        :param run_date: The date of the run, used for file naming.
-        :type run_date: Any
-        :return: The validation dataframe, training dataframe, validation labels, and training labels.
-        :rtype: tuple
-        """
-        cohorts_query = """select distinct * from "cohorts";"""
-        cohorts_df = get_data(cohorts_query)
+            return df
 
-        return self.execute_for_cohort(
-            engine, train_valid_id, cohorts_df, run_date
-        )
-
-    def execute_for_cohort(
+    def _get_feature_generator(
         self,
-        engine: Any,
-        training_validation_id: str,
-        cohorts_df: Any,
-        run_date: Any,
-    ) -> Tuple[Any, Any, Any, Any]:
-        """
-        Generate features and labels for a specific cohort.
-
-        :param engine: The database engine used for the operations.
-        :type engine: Any
-        :param training_validation_id: The ID of the training/validation set.
-        :type training_validation_id: str
-        :param cohorts_df: The dataframe containing cohort information.
-        :type cohorts_df: Any
-        :param run_date: The date of the run, used for file naming.
-        :type run_date: Any
-        :return: The validation dataframe, training dataframe, validation labels, and training labels.
-        :rtype: tuple
-        """
-        cohort_df = cohorts_df.loc[
-            cohorts_df["train_validation_set"] == training_validation_id
-        ]
-
-        if cohort_df is not None:
-            logging.info(
-                f"Generating features for Cohort {training_validation_id}"
-            )
-            (
-                train_df,
-                validation_df,
-                feature_train_id,
-                feature_valid_id,
-                labels_train_df,
-                labels_valid_df,
-            ) = self.matrix_generator(engine, cohort_df)
-
-            logging.info(f"Rows in training features: {train_df.shape[0]}")
-            logging.info(
-                f"Rows in validation features: {validation_df.shape[0]}"
-            )
-
-            self._write_labels_as_csv(
-                labels_train_df,
-                run_date,
-                training_validation_id,
-                "training",
-            )
-            self._write_labels_as_csv(
-                labels_valid_df,
-                run_date,
-                training_validation_id,
-                "validation",
-            )
-
-            logging.info(
-                f"Rows in training labels: {labels_train_df.shape[0]}"
-            )
-            logging.info(
-                f"Rows in validation labels: {labels_valid_df.shape[0]}"
-            )
-            return validation_df, train_df, labels_valid_df, labels_train_df
-        else:
-            logging.info("Training or validation cohort must be assigned")
-
-    def matrix_generator(
-        self, engine: Any, cohort_df: Any
-    ) -> Tuple[Any, Any, Any, Any, Any, Any]:
-        """
-        Generate the feature matrix for training and validation sets.
-
-        :param engine: The database engine used for the operations.
-        :type engine: Any
-        :param cohort_df: The dataframe containing cohort information.
-        :type cohort_df: Any
-        :return: The training dataframe, validation dataframe, training feature IDs, validation feature IDs, training labels, and validation labels.
-        :rtype: tuple
-        """
+    ) -> RandomForestRegressor:
         if self.algorithm == "RFR":
             config = BuildFeaturesConfig()
-
-            (
-                df_train,
-                df_valid,
-                feature_train_id,
-                feature_valid_id,
-                train_labels,
-                validation_labels,
-            ) = (
-                self._get_feature_generator()
-                .from_dataclass_config(config)
-                .execute(engine, cohort_df)
+            return BuildFeaturesRandomForest.from_dataclass_config(config)
+        else:
+            raise ValueError(
+                "The algorithm provided has no registered feature builder!"
             )
 
+    def build_features(self, cohort_table):
+        cohort_time_ranges = self.extract_time_ranges(cohort_table)
+        training_data = []
+        validation_data = []
+
+        for tv_id, types in cohort_time_ranges.items():
+            for c_type, time_ranges in types.items():
+                print(f"Processing {c_type} data for TV set {tv_id}")
+                for start_date, end_date in time_ranges:
+                    print(f"Time range: {start_date} to {end_date}")
+                    locations_query = f"""
+                        SELECT DISTINCT x, y FROM "{cohort_table}"
+                        WHERE train_validation_set = {tv_id}
+                    """
+                    locations = get_data(locations_query)
+                    for _, loc in locations.iterrows():
+                        x, y = loc["x"], loc["y"]
+                        print(f"Processing location: ({x}, {y})")
+                        sat_data = self.query_satellite_data(
+                            tv_id, x, y, start_date, end_date, cohort_table
+                        )
+                        if not sat_data.empty:
+                            sat_data["tv_set"] = sat_data["tv_set"].apply(
+                                lambda x: [tv_id]
+                            )
+                            if c_type == "training":
+                                training_data.append(sat_data)
+                            else:
+                                validation_data.append(sat_data)
+                        else:
+                            print(
+                                f"No satellite data found for location ({x}, {y}) and TV set {tv_id} between {start_date} and {end_date}"
+                            )
+
+        # Concatenate and combine tv_set lists
+        training_df = self.combine_tv_sets(training_data)
+        validation_df = self.combine_tv_sets(validation_data)
+
+        # Write to DB
+        write_to_db(
+            training_df,
+            get_dbengine(
+                os.getenv("PGDATABASE"),
+                os.getenv("PGHOST"),
+                os.getenv("PGPORT"),
+                os.getenv("PGUSER"),
+                os.getenv("PGPASSWORD"),
+            ),
+            f"{cohort_table}_training",
+            "public",
+            "replace",
+        )
+        write_to_db(
+            validation_df,
+            get_dbengine(
+                os.getenv("PGDATABASE"),
+                os.getenv("PGHOST"),
+                os.getenv("PGPORT"),
+                os.getenv("PGUSER"),
+                os.getenv("PGPASSWORD"),
+            ),
+            f"{cohort_table}_validation",
+            "public",
+            "replace",
+        )
+
+        return {"training": training_df, "validation": validation_df}
+
+    def combine_tv_sets(self, data):
+        if not data:
+            return pd.DataFrame()
+
+        df = pd.concat(data)
+        # Group by the relevant columns and aggregate tv_set properly
+        grouped = df.groupby(
+            ["sensor_longitude", "sensor_latitude", "datetime_hour"],
+            as_index=False,
+        ).agg(
+            {
+                **{
+                    col: "first" for col in df.columns if col not in ["tv_set"]
+                },
+                "tv_set": lambda x: list(set(sum(x, []))),
+            }
+        )
+
+        return grouped
+
+    def extract_time_ranges(
+        self, cohort_table: str
+    ) -> Dict[int, Dict[str, List]]:
+        query = text(
+            f"""
+            SELECT DISTINCT train_validation_set, cohort, cohort_type
+            FROM "{cohort_table}"
+        """
+        )
+        cohort_data = get_data(query)
+        cohort_time_ranges = {}
+
+        for _, row in cohort_data.iterrows():
+            tv_set, cohort, c_type = (
+                row["train_validation_set"],
+                row["cohort"],
+                row["cohort_type"],
+            )
+            start_date, end_date = cohort.split("_")[1:]
+
+            if tv_set not in cohort_time_ranges:
+                cohort_time_ranges[tv_set] = {"training": [], "validation": []}
+
+            cohort_time_ranges[tv_set][c_type].append((start_date, end_date))
+
+        return cohort_time_ranges
+
+    def query_satellite_data(
+        self, tv_id, x, y, start_date, end_date, cohort_table
+    ):
+        cohort_query = text(
+            f"""
+            SELECT x, y, value, date_trunc('hour', "timestamp_utc"::timestamp) AS "datetime_hour"
+            FROM "{cohort_table}"
+            WHERE x = {x} AND y = {y}
+            AND "timestamp_utc"::timestamp BETWEEN '{start_date}' AND '{end_date}'
+            AND train_validation_set = {tv_id}
+        """
+        )
+        cohort_df = get_data(cohort_query)
+        if cohort_df.empty:
+            print(
+                f"No cohort data found for location ({x}, {y}) and TV set {tv_id} between {start_date} and {end_date}"
+            )
             return (
-                df_train,
-                df_valid,
-                feature_train_id,
-                feature_valid_id,
-                train_labels,
-                validation_labels,
-            )
+                pd.DataFrame()
+            )  # Return an empty DataFrame if there's no cohort data
 
-    def _add_csr(
-        self,
-        df: Any,
-        train_validation_set: str,
-        cohort_type: str,
-        run_date: Any,
-    ) -> sp.csr_matrix:
+        cohort_df["datetime_hour"] = pd.to_datetime(
+            cohort_df["datetime_hour"], utc=True
+        )
+        cohort_df["sensor_longitude"] = cohort_df["x"]
+        cohort_df["sensor_latitude"] = cohort_df["y"]
+        cohort_df["tv_set"] = cohort_df.apply(lambda x: [tv_id], axis=1)
+
+        for satellite, config in self.satellite_config.items():
+            table_name = satellite.replace("/", "_")
+            columns = ", ".join([f'"{band}"' for band in config["bands"]])
+            query = text(
+                f"""
+                SELECT sensor_longitude, sensor_latitude, date_trunc('hour', "datetime"::timestamp) AS "datetime_hour", {columns}
+                FROM "{table_name}"
+                WHERE sensor_longitude = {x} AND sensor_latitude = {y}
+                AND "datetime"::timestamp BETWEEN '{start_date}' AND '{end_date}'
+            """
+            )
+            sat_df = get_data(query)
+            frequency = config["frequency"]
+            if not sat_df.empty:
+                # Aggregate to avoid duplicate datetime_hour values
+                sat_df["datetime_hour"] = pd.to_datetime(
+                    sat_df["datetime_hour"], utc=True
+                )
+                sat_df = sat_df.groupby("datetime_hour").mean().reset_index()
+
+                # Expand lower frequency data to match hourly intervals
+                if frequency in ["monthly", "weekly"]:
+                    sat_df = (
+                        sat_df.set_index("datetime_hour")
+                        .resample("h")
+                        .ffill()
+                        .reset_index()
+                    )
+
+                cohort_df = pd.merge(
+                    cohort_df,
+                    sat_df,
+                    on=[
+                        "sensor_longitude",
+                        "sensor_latitude",
+                        "datetime_hour",
+                    ],
+                    how="outer",
+                    suffixes=("", f"_{satellite}"),
+                )
+            else:
+                print(
+                    f"No satellite data found for {satellite} at location ({x}, {y}) between {start_date} and {end_date}"
+                )
+
+        # Sorting by datetime and sensor location for better readability
+        cohort_df.sort_values(
+            by=["datetime_hour", "sensor_longitude", "sensor_latitude"],
+            inplace=True,
+        )
+
+        return cohort_df
+
+    def _add_csr(self, df, train_validation_set, cohort_type, run_date):
         """
         Add a CSR (Compressed Sparse Row) matrix for the given dataframe.
 
@@ -226,35 +304,7 @@ class MatrixGenerator:
 
         return csr
 
-    def _get_feature_generator(self) -> Any:
-        """
-        Retrieve the appropriate feature generator based on the algorithm.
-
-        :return: The feature generator class.
-        :rtype: Any
-        """
-        if self.algorithm == "RFR":
-            return BuildFeaturesRandomForest
-        else:
-            raise ValueError(
-                "The algorithm provided has no registered feature builder!"
-            )
-
-    def _get_csr(
-        self, train_validation_set: str, cohort_type: str, run_date: Any
-    ) -> sp.csr_matrix:
-        """
-        Load a CSR matrix from a file.
-
-        :param train_validation_set: The ID of the train/validation set.
-        :type train_validation_set: str
-        :param cohort_type: The type of cohort (e.g., 'training', 'validation').
-        :type cohort_type: str
-        :param run_date: The date of the run, used for file naming.
-        :type run_date: Any
-        :return: The loaded CSR matrix.
-        :rtype: sp.csr_matrix
-        """
+    def _get_csr(self, train_validation_set, cohort_type, run_date):
         filename = "_".join(
             [
                 str(train_validation_set),
@@ -262,12 +312,13 @@ class MatrixGenerator:
                 run_date.strftime("%Y%m%d_%H%M%S%f"),
             ]
         )
-        file_path = os.path.join(filename + ".joblib")
-        return load(file_path)
+        return load(
+            os.path.join(
+                filename + ".joblib",
+            )
+        )
 
-    def _concat_csr(
-        self, X: Any, csr_list: List[sp.csr_matrix]
-    ) -> sp.csr_matrix:
+    def _concat_csr(self, X, csr_list):
         """
         Concatenate multiple CSR matrices.
 
@@ -282,7 +333,7 @@ class MatrixGenerator:
         csr_list += [structured_csr]
         return sp.hstack(csr_list)
 
-    def _load_all_labels(self, cohort_df: Any) -> Any:
+    def _load_all_labels(self, cohort_df):
         """
         Load all labels for the given cohort dataframe.
 
@@ -303,12 +354,8 @@ class MatrixGenerator:
         return labels_df
 
     def _write_labels_as_csv(
-        self,
-        y: Any,
-        run_date: Any,
-        training_validation_id: str,
-        cohort_type: str,
-    ) -> None:
+        self, y, run_date, training_validation_id, cohort_type
+    ):
         """
         Write labels to a CSV file and log the artifact with MLflow.
 

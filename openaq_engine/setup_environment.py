@@ -9,7 +9,6 @@ import os
 from contextlib import contextmanager
 
 import pandas as pd
-import psycopg2
 from sqlalchemy.engine import create_engine
 
 
@@ -41,76 +40,43 @@ def get_athena_engine():
 
 
 def get_dbengine(
-    PGDATABASE="",
-    PGHOST="",
-    PGPORT=5432,
-    PGPASSWORD="",
-    PGUSER="",
-    DBTYPE="postgresql",
+    database=None, host=None, port=None, user=None, password=None
 ):
-    """
-    Creates and returns a SQLAlchemy engine for connecting to a PostgreSQL database.
+    database = database or os.getenv("TEST_PGDATABASE")
+    user = user or os.getenv("TEST_PGUSER")
+    password = password or os.getenv("TEST_PGPASSWORD")
+    host = host or os.getenv("TEST_PGHOST")
+    port = port or os.getenv("TEST_PGPORT")
 
-    Parameters
-    ----------
-    PGDATABASE : str
-        The name of the database to connect to.
-    PGHOST : str
-        The hostname of the database server.
-    PGPORT : int, optional
-        The port number to connect to (default is 5432).
-    PGPASSWORD : str
-        The password for the database user.
-    PGUSER : str
-        The username for the database.
-    DBTYPE : str, optional
-        The type of database, default is "postgresql".
-
-    Returns
-    -------
-    engine : SQLAlchemy Engine
-        A SQLAlchemy engine connected to the specified database.
-    """
-    str_conn = "{dbtype}://{username}@{host}:{port}/{db}".format(
-        dbtype=DBTYPE,
-        username=os.getenv("PGUSER"),
-        db=os.getenv("PGDATABASE"),
-        host=os.getenv("PGHOST"),
-        port=PGPORT,
-    )
-
-    return create_engine(str_conn)
+    url = f"postgresql://{user}:{password}@{host}:{port}/{database}"
+    engine = create_engine(url)
+    return engine
 
 
 @contextmanager
-def connect_to_db(PGPORT=5432):
-    """
-    Context manager for connecting to a PostgreSQL database.
+def connect_to_db():
+    # Check if the USE_TEST_DB environment variable is set to "true"
+    use_test_db = os.getenv("USE_TEST_DB", "false").lower() == "true"
 
-    Parameters
-    ----------
-    PGPORT : int, optional
-        The port number to connect to (default is 5432).
-
-    Yields
-    ------
-    conn : SQLAlchemy Connection
-        A connection to the PostgreSQL database.
-    """
-    try:
-        engine = get_dbengine(
-            PGDATABASE=os.getenv("PGDATABASE"),
-            PGHOST=os.getenv("PGHOST"),
-            PGPORT=PGPORT,
-            PGUSER=os.getenv("PGUSER"),
-            PGPASSWORD=os.getenv("PGPASSWORD"),
-        )
-        conn = engine.connect()
-        yield conn
-    except psycopg2.Error:
-        raise SystemExit("Cannot Connect to DB")
+    if use_test_db:
+        database = os.getenv("TEST_PGDATABASE")
+        user = os.getenv("TEST_PGUSER")
+        password = os.getenv("TEST_PGPASSWORD")
+        host = os.getenv("TEST_PGHOST")
+        port = os.getenv("TEST_PGPORT")
     else:
-        conn.close()
+        database = os.getenv("PGDATABASE")
+        user = os.getenv("PGUSER")
+        password = os.getenv("PGPASSWORD")
+        host = os.getenv("PGHOST")
+        port = os.getenv("PGPORT")
+
+    engine = get_dbengine(database, host, port, user, password)
+    connection = engine.connect()
+    try:
+        yield connection
+    finally:
+        connection.close()
 
 
 def run_query(query):

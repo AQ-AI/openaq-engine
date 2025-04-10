@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, List, Optional, Type
 
 import pandas as pd
+from src.features.satellite._ee_data import EEFeatures
+from src.utils.utils import write_to_db
 
 from config.model_settings import BuildFeaturesConfig, EEConfig
-from openaq_engine.src.features.satellite._ee_data import EEFeatures
-from openaq_engine.src.utils.utils import write_to_db
 
 
 class BuildFeatureBase(ABC):
@@ -53,7 +53,7 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
 
     def __init__(
         self,
-        categorical_features: Dict[str, List[Any]],
+        categorical_features: List[str],
         all_model_features: Optional[List[str]],
     ) -> None:
         self.categorical_features = categorical_features
@@ -82,7 +82,7 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
             all_model_features=config.ALL_MODEL_FEATURES,
         )
 
-    def execute(self, engine: Any, cohort_df: pd.DataFrame) -> pd.DataFrame:
+    def execute(self, engine, x, y, table_name) -> pd.DataFrame:
         """
         Execute the feature building process for the Random Forest model.
 
@@ -98,27 +98,9 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
         pd.DataFrame
             A tuple containing the training and validation features and labels.
         """
-        df = self._add_ee_features(cohort_df)
+        df = self._add_ee_features(x, y, table_name)
         df = self._change_to_categorical_type(df)
-        self._results_to_db(df, engine)
-
-        (
-            df_train,
-            df_valid,
-            feature_train_id,
-            feature_valid_id,
-            train_labels,
-            validation_labels,
-        ) = self._split_train_valid(cohort_df, df)
-
-        return (
-            df_train,
-            df_valid,
-            feature_train_id,
-            feature_valid_id,
-            train_labels,
-            validation_labels,
-        )
+        return df
 
     @property
     def all_model_features(self) -> Optional[List[str]]:
@@ -151,22 +133,9 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
             raise ValueError("All the feature names should be strings!")
         self._all_model_features = features
 
-    def _add_ee_features(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Add Earth Engine (EE) features to the DataFrame.
-
-        Parameters
-        ----------
-        df : pd.DataFrame
-            The DataFrame to which EE features will be added.
-
-        Returns
-        -------
-        pd.DataFrame
-            The DataFrame with EE features added.
-        """
+    def _add_ee_features(self, x, y, table_name):
         return EEFeatures.from_dataclass_config(EEConfig()).execute(
-            df, save_images=False
+            x, y, table_name, save_images=False
         )
 
     def _add_year(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -211,7 +180,7 @@ class BuildFeaturesRandomForest(BuildFeatureBase):
         Parameters
         ----------
         features_df : pd.DataFrame
-            The DataFrame containing the features.
+            The DataFrameF containing the features.
         engine : Any
             The database engine for saving the features.
         """

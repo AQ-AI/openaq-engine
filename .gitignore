@@ -127,9 +127,43 @@ openaq_engine/scripts/plume_labs.ipynb
 
 openssl-1.1.1k/*
 
+## Notebooks
+openaq_engine/scripts/plume_labs.ipynb
+
+/home/ec2-user/openaq-engine/openssl-1.1.1k/
+
+# python local version
+.python-version
+
+# mlrun
+mlruns/*
+
+# history
+.history/*
+
+
+# mlflow
+3.82.115.10:5000/*
+
+openssl-1.1.1k/*
+
+.history/*
+
+mlruns/*
+openaq_engine/mlruns/*
+
 google-cloud-sdk/*
 
 EarthEngineImages/*
+
 UnzippedImages/*
 
-mlruns/
+get-docker.sh
+
+google-cloud-sdk-390.0.0-linux-x86_64.tar.gz
+
+data/*
+models/*
+plots/*
+myenv/*
+mlruns/*

@@ -7,7 +7,21 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.9", "3.10"]
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: openaq
+          POSTGRES_PASSWORD: openaq
+          POSTGRES_DB: openaq
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v3
 
@@ -21,10 +35,37 @@ jobs:
           python -m pip install --upgrade pip
           curl -sSL https://install.python-poetry.org | python3 -
           poetry install
-
+          poetry run pip install psycopg2-binary pandas
       - name: Set PYTHONPATH
-        run: echo "PYTHONPATH=${{ github.workspace }}/openaq_engine" >> $GITHUB_ENV
-
+        run: |
+          echo "PYTHONPATH=$PYTHONPATH:$(pwd)/openaq_engine:$(pwd)/openaq_engine/src" >> $GITHUB_ENV
+      - name: Set up test database and roles
+        env:
+          PGUSER: openaq
+          PGPASSWORD: openaq
+          PGHOST: localhost
+          PGPORT: 5432
+        run: |
+          sudo apt-get install -y postgresql-client
+          psql -h $PGHOST -U $PGUSER -c "CREATE ROLE test_user WITH LOGIN PASSWORD 'test_password';"
+          psql -h $PGHOST -U $PGUSER -c "CREATE DATABASE test_db OWNER test_user;"
+          psql -h $PGHOST -U $PGUSER -d test_db -c "GRANT ALL PRIVILEGES ON DATABASE test_db TO test_user;"
+          psql -h $PGHOST -U $PGUSER -d test_db -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO test_user;"
+          psql -h $PGHOST -U $PGUSER -d test_db -c "CREATE TABLE cohorts_Mumbai (train_validation_set INT, cohort TEXT, cohort_type TEXT);"
+          psql -h $PGHOST -U $PGUSER -d test_db -c "INSERT INTO cohorts_Mumbai (train_validation_set, cohort, cohort_type) VALUES (0, 'cohort1', 'type1'), (1, 'cohort2', 'type2');"
+      - name: Run database setup script
+        env:
+          TEST_PGDATABASE: test_db
+          TEST_PGUSER: test_user
+          TEST_PGPASSWORD: test_password
+          TEST_PGHOST: localhost
+          TEST_PGPORT: 5432
+          PGUSER: openaq
+          PGPASSWORD: openaq
+          PGHOST: localhost
+          PGPORT: 5432
+        run: |
+          poetry run python tests/create_test_database.py
       - name: Analysing the code with black
         run: |
           poetry run black $(git ls-files '*.py')
@@ -34,7 +75,26 @@ jobs:
           poetry run flake8 $(git ls-files '*.py') --ignore=E501,W503
 
       - name: Testing
+        env:
+          DB_NAME_OPENAQ: test_db
+          S3_BUCKET_OPENAQ: openaq-pm25-historic
+          S3_OUTPUT_OPENAQ: pm25-month
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_password
+          TEST_PGDATABASE: test_db
+          TEST_PGUSER: test_user
+          TEST_PGPASSWORD: test_password
+          TEST_PGHOST: localhost
+          TEST_PGPORT: 5432
         run: |
           poetry run pytest --cov --cov-fail-under=80
+      - name: Clean up test database
         env:
-          PYTHONPATH: ${{ env.PYTHONPATH }}
+          PGUSER: openaq
+          PGPASSWORD: openaq
+          PGHOST: localhost
+          PGPORT: 5432
+        run: |
+          psql -h $PGHOST -U $PGUSER -d postgres -c "DROP DATABASE IF EXISTS test_db;"

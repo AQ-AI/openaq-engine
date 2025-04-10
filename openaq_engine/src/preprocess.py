@@ -8,9 +8,9 @@ from typing import List
 import pandas as pd
 from shapely.errors import ShapelyDeprecationWarning
 from shapely.geometry import Point
+from src.preprocessing.filter import Filter
 
 from config.model_settings import CohortBuilderConfig
-from openaq_engine.src.preprocessing.filter import Filter
 
 
 class Preprocess:
@@ -191,25 +191,23 @@ class Preprocess:
         :return: The updated row with 'timestamp_utc' and 'timestamp_local' columns.
         :rtype: pd.Series
         """
-        if isinstance(row["date"], str):
-            row["date"] = json.loads(row["date"])
+        date_info = row["date"]
 
-        utc_time = row["date"]["utc"]
-        local_time = row["date"]["local"]
+        # If date_info is a string, convert it to a dictionary
+        if isinstance(date_info, str):
+            date_info = json.loads(date_info)
 
-        # Parse 'utc' time
-        if utc_time.endswith("Z"):
-            utc_time = utc_time[:-1] + "+00:00"
+        # Extract UTC timestamp
         row["timestamp_utc"] = (
-            datetime.fromisoformat(utc_time)
+            datetime.fromisoformat(date_info["utc"].replace("Z", "+00:00"))
             .astimezone(timezone.utc)
             .strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         )
 
-        # Parse 'local' time
-        row["timestamp_local"] = datetime.fromisoformat(local_time).strftime(
-            "%Y-%m-%dT%H:%M:%S.%f%z"
-        )
+        # Extract local timestamp
+        row["timestamp_local"] = datetime.fromisoformat(
+            date_info["local"]
+        ).strftime("%Y-%m-%dT%H:%M:%S.%f%z")
 
         return row
 

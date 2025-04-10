@@ -1,10 +1,12 @@
 import itertools
+import json
 import logging
 import os
 import string
 from datetime import datetime
 from typing import Any, List, Optional
 
+import mlflow
 import psutil
 from joblib import Parallel, delayed, dump
 from sklearn.compose import ColumnTransformer
@@ -18,11 +20,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
 from sqlalchemy import text
 
-from config.model_settings import (
-    EEConfig,
-    HyperparamConfig,
-    ModelTrainerConfig,
-)
+from config.model_settings import HyperparamConfig, ModelTrainerConfig
 
 logging.basicConfig(level=logging.INFO)
 
@@ -69,11 +67,7 @@ class ModelTrainer:
             model_names_list=config.MODEL_NAMES_LIST,
             random_state=config.RANDOM_STATE,
             id_cols_to_remove=config.ID_COLS_TO_REMOVE,
-            all_model_features=list(
-                itertools.chain(
-                    *[x[1] for x in list(EEConfig().ALL_SATELLITES)]
-                )
-            ),
+            all_model_features=config.CORE_FEATURES,
         )
 
     def train_all_models(
@@ -197,11 +191,13 @@ class ModelTrainer:
             model_id,
             model_set,
             run_date,
-            list(Y_train.columns),
+            (
+                [Y_train.name] if Y_train.name else ["value"]
+            ),  # Adjust this if 'value' is the label name you expect
             hp_id,
             engine,
         )
-        return model_id, model_name, cohort_id
+        return model_id, model_name, train_model
 
     def get_train_pipeline(self, model_name: str, hp: tuple) -> Pipeline:
         """
@@ -385,7 +381,7 @@ class ModelTrainer:
         run_date: datetime,
     ) -> None:
         """
-        Save the trained model to the specified path.
+        Save the trained model to the specified path and log it as an artifact in MLflow.
 
         :param train_model: The trained model pipeline.
         :type train_model: Pipeline
@@ -396,11 +392,38 @@ class ModelTrainer:
         :param run_date: The date and time of the training run.
         :type run_date: datetime
         """
+        # Generate the filename for the model
         filename = (
             "_".join([model_id, run_date.strftime("%Y%m%d_%H%M%S%f")])
             + ".joblib"
         )
-        dump(train_model, os.path.join(model_path, filename))
+        model_filepath = os.path.join(model_path, filename)
+
+        # Save the model to disk
+        dump(train_model, model_filepath)
+
+        # Log the model file as an artifact in MLflow
+        mlflow.log_artifact(model_filepath)
+
+        # Optionally, you can log additional artifacts like metrics or parameters
+        # For example, log model metadata as a JSON file
+        metadata_filepath = os.path.join(
+            model_path, f"{model_id}_metadata.json"
+        )
+        metadata = {
+            "model_id": model_id,
+            "run_date": run_date.strftime("%Y-%m-%d %H:%M:%S"),
+            # Add other metadata fields as needed
+        }
+        with open(metadata_filepath, "w") as f:
+            json.dump(metadata, f)
+
+        # Log the metadata file as an artifact
+        mlflow.log_artifact(metadata_filepath)
+
+        # If your model is compatible, you can also log it using mlflow's built-in methods
+        # This is useful for later loading the model using mlflow
+        mlflow.sklearn.log_model(train_model, "model")
 
     def _build_hyperparameters_id(self, model_name: str, hp: tuple) -> str:
         """
@@ -447,33 +470,44 @@ class ModelTrainer:
         :param engine: The database engine for saving model metadata.
         :type engine: Any
         """
-        with engine.connect() as conn:
-            conn.execute(
-                """CREATE TABLE IF NOT EXISTS model_metadata
-                            (model_id text,
-                            model_set text,
-                            features varchar[],
-                            labels varchar[],
-                            hyperparameters varchar,
-                            run_date timestamp)"""
-            )
+
+        # Wrap the CREATE TABLE statement in a text() object
+        create_table_statement = text(
+            """
+        CREATE TABLE IF NOT EXISTS model_metadata
+            (model_id text,
+            model_set text,
+            features varchar[],
+            labels varchar[],
+            hyperparameters varchar,
+            run_date timestamp)
+        """
+        )
 
         with engine.connect() as conn:
-            logging.info("Inserting model information into database")
-            q = text(
-                """insert into model_metadata
-                (model_id, model_set, features, labels, hyperparameters, run_date)
-                    values (:m1, :m2, :f, :l, :h, :r);"""
+            conn.execute(create_table_statement)
+
+            # Wrap the INSERT statement in a text() object
+            insert_statement = text(
+                """
+            INSERT INTO model_metadata
+            (model_id, model_set, features, labels, hyperparameters, run_date)
+            VALUES (:model_id, :model_set, :features, :labels, :hyperparameters, :run_date);
+            """
             )
-            conn.execute(
-                q,
-                m1=model_id,
-                m2=model_set,
-                f=self.all_model_features,
-                l=labels,
-                h=hp_id,
-                r=run_date,
-            )
+
+            with engine.connect() as conn:
+                logging.info("Inserting model information into database")
+                conn.execute(
+                    insert_statement.params(
+                        model_id=model_id,
+                        model_set=model_set,
+                        features=self.all_model_features,
+                        labels=labels,
+                        hyperparameters=hp_id,
+                        run_date=run_date,
+                    )
+                )
 
     def _parallelize_dtc(
         self,

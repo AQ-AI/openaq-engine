@@ -1,5 +1,6 @@
 import json
 import time
+from datetime import datetime
 from typing import Any, List
 
 import boto3
@@ -44,19 +45,40 @@ def write_csv(df: pd.DataFrame, path: str, **kwargs: Any) -> None:
     )
 
 
-def query_results_from_api(headers, url):
-    response = requests.get(url, headers=headers)
+def query_results_from_api(params, query):
+    url = query
+    headers = params
+    response = requests.get(url, headers=headers, timeout=None)
     return response
 
 
 def api_response_to_df(url):
+    """
+    Fetch data from the provided URL and return a DataFrame and the full response.
+    Implements retry with exponential backoff on rate limiting.
+    """
     headers = {"accept": "application/json"}
-    response = query_results_from_api(headers, url)
-    try:
-        # Directly use response.json() without json.loads
-        return pd.DataFrame(response.json()["results"])
-    except KeyError:
-        pass
+    max_retries = 5
+    retry_count = 0
+    base_wait_time = 10  # Base wait time in seconds
+
+    while retry_count < max_retries:
+        response = query_results_from_api(headers, url)
+
+        if response.status_code == 200:
+            return pd.DataFrame(json.loads(response.text)["results"])
+        elif response.status_code == 429:
+            wait_time = base_wait_time * (2**retry_count)
+            print(f"Rate limit exceeded. Retrying in {wait_time} seconds...")
+            time.sleep(wait_time)
+            retry_count += 1
+        else:
+            print(
+                f"API Error: {response.json().get('detail', 'No details provided.')}"
+            )
+            return pd.DataFrame()
+    print("Max retries exceeded. Unable to fetch data.")
+    return pd.DataFrame()
 
 
 def query_results_from_aws(params, query, wait=True):
@@ -71,7 +93,6 @@ def query_results_from_aws(params, query, wait=True):
             "OutputLocation": f"s3://{params['bucket']}/{params['path']}/"
         },
     )
-
     if not wait:
         return response_query_execution_id["QueryExecutionId"]
     else:
@@ -106,6 +127,7 @@ def query_results_from_aws(params, query, wait=True):
                         "QueryExecutionId"
                     ]
                 )
+                print("response_query_result", response_query_result)
                 return response_query_result
 
         else:
@@ -166,6 +188,11 @@ def get_data(query):
     query : str
         SQL query from the database
 
+    if isinstance(query, str):
+        query = text(
+            query
+        )  # Only wrap in text if it's a string, not already a TextClause
+
     Returns
     -------
     pd.DataFrame
@@ -174,6 +201,27 @@ def get_data(query):
     with connect_to_db() as conn:
         df = pd.read_sql_query(query, conn)
     return df
+
+
+def extract_utc_date(date_dict):
+    """
+    Extracts the UTC date from the date dictionary and converts it to a datetime.date object.
+
+    Parameters:
+    date_dict (dict): The dictionary containing date information with 'utc' and 'local' keys.
+
+    Returns:
+    datetime.date: The date part of the 'utc' datetime.
+    """
+    # If the input is a string, parse it as JSON
+    if isinstance(date_dict, str):
+        date_dict = json.loads(date_dict)
+
+    utc_datetime_str = date_dict["utc"]
+    utc_datetime = datetime.fromisoformat(
+        utc_datetime_str.replace("Z", "+00:00")
+    )
+    return utc_datetime.date()
 
 
 def write_to_db(
@@ -185,8 +233,6 @@ def write_to_db(
     index=False,
     **kwargs,
 ):
-    #     with engine.begin() as connection:
-    #         connection.execute(text("""SET ROLE "pakistan-ihhn-role" """))
     df.to_sql(
         name=table_name,
         schema=schema_name,
@@ -199,19 +245,12 @@ def write_to_db(
 
 def ee_array_to_df(arr, list_of_bands):
     """Transforms client-side ee.Image.getRegion array to pandas.DataFrame."""
-    df = pd.DataFrame(arr)
-
-    # Rearrange the header.
-    headers = df.iloc[0].tolist()  # Ensure headers are in list format
-    df = pd.DataFrame(df.values[1:], columns=headers)
+    df = pd.DataFrame(arr[1:], columns=arr[0])
 
     # Remove rows without data inside.
     df = df[["longitude", "latitude", "time", *list_of_bands]].dropna()
 
     # Convert the data to numeric values.
-    df["longitude"] = pd.to_numeric(df["longitude"], errors="coerce")
-    df["latitude"] = pd.to_numeric(df["latitude"], errors="coerce")
-    df["time"] = pd.to_numeric(df["time"], errors="coerce")
     for band in list_of_bands:
         df[band] = pd.to_numeric(df[band], errors="coerce")
 
@@ -221,4 +260,73 @@ def ee_array_to_df(arr, list_of_bands):
     # Keep the columns of interest.
     df = df[["longitude", "latitude", "time", "datetime", *list_of_bands]]
 
-    return df.reset_index(drop=True)
+    return df
+
+
+def load_data_for_single_tv_set(cohort_table, tv_set):
+    # SQL query for X_train and Y_train filtered by tv_set
+    train_query = f"""
+    SELECT
+        EXTRACT(EPOCH FROM "datetime_hour") AS "timestamp_as_float",
+        "y",
+        "x",
+        "Optical_Depth_047",
+        "Optical_Depth_047_time_diff",
+        "SR_B4",
+        "SR_B4_time_diff",
+        "SR_B3",
+        "SR_B2",
+        "avg_rad",
+        "avg_rad_time_diff",
+        "temperature_2m_above_ground",
+        "temperature_2m_above_ground_time_diff",
+        "relative_humidity_2m_above_ground",
+        "precipitable_water_entire_atmosphere",
+        "u_component_of_wind_10m_above_ground",
+        "v_component_of_wind_10m_above_ground",
+        "value"
+    FROM
+        "{cohort_table}_training"
+    WHERE
+        {tv_set} = ANY("tv_set"::int[]);
+    """
+
+    # SQL query for X_valid and Y_valid filtered by tv_set
+    valid_query = f"""
+    SELECT
+        EXTRACT(EPOCH FROM "datetime_hour") AS "timestamp_as_float",
+        "y",
+        "x",
+        "Optical_Depth_047",
+        "Optical_Depth_047_time_diff",
+        "SR_B4",
+        "SR_B4_time_diff",
+        "SR_B3",
+        "SR_B2",
+        "avg_rad",
+        "avg_rad_time_diff",
+        "temperature_2m_above_ground",
+        "temperature_2m_above_ground_time_diff",
+        "relative_humidity_2m_above_ground",
+        "precipitable_water_entire_atmosphere",
+        "u_component_of_wind_10m_above_ground",
+        "v_component_of_wind_10m_above_ground",
+        "value"
+    FROM
+        "{cohort_table}_validation"
+    WHERE
+        {tv_set} = ANY("tv_set"::int[]);
+    """
+
+    # Retrieve data from the database
+    train_df = get_data(train_query)
+    valid_df = get_data(valid_query)
+
+    # Separate features (X) and labels (Y)
+    X_train = train_df.drop(columns=["value"])
+    Y_train = train_df["value"]
+
+    X_valid = valid_df.drop(columns=["value"])
+    Y_valid = valid_df["value"]
+
+    return X_train, Y_train, X_valid, Y_valid

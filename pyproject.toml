@@ -41,6 +41,9 @@ force_grid_wrap = 0
 use_parentheses = true
 ensure_newline_before_comments = true
 
+[tool.pytest.ini_options]
+norecursedirs = ["google-cloud-sdk"]
+
 [tool.black]
 line-length = 79
 

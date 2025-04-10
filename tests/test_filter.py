@@ -1,7 +1,24 @@
+import os
+from unittest.mock import patch
+
 import pandas as pd
 import pytest
+from src.preprocessing.filter import Filter
 
-from openaq_engine.src.preprocessing.filter import Filter
+
+@pytest.fixture(autouse=True)
+def mock_env_vars():
+    with patch.dict(
+        os.environ,
+        {
+            "DB_NAME_OPENAQ": "test_db",
+            "DB_HOST": "localhost",
+            "DB_PORT": "5432",
+            "DB_USER": "test_user",
+            "DB_PASSWORD": "test_password",
+        },
+    ):
+        yield
 
 
 @pytest.fixture
