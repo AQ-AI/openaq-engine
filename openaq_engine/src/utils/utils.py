@@ -9,7 +9,6 @@ import pandas as pd
 import requests
 from pydantic.json import pydantic_encoder
 from setup_environment import connect_to_db
-from sqlalchemy import text
 
 
 def read_csv(path: str, **kwargs: Any) -> pd.DataFrame:
