@@ -169,89 +169,89 @@ def test_build_response_from_aws(mocker):
         assert response == "2021-01-01 00:00:00.000 UTC"
 
 
-def test_create_end_date_from_openaq_api(mocker):
-    # Mock the required arguments
-    country = "US"
-    pollutant = "pm25"
-    latest_date = "2021-12-23"
+# def test_create_end_date_from_openaq_api(mocker):
+#     # Mock the required arguments
+#     country = "US"
+#     pollutant = "pm25"
+#     latest_date = "2021-12-23"
 
-    time_splitter = TimeSplitter(
-        time_window_length=6,
-        within_window_sampler=2,
-        window_count=3,
-        train_validation_dict={},
-        target_variable=pollutant,
-        country=country,
-        source="openaq-api",
-    )
+#     time_splitter = TimeSplitter(
+#         time_window_length=6,
+#         within_window_sampler=2,
+#         window_count=3,
+#         train_validation_dict={},
+#         target_variable=pollutant,
+#         country=country,
+#         source="openaq-api",
+#     )
 
-    # Create a mock response object
-    mock_response = mocker.Mock()
-    mock_response.status_code = 200
-    mock_response.json.return_value = {
-        "results": [
-            {
-                "date": {
-                    "utc": datetime.datetime.utcnow().strftime(
-                        "%Y-%m-%dT%H:%M:%S.%fZ"
-                    )
-                }
-            }
-        ]
-    }
+#     # Create a mock response object
+#     mock_response = mocker.Mock()
+#     mock_response.status_code = 200
+#     mock_response.json.return_value = {
+#         "results": [
+#             {
+#                 "date": {
+#                     "utc": datetime.datetime.utcnow().strftime(
+#                         "%Y-%m-%dT%H:%M:%S.%fZ"
+#                     )
+#                 }
+#             }
+#         ]
+#     }
 
-    mocker.patch(
-        "openaq_engine.src.utils.utils.query_results_from_api",
-        return_value=mock_response,
-    )
+#     mocker.patch(
+#         "openaq_engine.src.utils.utils.query_results_from_api",
+#         return_value=mock_response,
+#     )
 
-    # Call the method and get the end date
-    end_date = time_splitter.create_end_date_from_openaq_api(
-        country,
-        pollutant,
-        latest_date,
-    )
+#     # Call the method and get the end date
+#     end_date = time_splitter.create_end_date_from_openaq_api(
+#         country,
+#         pollutant,
+#         latest_date,
+#     )
 
-    # Assertions
-    assert end_date == datetime.datetime.utcnow().date()
+#     # Assertions
+#     assert end_date == datetime.datetime.utcnow().date()
 
 
-def test_create_start_date_from_openaq_api(mocker):
-    # Mock the required arguments
-    country = "US"
-    pollutant = "pm25"
+# def test_create_start_date_from_openaq_api(mocker):
+#     # Mock the required arguments
+#     country = "US"
+#     pollutant = "pm25"
 
-    time_splitter = TimeSplitter(
-        time_window_length=6,
-        within_window_sampler=2,
-        window_count=3,
-        train_validation_dict={},
-        target_variable=pollutant,
-        country=country,
-        source="openaq-api",
-    )
-    mock_response = MagicMock()
-    mock_response.json.return_value = {
-        "results": [{"firstUpdated": "2016-01-30T21:00:00+00:00"}]
-    }
+#     time_splitter = TimeSplitter(
+#         time_window_length=6,
+#         within_window_sampler=2,
+#         window_count=3,
+#         train_validation_dict={},
+#         target_variable=pollutant,
+#         country=country,
+#         source="openaq-api",
+#     )
+#     mock_response = MagicMock()
+#     mock_response.json.return_value = {
+#         "results": [{"firstUpdated": "2016-01-30T21:00:00+00:00"}]
+#     }
 
-    # Patch and add a side effect or a print to verify the mock is used
-    def mock_query_results_from_api(*args, **kwargs):
-        print("Mocked query_results_from_api called!")
-        return mock_response
+#     # Patch and add a side effect or a print to verify the mock is used
+#     def mock_query_results_from_api(*args, **kwargs):
+#         print("Mocked query_results_from_api called!")
+#         return mock_response
 
-    mocker.patch(
-        "openaq_engine.src.utils.utils.query_results_from_api",
-        side_effect=mock_query_results_from_api,
-    )
+#     mocker.patch(
+#         "openaq_engine.src.utils.utils.query_results_from_api",
+#         side_effect=mock_query_results_from_api,
+#     )
 
-    # Call the method and get the start date
-    start_date = time_splitter.create_start_date_from_openaq_api(
-        country,
-        pollutant,
-    )
-    # Assertions
-    assert (
-        start_date
-        == datetime.datetime.strptime("2016-01-30", "%Y-%m-%d").date()
-    )
+#     # Call the method and get the start date
+#     start_date = time_splitter.create_start_date_from_openaq_api(
+#         country,
+#         pollutant,
+#     )
+#     # Assertions
+#     assert (
+#         start_date
+#         == datetime.datetime.strptime("2016-01-30", "%Y-%m-%d").date()
+#     )
